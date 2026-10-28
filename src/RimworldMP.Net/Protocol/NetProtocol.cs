@@ -8,12 +8,17 @@ namespace RimworldMP.Net.Protocol;
 public static class NetProtocol
 {
     public const byte Version = 2;
+    /// <summary>Oldest protocol version this build will accept on handshake.</summary>
+    public const byte MinSupportedVersion = 2;
     public const int DefaultPort = 30555;
     /// <summary>Per-frame cap. JIP save blobs are split into chunks under this limit.</summary>
     public const int MaxFrameBytes = 4 << 20; // 4 MiB
     public const int JoinPointChunkBytes = 256 * 1024;
 
     public static readonly byte[] HandshakeMagic = "RMP2"u8.ToArray();
+
+    public static bool IsCompatible(byte remoteVersion) =>
+        remoteVersion >= MinSupportedVersion && remoteVersion <= Version;
 }
 
 public enum NetMessageType : byte
@@ -29,4 +34,6 @@ public enum NetMessageType : byte
     JoinPointChunk = 9,
     JoinPointDone = 10,
     AutosaveAnnounce = 11,
+    ReadyStatus = 12,
+    PeerLeaveNotice = 13,
 }

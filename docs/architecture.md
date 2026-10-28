@@ -11,8 +11,8 @@ Locks: RimWorld **1.7** · `net10.0` · Harmony **3** · shared colony · LAN-fi
 | 0 Skeleton | Done |
 | 1 Smallest playable MP | Done (merged) |
 | 2 Colony playable | Done (merged) |
-| 3 Broader compatibility | In progress on `phase-3-compat` |
-| 4 Harden | Next |
+| 3 Broader compatibility | Done (merged) |
+| 4 Harden | In progress on `phase-4-harden` |
 | 5 Release-ready | Next |
 
 ### Phase 2 highlights
