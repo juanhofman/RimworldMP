@@ -3,7 +3,8 @@
   <name>RimworldMP</name>
   <author>RimworldMP contributors</author>
   <packageId>RimworldMP.Core</packageId>
-  <description>From-scratch RimWorld 1.7 multiplayer (shared colony, LAN TCP, in-game host). Phase 2: colony commands (bills/research/trade/caravans), join-in-progress, richer desync dumps, public API. Requires Harmony 3. Build with RIMWORLD_DIR for full Verse patches.</description>
+  <modVersion>0.5.0</modVersion>
+  <description>From-scratch RimWorld 1.7 multiplayer (shared colony, LAN TCP, in-game host). v0.5.0: lockstep lobby + JIP, colony/DLC command surfaces, Compat API, ready/modlist checks, desync dumps. Requires Harmony 3. Build with RIMWORLD_DIR for full Verse patches.</description>
   <supportedVersions>
     <li>1.7</li>
   </supportedVersions>
