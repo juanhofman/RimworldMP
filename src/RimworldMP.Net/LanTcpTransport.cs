@@ -92,10 +92,10 @@ public sealed class LanTcpTransport : INetTransport
             throw new InvalidOperationException("Host rejected handshake / join.");
         }
 
-        if (payload[0] != NetProtocol.Version)
+        if (!NetProtocol.IsCompatible(payload[0]))
         {
             client.Dispose();
-            throw new InvalidOperationException($"Protocol version mismatch: host={payload[0]} local={NetProtocol.Version}");
+            throw new InvalidOperationException($"Protocol version mismatch: host={payload[0]} local={NetProtocol.Version} (min={NetProtocol.MinSupportedVersion})");
         }
 
         var assignedId = BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(1));
@@ -146,7 +146,7 @@ public sealed class LanTcpTransport : INetTransport
     }
 
     private static bool IsKnownType(byte value) =>
-        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.AutosaveAnnounce;
+        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.PeerLeaveNotice;
 
     /// <summary>Send a typed control message to one peer (hash / desync / keepalive).</summary>
     public void SendControl(NetPeerId peer, NetMessageType type, ReadOnlyMemory<byte> payload)
@@ -234,7 +234,7 @@ public sealed class LanTcpTransport : INetTransport
                 }
 
                 var remoteVersion = payload[NetProtocol.HandshakeMagic.Length];
-                if (remoteVersion != NetProtocol.Version)
+                if (!NetProtocol.IsCompatible(remoteVersion))
                 {
                     client.Dispose();
                     continue;

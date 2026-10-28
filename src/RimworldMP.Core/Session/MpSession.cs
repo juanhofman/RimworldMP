@@ -19,11 +19,14 @@ public sealed class MpSession : IAsyncDisposable
     private readonly object _applyGate = new();
     private readonly JoinPointTransfer _jipReceive = new();
     private readonly CommandLog _commandLog = new();
+    private readonly ReadyCheck _ready = new();
+    private readonly Dictionary<long, string> _pendingRemoteHashes = new();
     private int _localPlayerId;
     private long _sessionSeed;
     private bool _wired;
     private bool _jipPending;
     private string _modlistHash = "unknown";
+    private int _expectedPeers = 2;
 
     public MpSession(INetTransport transport, bool isHost, long? sessionSeed = null)
     {
@@ -34,6 +37,7 @@ public sealed class MpSession : IAsyncDisposable
         Hasher = new StateHasher();
         Desync = new DesyncDetector(Hasher, Rand);
         TickGate = new TickGate();
+        _ready.SetPeer(0, ready: isHost, modlistHash: _modlistHash);
     }
 
     public INetTransport Transport { get; }
@@ -51,12 +55,38 @@ public sealed class MpSession : IAsyncDisposable
     public CommandLog CommandLog => _commandLog;
     public IJoinPointSource? JoinPointSource { get; set; }
     public bool IsJoinInProgress => _jipPending;
+    public ReadyCheck Ready => _ready;
+    public bool PauseOnPeerLeave { get; set; } = true;
+    public int ExpectedPeers
+    {
+        get => _expectedPeers;
+        set => _expectedPeers = Math.Max(1, value);
+    }
+
+    public bool IsLobbyReady => _ready.AllReady(_expectedPeers, _modlistHash);
 
     public event Action<CommandBatch>? OnBatchApply;
     public event Action<DesyncInfo>? OnDesync;
     public event Action<JoinPoint>? OnJoinPointReceived;
+    public event Action<int>? OnPeerLeft;
 
-    public void SetModlistHash(string hash) => _modlistHash = hash ?? "unknown";
+    public void SetModlistHash(string hash)
+    {
+        _modlistHash = hash ?? "unknown";
+        _ready.SetPeer(_localPlayerId, _ready.Snapshot().TryGetValue(_localPlayerId, out var cur) && cur.Ready, _modlistHash);
+    }
+
+    public void SetReady(bool ready)
+    {
+        _ready.SetPeer(_localPlayerId, ready, _modlistHash);
+        var payload = ReadyPayload(_localPlayerId, ready, _modlistHash);
+        if (IsHost)
+            Transport.BroadcastReliable(Envelope(NetMessageType.ReadyStatus, payload));
+        else
+            Transport.SendReliable(NetPeerId.Host, Envelope(NetMessageType.ReadyStatus, payload));
+    }
+
+    public void RequestRecoveryRejoin() => SessionRecovery.RequestRejoin(this);
 
     public async Task StartAsync(NetEndpoint endpoint, CancellationToken cancellationToken = default)
     {
@@ -129,6 +159,8 @@ public sealed class MpSession : IAsyncDisposable
     {
         if (!IsHost || !IsActive || IsFrozen)
             return;
+        if (_ready.Required && !IsLobbyReady)
+            return;
 
         long tick;
         CommandBatch batch;
@@ -173,6 +205,10 @@ public sealed class MpSession : IAsyncDisposable
 
             if (Tick > 0 && Tick % HashIntervalTicks == 0)
                 PublishHash(Tick);
+
+            // Compare any remote hash that arrived before we reached this tick.
+            if (_pendingRemoteHashes.Remove(Tick, out var remoteHex))
+                EvaluateRemoteHash(Tick, remoteHex);
         }
 
         return true;
@@ -296,7 +332,47 @@ public sealed class MpSession : IAsyncDisposable
                     _jipPending = false; // empty lobby — no blob
                 break;
             }
+            case NetMessageType.ReadyStatus:
+                HandleReadyStatus(payload);
+                break;
+            case NetMessageType.PeerLeaveNotice:
+                if (payload.Length >= 4)
+                {
+                    var left = BinaryPrimitives.ReadInt32LittleEndian(payload);
+                    OnPeerLeft?.Invoke(left);
+                    if (PauseOnPeerLeave)
+                        SubmitCommand(CommandOpcode.Pause, CommandPayloads.Pause(true));
+                }
+                break;
         }
+    }
+
+    private void HandleReadyStatus(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 6)
+            return;
+        var playerId = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var ready = payload[4] != 0;
+        var hashLen = payload[5];
+        if (payload.Length < 6 + hashLen)
+            return;
+        var hash = hashLen == 0 ? string.Empty : System.Text.Encoding.UTF8.GetString(payload.Slice(6, hashLen));
+        _ready.SetPeer(playerId, ready, hash);
+        if (IsHost)
+            Transport.BroadcastReliable(Envelope(NetMessageType.ReadyStatus, payload.ToArray()));
+    }
+
+    private static byte[] ReadyPayload(int playerId, bool ready, string modlistHash)
+    {
+        var hashBytes = System.Text.Encoding.UTF8.GetBytes(modlistHash ?? string.Empty);
+        if (hashBytes.Length > 255)
+            hashBytes = hashBytes.AsSpan(0, 255).ToArray();
+        var buf = new byte[6 + hashBytes.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, playerId);
+        buf[4] = ready ? (byte)1 : (byte)0;
+        buf[5] = (byte)hashBytes.Length;
+        hashBytes.CopyTo(buf.AsSpan(6));
+        return buf;
     }
 
     private static byte[] Envelope(NetMessageType type, ReadOnlyMemory<byte> payload)
@@ -351,6 +427,23 @@ public sealed class MpSession : IAsyncDisposable
         var tick = BinaryPrimitives.ReadInt64LittleEndian(payload);
         var remoteHex = Convert.ToHexString(payload.Slice(8, 32)).ToLowerInvariant();
 
+        lock (_applyGate)
+        {
+            if (tick > Tick)
+            {
+                _pendingRemoteHashes[tick] = remoteHex;
+                return;
+            }
+
+            if (tick < Tick)
+                return; // stale
+        }
+
+        EvaluateRemoteHash(tick, remoteHex);
+    }
+
+    private void EvaluateRemoteHash(long tick, string remoteHex)
+    {
         List<MpCommand> recent;
         lock (_applyGate)
             recent = _recentApplied.ToList();
