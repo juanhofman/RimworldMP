@@ -52,4 +52,35 @@ public class TickGateAndDesyncTests
         b.AddDrawCount(7);
         Assert.Equal(a.CurrentHashHex(), b.CurrentHashHex());
     }
+
+    [Fact]
+    public void SnapshotHash_does_not_mutate_rolling_hasher()
+    {
+        var rand = new SyncedRand(42);
+        var hasher = new StateHasher();
+        hasher.AddUtf8("base");
+        var detector = new DesyncDetector(hasher, rand, Path.Combine(Path.GetTempPath(), "rimworldmp-snap"));
+
+        var before = hasher.CurrentHashHex();
+        var snap1 = detector.SnapshotHashHex(10);
+        var mid = hasher.CurrentHashHex();
+        var snap2 = detector.SnapshotHashHex(10);
+        var after = hasher.CurrentHashHex();
+
+        Assert.Equal(before, mid);
+        Assert.Equal(mid, after);
+        Assert.Equal(snap1, snap2);
+    }
+
+    [Fact]
+    public void Matching_remote_hash_does_not_freeze()
+    {
+        var rand = new SyncedRand(7);
+        var hasher = new StateHasher();
+        hasher.AddUtf8("same");
+        var detector = new DesyncDetector(hasher, rand, Path.Combine(Path.GetTempPath(), "rimworldmp-match"));
+        var local = detector.SnapshotHashHex(5);
+        Assert.True(detector.CheckRemote(5, local));
+        Assert.False(detector.IsFrozen);
+    }
 }

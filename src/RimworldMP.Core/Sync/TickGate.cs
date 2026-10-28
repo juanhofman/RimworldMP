@@ -20,6 +20,8 @@ public sealed class TickGate
 
     public int PendingCount => _pending.Count;
 
+    public bool HasBatch(long tick) => _pending.ContainsKey(tick);
+
     public void EnqueueBatch(CommandBatch batch)
     {
         ArgumentNullException.ThrowIfNull(batch);

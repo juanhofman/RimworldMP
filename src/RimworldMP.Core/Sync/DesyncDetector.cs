@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
 using System.Text;
 using RimworldMP.Core.Commands;
 
@@ -13,6 +15,7 @@ public sealed class DesyncInfo
 
 /// <summary>
 /// Compares periodic state hashes across peers. On mismatch: freeze session and write a dump file.
+/// Checkpoint hashes are ephemeral — they must not mutate the rolling <see cref="StateHasher"/>.
 /// </summary>
 public sealed class DesyncDetector
 {
@@ -43,11 +46,17 @@ public sealed class DesyncDetector
 
     public string LogDirectory => _logDirectory;
 
+    /// <summary>
+    /// Non-mutating checkpoint: SHA256(rollingState ‖ tick ‖ drawCount).
+    /// </summary>
     public byte[] SnapshotHash(long tick)
     {
-        _hasher.AddTick(tick);
-        _hasher.AddDrawCount(_rand.DrawCount);
-        return _hasher.CurrentHash();
+        var state = _hasher.CurrentHash();
+        Span<byte> buf = stackalloc byte[32 + 8 + 8];
+        state.CopyTo(buf);
+        BinaryPrimitives.WriteInt64LittleEndian(buf[32..], tick);
+        BinaryPrimitives.WriteInt64LittleEndian(buf[40..], _rand.DrawCount);
+        return SHA256.HashData(buf);
     }
 
     public string SnapshotHashHex(long tick) => Convert.ToHexString(SnapshotHash(tick)).ToLowerInvariant();

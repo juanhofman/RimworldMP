@@ -74,6 +74,17 @@ public sealed class SyncedRand
         lock (_gate) _drawCount = 0;
     }
 
+    /// <summary>Replace the session seed (e.g. after JoinAck delivers the host seed).</summary>
+    public void ResetSession(long sessionSeed)
+    {
+        lock (_gate)
+        {
+            _seed = sessionSeed;
+            _drawCount = 0;
+            _rng = new Random(HashSeed(sessionSeed, 0));
+        }
+    }
+
     private static int HashSeed(long sessionSeed, long tick)
     {
         unchecked

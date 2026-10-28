@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Collections.Concurrent;
 using RimworldMP.Core.Commands;
 using RimworldMP.Core.Sync;
 using RimworldMP.Net;
@@ -19,7 +18,7 @@ public sealed class MpSession : IAsyncDisposable
     private readonly List<MpCommand> _recentApplied = new();
     private readonly object _applyGate = new();
     private int _localPlayerId;
-    private readonly long _sessionSeed;
+    private long _sessionSeed;
     private bool _wired;
 
     public MpSession(INetTransport transport, bool isHost, long? sessionSeed = null)
@@ -61,6 +60,9 @@ public sealed class MpSession : IAsyncDisposable
         if (IsHost)
         {
             _localPlayerId = 0;
+            if (Transport is LanTcpTransport hostLan)
+                hostLan.HostSessionSeed = _sessionSeed;
+
             await Transport.StartHostAsync(endpoint, cancellationToken).ConfigureAwait(false);
             // Consume a synthetic tick-0 empty batch so the first real tick is 1.
             TickGate.EnqueueBatch(CommandBatch.Empty(0));
@@ -70,12 +72,35 @@ public sealed class MpSession : IAsyncDisposable
         else
         {
             await Transport.StartClientAsync(endpoint, cancellationToken).ConfigureAwait(false);
-            // Phase 1: first client is player 1 (JoinAck assigns the same id on the wire).
-            _localPlayerId = 1;
+            if (Transport is LanTcpTransport clientLan)
+            {
+                if (clientLan.AssignedPlayerId is int assigned)
+                    _localPlayerId = assigned;
+                else
+                    _localPlayerId = 1;
+
+                if (clientLan.JoinedSessionSeed is long seed)
+                    ApplySessionSeed(seed);
+            }
+            else
+            {
+                // Loopback / tests: caller supplies matching seeds out of band.
+                _localPlayerId = 1;
+            }
+
             Tick = 0;
         }
 
         IsActive = true;
+    }
+
+    /// <summary>Apply the authoritative host session seed (JoinAck / lobby hello).</summary>
+    public void ApplySessionSeed(long seed)
+    {
+        _sessionSeed = seed;
+        Rand.ResetSession(seed);
+        Hasher.Reset();
+        Desync.Reset();
     }
 
     /// <summary>
@@ -229,9 +254,13 @@ public sealed class MpSession : IAsyncDisposable
 
     private void HandleCommandBatch(NetPeerId peer, ReadOnlySpan<byte> payload)
     {
-        if (IsHost && peer.Value != 0)
+        if (IsHost)
         {
-            // Client proposals are a single MpCommand (tick==0).
+            // Host never enqueues remote batches into its own tick gate — only client proposals.
+            // (A crafted full batch from a client would otherwise desync/corrupt the host sim.)
+            if (peer.Value == 0)
+                return;
+
             try
             {
                 var cmd = MpCommand.ReadFrom(payload, out var consumed);
@@ -239,13 +268,14 @@ public sealed class MpSession : IAsyncDisposable
                 {
                     lock (_applyGate)
                         _hostStaging.Add(new MpCommand(cmd.Opcode, 0, peer.Value, cmd.Payload));
-                    return;
                 }
             }
             catch
             {
-                // fall through
+                // ignore malformed proposals
             }
+
+            return;
         }
 
         try

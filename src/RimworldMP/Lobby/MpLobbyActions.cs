@@ -28,10 +28,11 @@ public static class MpLobbyActions
     public static async Task JoinAsync(string host, int port = NetProtocol.DefaultPort, long? seed = null)
     {
         await StopAsync().ConfigureAwait(false);
+        // Seed is optional: JoinAck delivers the host session seed over LAN TCP.
         var session = await SessionFacade.JoinLobbyAsync(host, port, sessionSeed: seed).ConfigureAwait(false);
         WireSession(session);
 #if !RIMWORLDMP_NO_GAME_REFS
-        Log.Message($"[RimworldMP] Joined lobby at {host}:{port}");
+        Log.Message($"[RimworldMP] Joined lobby at {host}:{port}, seed={session.SessionSeed}, player={session.LocalPlayerId}");
 #endif
     }
 

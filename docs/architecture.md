@@ -12,7 +12,7 @@ Implemented in-repo (compiles without game via `RIMWORLDMP_NO_GAME_REFS`):
 
 | Area | Status |
 | --- | --- |
-| LAN TCP `INetTransport` + handshake | Done (`LanTcpTransport`, protocol v1 frames) |
+| LAN TCP `INetTransport` + handshake | Done (`LanTcpTransport`, protocol v1 frames; JoinAck carries session seed; max 1 client) |
 | Host lobby + one client join | Done (`SessionFacade` / `MpLobbyActions`) |
 | Tick gate + command batches | Done (`TickGate`, `MpSession`) |
 | Pause / speed / draft / job / zone / restrict opcodes | Done (serialize + host stage + apply stubs) |

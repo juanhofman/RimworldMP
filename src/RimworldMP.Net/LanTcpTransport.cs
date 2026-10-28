@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -24,8 +25,20 @@ public sealed class LanTcpTransport : INetTransport
     private CancellationTokenSource? _cts;
     private Task? _acceptLoop;
     private readonly ConcurrentDictionary<NetPeerId, PeerConnection> _peers = new();
-    private int _nextPeerId = 1;
+    private int _nextPeerId; // Incremented to assign client ids starting at 1.
     private readonly object _sendLock = new();
+
+    /// <summary>Phase 1: single client. Raise later when multi-client lobby lands.</summary>
+    public int MaxClients { get; set; } = 1;
+
+    /// <summary>Host sets this before <see cref="StartHostAsync"/>; embedded in JoinAck.</summary>
+    public long HostSessionSeed { get; set; }
+
+    /// <summary>Client: session seed delivered by JoinAck.</summary>
+    public long? JoinedSessionSeed { get; private set; }
+
+    /// <summary>Client: player id assigned by JoinAck.</summary>
+    public int? AssignedPlayerId { get; private set; }
 
     public bool IsRunning => _mode != Mode.Idle;
     public NetEndpoint? Endpoint => _endpoint;
@@ -72,7 +85,8 @@ public sealed class LanTcpTransport : INetTransport
             .ConfigureAwait(false);
 
         var (type, payload) = await FrameCodec.ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
-        if (type != NetMessageType.JoinAck || payload.Length < 5)
+        // JoinAck: version(1) + peerId(i32 LE) + sessionSeed(i64 LE)
+        if (type != NetMessageType.JoinAck || payload.Length < 13)
         {
             client.Dispose();
             throw new InvalidOperationException("Host rejected handshake / join.");
@@ -84,7 +98,9 @@ public sealed class LanTcpTransport : INetTransport
             throw new InvalidOperationException($"Protocol version mismatch: host={payload[0]} local={NetProtocol.Version}");
         }
 
-        var assignedId = BitConverter.ToInt32(payload, 1);
+        var assignedId = BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(1));
+        AssignedPlayerId = assignedId;
+        JoinedSessionSeed = BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(5));
         var peerId = new NetPeerId(assignedId);
         var conn = new PeerConnection(peerId, client, stream);
         if (!_peers.TryAdd(NetPeerId.Host, conn))
@@ -183,7 +199,9 @@ public sealed class LanTcpTransport : INetTransport
         _acceptLoop = null;
         _mode = Mode.Idle;
         _endpoint = null;
-        _nextPeerId = 1;
+        _nextPeerId = 0;
+        JoinedSessionSeed = null;
+        AssignedPlayerId = null;
     }
 
     public ValueTask DisposeAsync() => new(StopAsync());
@@ -199,6 +217,12 @@ public sealed class LanTcpTransport : INetTransport
             try
             {
                 client = await _listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
+                if (_peers.Count >= MaxClients)
+                {
+                    client.Dispose();
+                    continue;
+                }
+
                 var stream = client.GetStream();
                 var (type, payload) = await FrameCodec.ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
                 if (type != NetMessageType.Handshake
@@ -217,9 +241,10 @@ public sealed class LanTcpTransport : INetTransport
                 }
 
                 var peerId = new NetPeerId(Interlocked.Increment(ref _nextPeerId));
-                var ack = new byte[5];
+                var ack = new byte[13];
                 ack[0] = NetProtocol.Version;
-                BitConverter.TryWriteBytes(ack.AsSpan(1), peerId.Value);
+                BinaryPrimitives.WriteInt32LittleEndian(ack.AsSpan(1), peerId.Value);
+                BinaryPrimitives.WriteInt64LittleEndian(ack.AsSpan(5), HostSessionSeed);
                 await FrameCodec.WriteFrameAsync(stream, NetMessageType.JoinAck, ack, cancellationToken)
                     .ConfigureAwait(false);
 
