@@ -257,4 +257,107 @@ public static class CommandPayloads
         consumed = 2 + len;
         return len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(2, len));
     }
+
+    public static byte[] Utf8Prefixed(string value)
+    {
+        var nameBytes = Encoding.UTF8.GetBytes(value ?? string.Empty);
+        var buf = new byte[2 + nameBytes.Length];
+        BinaryPrimitives.WriteUInt16LittleEndian(buf, (ushort)nameBytes.Length);
+        nameBytes.CopyTo(buf.AsSpan(2));
+        return buf;
+    }
+
+    /// <summary>DLC generic: pawn + def name (title, permit, gene, entity study, etc.).</summary>
+    public static byte[] PawnDef(int pawnThingId, string defName)
+    {
+        var nameBytes = Encoding.UTF8.GetBytes(defName ?? string.Empty);
+        var buf = new byte[4 + 2 + nameBytes.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnThingId);
+        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(4), (ushort)nameBytes.Length);
+        nameBytes.CopyTo(buf.AsSpan(6));
+        return buf;
+    }
+
+    public static (int PawnThingId, string DefName) ReadPawnDef(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 6)
+            throw new InvalidOperationException("PawnDef payload truncated.");
+        var pawn = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[4..]);
+        if (payload.Length < 6 + len)
+            throw new InvalidOperationException("PawnDef name truncated.");
+        var name = len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(6, len));
+        return (pawn, name);
+    }
+
+    public static byte[] IdeologyBelief(string ideoId, string preceptDef, byte severity)
+    {
+        var a = Encoding.UTF8.GetBytes(ideoId ?? string.Empty);
+        var b = Encoding.UTF8.GetBytes(preceptDef ?? string.Empty);
+        var buf = new byte[2 + a.Length + 2 + b.Length + 1];
+        BinaryPrimitives.WriteUInt16LittleEndian(buf, (ushort)a.Length);
+        a.CopyTo(buf.AsSpan(2));
+        var o = 2 + a.Length;
+        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(o), (ushort)b.Length);
+        b.CopyTo(buf.AsSpan(o + 2));
+        buf[^1] = severity;
+        return buf;
+    }
+
+    public static (string IdeoId, string PreceptDef, byte Severity) ReadIdeologyBelief(ReadOnlySpan<byte> payload)
+    {
+        var ideo = ReadUtf8Prefixed(payload, out var c1);
+        var precept = ReadUtf8Prefixed(payload[c1..], out var c2);
+        if (payload.Length < c1 + c2 + 1)
+            throw new InvalidOperationException("IdeologyBelief truncated.");
+        return (ideo, precept, payload[c1 + c2]);
+    }
+
+    public static byte[] RitualStart(string ritualDef, int mapId)
+    {
+        var name = Utf8Prefixed(ritualDef);
+        var buf = new byte[name.Length + 4];
+        name.CopyTo(buf, 0);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(name.Length), mapId);
+        return buf;
+    }
+
+    public static (string RitualDef, int MapId) ReadRitualStart(ReadOnlySpan<byte> payload)
+    {
+        var name = ReadUtf8Prefixed(payload, out var c);
+        if (payload.Length < c + 4)
+            throw new InvalidOperationException("RitualStart truncated.");
+        return (name, BinaryPrimitives.ReadInt32LittleEndian(payload[c..]));
+    }
+
+    public static byte[] GrowthVatAssign(int vatThingId, int pawnThingId)
+    {
+        var buf = new byte[8];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, vatThingId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), pawnThingId);
+        return buf;
+    }
+
+    public static (int VatThingId, int PawnThingId) ReadGrowthVatAssign(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 8)
+            throw new InvalidOperationException("GrowthVatAssign truncated.");
+        return (
+            BinaryPrimitives.ReadInt32LittleEndian(payload),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]));
+    }
+
+    public static byte[] EntityContain(int entityThingId, int chamberThingId) =>
+        GrowthVatAssign(entityThingId, chamberThingId);
+
+    public static (int EntityThingId, int ChamberThingId) ReadEntityContain(ReadOnlySpan<byte> payload) =>
+        ReadGrowthVatAssign(payload);
+
+    private static byte[] Combine(byte[] a, byte[] b)
+    {
+        var buf = new byte[a.Length + b.Length];
+        a.CopyTo(buf, 0);
+        b.CopyTo(buf, a.Length);
+        return buf;
+    }
 }

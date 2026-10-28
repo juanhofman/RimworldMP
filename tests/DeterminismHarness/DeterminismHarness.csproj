@@ -20,5 +20,6 @@
     <ProjectReference Include="..\..\src\RimworldMP.API\RimworldMP.API.csproj" />
     <ProjectReference Include="..\..\src\RimworldMP.Core\RimworldMP.Core.csproj" />
     <ProjectReference Include="..\..\src\RimworldMP.Net\RimworldMP.Net.csproj" />
+    <ProjectReference Include="..\..\src\RimworldMP.Compat\RimworldMP.Compat.csproj" />
   </ItemGroup>
 </Project>

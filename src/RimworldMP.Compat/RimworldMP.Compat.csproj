@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>RimworldMP.Compat</RootNamespace>
+    <AssemblyName>RimworldMP.Compat</AssemblyName>
+    <Description>Optional compat helpers and DLC command surfaces for RimworldMP.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RimworldMP.API\RimworldMP.API.csproj" />
+    <ProjectReference Include="..\RimworldMP.Core\RimworldMP.Core.csproj" />
+  </ItemGroup>
+</Project>
