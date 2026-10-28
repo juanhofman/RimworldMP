@@ -2,7 +2,7 @@
 
 Canonical plan: Project store `docs/multiplayer-architecture.md`.
 
-Locks: RimWorld **1.7** · `net10.0` · Harmony **3** · shared colony · LAN-first TCP · in-game host · PackageId `RimworldMP.Core` · MIT
+Locks: RimWorld **1.7** · `net10.0` · Harmony **3** (`Lib.Harmony.Ref` `3.0.0-rc.3` / Workshop ≥ v3.0.1) · shared colony · LAN-first TCP · in-game host · PackageId `RimworldMP.Core` · MIT
 
 ## Phase status (v0.5.0)
 

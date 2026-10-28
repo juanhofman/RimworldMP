@@ -14,7 +14,7 @@ Not a fork of Zetrith/RWMT. **v0.5.0** ships Phases 1–5 as a release-ready sca
 | Host | **In-game host only** |
 | PackageId | `RimworldMP.Core` |
 | License | MIT |
-| Harmony | Hard dependency on Harmony **3** — do **not** bundle `0Harmony.dll` |
+| Harmony | Hard dep on Workshop Harmony **3** (≥ v3.0.1 / lib `3.0.0-rc.3`); compile with `Lib.Harmony.Ref` — do **not** bundle `0Harmony.dll` |
 
 ## Quick start
 

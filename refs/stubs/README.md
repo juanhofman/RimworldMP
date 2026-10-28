@@ -13,4 +13,4 @@ To build the full `RimworldMP` game project (Harmony patches + command applicato
 | `Waylith.dll` | 1.7 engine |
 | `UnityStubs.dll` | Unity compatibility stubs (keep `using UnityEngine;`) |
 
-Without them, the solution still builds API / Core / Net / DeterminismHarness, and the main project compiles under `RIMWORLDMP_NO_GAME_REFS` (patches excluded). Harmony **3** remains a hard runtime dependency and must not be bundled as `0Harmony.dll`.
+Without them, the solution still builds API / Core / Net / DeterminismHarness, and the main project compiles under `RIMWORLDMP_NO_GAME_REFS` (patches excluded). Harmony **3** remains a hard runtime dependency (Workshop ≥ v3.0.1 / lib `3.0.0-rc.3`); compile-time pin is NuGet `Lib.Harmony.Ref` `3.0.0-rc.3` — do not bundle `0Harmony.dll`.

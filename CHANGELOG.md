@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Pin compile-time Harmony to NuGet `Lib.Harmony.Ref` `3.0.0-rc.3` (matches HarmonyRimWorld v3.0.1); stop using `Lib.Harmony` `3.0.0-rc.2`
+
 ## 0.5.0 — Release-ready scaffold (2026-10-28)
 
 First tagged release of the from-scratch RimworldMP lockstep stack for RimWorld **1.7**.
