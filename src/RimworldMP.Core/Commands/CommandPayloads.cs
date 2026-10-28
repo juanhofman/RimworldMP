@@ -29,54 +29,88 @@ public static class CommandPayloads
         return (BinaryPrimitives.ReadInt32LittleEndian(payload), payload[4] != 0);
     }
 
-    public static byte[] JobGive(int pawnLoadId, int cellX, int cellZ, string jobDefName)
+    /// <summary>
+    /// Job give: map + pawn + cell + optional Thing target + count + queue flag + def name.
+    /// Map id is mandatory so apply never reads <c>Find.CurrentMap</c>.
+    /// </summary>
+    public static byte[] JobGive(
+        int mapId,
+        int pawnLoadId,
+        int cellX,
+        int cellZ,
+        string jobDefName,
+        int targetThingId = -1,
+        int count = -1,
+        byte queue = 0)
     {
         var nameBytes = Encoding.UTF8.GetBytes(jobDefName ?? string.Empty);
-        var buf = new byte[4 + 4 + 4 + 2 + nameBytes.Length];
-        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnLoadId);
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), cellX);
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8), cellZ);
-        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(12), (ushort)nameBytes.Length);
-        nameBytes.CopyTo(buf.AsSpan(14));
+        // map(4) pawn(4) x(4) z(4) targetThing(4) count(4) queue(1) nameLen(2) name
+        var buf = new byte[4 + 4 + 4 + 4 + 4 + 4 + 1 + 2 + nameBytes.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), pawnLoadId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8), cellX);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(12), cellZ);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(16), targetThingId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(20), count);
+        buf[24] = queue;
+        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(25), (ushort)nameBytes.Length);
+        nameBytes.CopyTo(buf.AsSpan(27));
         return buf;
     }
 
-    public static (int PawnLoadId, int CellX, int CellZ, string JobDefName) ReadJobGive(ReadOnlySpan<byte> payload)
+    public static JobGivePayload ReadJobGive(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 14)
+        if (payload.Length < 27)
             throw new InvalidOperationException("JobGive payload truncated.");
-        var pawn = BinaryPrimitives.ReadInt32LittleEndian(payload);
-        var x = BinaryPrimitives.ReadInt32LittleEndian(payload[4..]);
-        var z = BinaryPrimitives.ReadInt32LittleEndian(payload[8..]);
-        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[12..]);
-        if (payload.Length < 14 + len)
+        var mapId = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var pawn = BinaryPrimitives.ReadInt32LittleEndian(payload[4..]);
+        var x = BinaryPrimitives.ReadInt32LittleEndian(payload[8..]);
+        var z = BinaryPrimitives.ReadInt32LittleEndian(payload[12..]);
+        var targetThingId = BinaryPrimitives.ReadInt32LittleEndian(payload[16..]);
+        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[20..]);
+        var queue = payload[24];
+        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[25..]);
+        if (payload.Length < 27 + len)
             throw new InvalidOperationException("JobGive name truncated.");
-        var name = len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(14, len));
-        return (pawn, x, z, name);
+        var name = len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(27, len));
+        return new JobGivePayload(mapId, pawn, x, z, targetThingId, count, queue, name);
     }
 
-    public static byte[] ZoneCells(byte zoneKind, int[] cellsPacked)
+    public readonly record struct JobGivePayload(
+        int MapId,
+        int PawnLoadId,
+        int CellX,
+        int CellZ,
+        int TargetThingId,
+        int Count,
+        byte Queue,
+        string JobDefName);
+
+    /// <summary>Zone cells: kind + map id + packed x/z pairs. Map id avoids UI-map affinity.</summary>
+    public static byte[] ZoneCells(byte zoneKind, int mapId, int[] cellsPacked)
     {
-        var buf = new byte[1 + 4 + cellsPacked.Length * 4];
+        var buf = new byte[1 + 4 + 4 + cellsPacked.Length * 4];
         buf[0] = zoneKind;
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(1), cellsPacked.Length);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(1), mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(5), cellsPacked.Length);
         for (var i = 0; i < cellsPacked.Length; i++)
-            BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(5 + i * 4), cellsPacked[i]);
+            BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(9 + i * 4), cellsPacked[i]);
         return buf;
     }
 
-    public static (byte ZoneKind, int[] CellsPacked) ReadZoneCells(ReadOnlySpan<byte> payload)
+    public static (byte ZoneKind, int MapId, int[] CellsPacked) ReadZoneCells(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 5)
+        if (payload.Length < 9)
             throw new InvalidOperationException("Zone payload truncated.");
         var kind = payload[0];
-        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[1..]);
-        if (count < 0 || payload.Length < 5 + count * 4)
+        var mapId = BinaryPrimitives.ReadInt32LittleEndian(payload[1..]);
+        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[5..]);
+        if (count < 0 || payload.Length < 9 + count * 4)
             throw new InvalidOperationException("Zone cells truncated.");
         var cells = new int[count];
         for (var i = 0; i < count; i++)
-            cells[i] = BinaryPrimitives.ReadInt32LittleEndian(payload[(5 + i * 4)..]);
-        return (kind, cells);
+            cells[i] = BinaryPrimitives.ReadInt32LittleEndian(payload[(9 + i * 4)..]);
+        return (kind, mapId, cells);
     }
 
     /// <summary>Zone create: kind + map id + optional label.</summary>

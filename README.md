@@ -2,7 +2,7 @@
 
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
-Not a fork of Zetrith/RWMT. **v0.5.0** ships Phases 1–5 as a release-ready scaffold: LAN TCP lockstep, colony + DLC command surfaces, join-in-progress, Compat API, ready/modlist checks, and a green offline harness. Full in-game proof still needs `RIMWORLD_DIR`.
+Not a fork of Zetrith/RWMT. **v0.5.0** + **P0 sim-correctness**: LAN TCP lockstep (protocol **v3**), join hard-gate on modlist hash, thickened job/zone payloads with map ids, JIP save-load hooks, MaxClients default **4**, in-mod lobby (F10 / button / launcher handoff). Full Verse proof still needs `RIMWORLD_DIR`.
 
 ## Locked scope
 
@@ -28,7 +28,7 @@ dotnet build RimworldMP.sln -c Release
 # Copy mod/ → RimWorld/Mods/RimworldMP ; enable Harmony then RimworldMP
 ```
 
-Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md) · Release notes: [`docs/RELEASE_NOTES_0.5.0.md`](docs/RELEASE_NOTES_0.5.0.md)
+Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · P0: [`docs/p0-sim-correctness.md`](docs/p0-sim-correctness.md) · Handoff: [`docs/launcher-handoff.md`](docs/launcher-handoff.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md)
 
 ## Layout
 

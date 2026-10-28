@@ -1,4 +1,8 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
 using RimworldMP.Core.Commands;
+using RimworldMP.Net.Protocol;
 
 namespace RimworldMP.Core.Sync;
 
@@ -11,8 +15,11 @@ public sealed class DesyncInfo
 }
 
 /// <summary>
-/// Compares periodic state hashes across peers. On mismatch: freeze session and write a dump file.
+/// Compares periodic state fingerprints across peers. On mismatch: freeze session and write a dump.
 /// Checkpoint hashes are ephemeral — they must not mutate the rolling <see cref="StateHasher"/>.
+/// P0 fingerprint includes protocol version, tick, RNG seed/draw counters, named counters, and the
+/// rolling command-stream hash. A 32-byte world-fingerprint slot is reserved (zeros until
+/// RIMWORLD_DIR can sample Verse map/world state — see docs/p0-sim-correctness.md).
 /// </summary>
 public sealed class DesyncDetector
 {
@@ -21,6 +28,7 @@ public sealed class DesyncDetector
     private readonly string _logDirectory;
     private readonly object _gate = new();
     private readonly Dictionary<string, long> _rngCounters = new(StringComparer.Ordinal);
+    private byte[] _worldFingerprint = new byte[32];
     private bool _frozen;
     private DesyncInfo? _last;
 
@@ -44,6 +52,18 @@ public sealed class DesyncDetector
 
     public string LogDirectory => _logDirectory;
 
+    /// <summary>
+    /// Optional Verse-world / map fingerprint (32 bytes). Callers with <c>RIMWORLD_DIR</c> should
+    /// populate this from pawn/thing/RNG-opinion samples; until then the reserved zeros remain.
+    /// </summary>
+    public void SetWorldFingerprint(ReadOnlySpan<byte> fingerprint32)
+    {
+        if (fingerprint32.Length != 32)
+            throw new ArgumentException("World fingerprint must be exactly 32 bytes.", nameof(fingerprint32));
+        lock (_gate)
+            fingerprint32.CopyTo(_worldFingerprint);
+    }
+
     public void IncrementCounter(string name, long delta = 1)
     {
         lock (_gate)
@@ -60,16 +80,43 @@ public sealed class DesyncDetector
     }
 
     /// <summary>
-    /// Non-mutating checkpoint: SHA256(rollingState ‖ tick ‖ drawCount).
+    /// Non-mutating checkpoint fingerprint:
+    /// SHA256(protocol ‖ tick ‖ rngSeed ‖ drawCount ‖ namedCounters ‖ rollingCmdHash ‖ worldFingerprint).
     /// </summary>
     public byte[] SnapshotHash(long tick)
     {
-        var state = _hasher.CurrentHash();
-        Span<byte> buf = stackalloc byte[32 + 8 + 8];
-        state.CopyTo(buf);
-        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(buf[32..], tick);
-        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(buf[40..], _rand.DrawCount);
-        return System.Security.Cryptography.SHA256.HashData(buf);
+        using var inc = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        Span<byte> num = stackalloc byte[8];
+
+        inc.AppendData([(byte)NetProtocol.Version]);
+
+        BinaryPrimitives.WriteInt64LittleEndian(num, tick);
+        inc.AppendData(num);
+
+        BinaryPrimitives.WriteInt64LittleEndian(num, _rand.Seed);
+        inc.AppendData(num);
+
+        BinaryPrimitives.WriteInt64LittleEndian(num, _rand.DrawCount);
+        inc.AppendData(num);
+
+        IReadOnlyDictionary<string, long> counters;
+        byte[] world;
+        lock (_gate)
+        {
+            counters = new Dictionary<string, long>(_rngCounters);
+            world = (byte[])_worldFingerprint.Clone();
+        }
+
+        foreach (var (key, value) in counters.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+        {
+            inc.AppendData(Encoding.UTF8.GetBytes(key));
+            BinaryPrimitives.WriteInt64LittleEndian(num, value);
+            inc.AppendData(num);
+        }
+
+        inc.AppendData(_hasher.CurrentHash());
+        inc.AppendData(world);
+        return inc.GetHashAndReset();
     }
 
     public string SnapshotHashHex(long tick) => Convert.ToHexString(SnapshotHash(tick)).ToLowerInvariant();
@@ -101,7 +148,8 @@ public sealed class DesyncDetector
                 _rand.Seed,
                 _rand.DrawCount,
                 cmds,
-                new Dictionary<string, long>(_rngCounters));
+                new Dictionary<string, long>(_rngCounters),
+                protocolVersion: NetProtocol.Version);
 
             _last = new DesyncInfo
             {
@@ -120,6 +168,7 @@ public sealed class DesyncDetector
             _frozen = false;
             _last = null;
             _rngCounters.Clear();
+            Array.Clear(_worldFingerprint);
             _hasher.Reset();
         }
     }

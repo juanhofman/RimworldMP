@@ -27,55 +27,57 @@ public sealed class ZoneStateStore
         }
     }
 
-    public void AddCells(byte zoneKind, int[] cellsPacked)
+    public void AddCells(byte zoneKind, int mapId, int[] cellsPacked)
     {
         lock (_gate)
         {
-            var zone = FindOrCreateDefault(zoneKind);
+            var zone = FindOrCreateDefault(zoneKind, mapId);
             for (var i = 0; i + 1 < cellsPacked.Length; i += 2)
                 zone.Cells.Add((cellsPacked[i], cellsPacked[i + 1]));
         }
     }
 
-    public void RemoveCells(byte zoneKind, int[] cellsPacked)
+    public void RemoveCells(byte zoneKind, int mapId, int[] cellsPacked)
     {
         lock (_gate)
         {
-            var zone = FindOrCreateDefault(zoneKind);
+            var zone = FindOrCreateDefault(zoneKind, mapId);
             for (var i = 0; i + 1 < cellsPacked.Length; i += 2)
                 zone.Cells.Remove((cellsPacked[i], cellsPacked[i + 1]));
         }
     }
 
-    public void Clear(byte zoneKind)
+    public void Clear(byte zoneKind, int mapId)
     {
         lock (_gate)
         {
-            var zone = FindOrCreateDefault(zoneKind);
+            var zone = FindOrCreateDefault(zoneKind, mapId);
             zone.Cells.Clear();
         }
     }
 
-    public int CellCount(byte zoneKind)
+    public int CellCount(byte zoneKind, int? mapId = null)
     {
         lock (_gate)
         {
-            return _zones.Values.Where(z => z.Kind == zoneKind).Sum(z => z.Cells.Count);
+            return _zones.Values
+                .Where(z => z.Kind == zoneKind && (mapId is null || z.MapId == mapId))
+                .Sum(z => z.Cells.Count);
         }
     }
 
-    public void ApplyOpcode(CommandOpcode op, byte zoneKind, int[] cellsPacked)
+    public void ApplyOpcode(CommandOpcode op, byte zoneKind, int mapId, int[] cellsPacked)
     {
         switch (op)
         {
             case CommandOpcode.ZoneAdd:
-                AddCells(zoneKind, cellsPacked);
+                AddCells(zoneKind, mapId, cellsPacked);
                 break;
             case CommandOpcode.ZoneRemove:
-                RemoveCells(zoneKind, cellsPacked);
+                RemoveCells(zoneKind, mapId, cellsPacked);
                 break;
             case CommandOpcode.ZoneClear:
-                Clear(zoneKind);
+                Clear(zoneKind, mapId);
                 break;
         }
     }
@@ -89,16 +91,16 @@ public sealed class ZoneStateStore
         }
     }
 
-    private ZoneRecord FindOrCreateDefault(byte zoneKind)
+    private ZoneRecord FindOrCreateDefault(byte zoneKind, int mapId)
     {
         foreach (var z in _zones.Values)
         {
-            if (z.Kind == zoneKind)
+            if (z.Kind == zoneKind && z.MapId == mapId)
                 return z;
         }
 
         var id = _nextId++;
-        var created = new ZoneRecord(id, zoneKind, mapId: 0, label: $"zone-{zoneKind}", new HashSet<(int X, int Z)>());
+        var created = new ZoneRecord(id, zoneKind, mapId, label: $"zone-{zoneKind}", new HashSet<(int X, int Z)>());
         _zones[id] = created;
         return created;
     }

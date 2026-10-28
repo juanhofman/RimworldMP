@@ -1,13 +1,15 @@
 # Launcher handoff schema (protocol 1)
 
-The LAN launcher writes a **local-only** JSON file that RimworldMP reads once at load / main menu, then renames to `.ack` (or deletes). No network upload.
+Stable local-only contract between the external **LAN launcher** (`tools/RimworldMP.Launcher/**`) and the in-mod lobby. No network upload.
+
+The launcher writes the JSON; RimworldMP reads it once at load / main menu, then renames to `.ack`.
 
 ## Path
 
 | OS | Path |
 | --- | --- |
 | Windows | `%LocalAppData%\RimworldMP\launcher-handoff.json` |
-| Linux | `~/.local/share/RimworldMP/launcher-handoff.json` (or `$XDG_DATA_HOME/RimworldMP/`) |
+| Linux | `~/.local/share/RimworldMP/launcher-handoff.json` (or `$XDG_DATA_HOME/RimworldMP/`; Core uses `LocalApplicationData`) |
 | macOS (stretch) | `~/Library/Application Support/RimworldMP/launcher-handoff.json` — MVP focuses Win/Linux |
 
 Ack path: same file with `.ack` appended (`launcher-handoff.json.ack`).
@@ -30,23 +32,25 @@ dotnet run --project tools/RimworldMP.Launcher -- handoff-path
   "sessionName": "Colony Night",
   "autoStartLobby": true,
   "launcherPid": 12345,
+  "maxClients": 4,
   "rwBuild": "1.7",
   "createdUtc": "2026-10-28T00:00:00.0000000Z"
 }
 ```
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `protocol` | int | Must be `1` for this document |
-| `role` | string | `"host"` or `"client"` |
-| `host` | string | Host: bind hint (`0.0.0.0`). Client: host IPv4 to join |
-| `port` | int | Game MP TCP port (default **30555**). Discovery uses **30556** and is launcher-only |
-| `modlistHash` | string | `ModlistHash.Compute(ordered packageIds)` — see below |
-| `sessionName` | string | Display / beacon name |
-| `autoStartLobby` | bool | When true, mod should Host/Join without DevMode |
-| `launcherPid` | int | Writer PID (debug) |
-| `rwBuild` | string? | Best-effort RimWorld version hint |
-| `createdUtc` | string | ISO-8601 UTC |
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `protocol` | int | yes | Must be `1` for this document |
+| `role` | string | yes | `"host"` or `"client"` |
+| `host` | string | role-dependent | Host: bind hint (`0.0.0.0`). Client: host IPv4/hostname to join |
+| `port` | int | no | Game MP TCP port (default **30555**). Discovery uses **30556** and is launcher-only |
+| `modlistHash` | string | recommended | `ModlistHash.Compute(ordered packageIds)` — hard-gated at TCP join (protocol v3) |
+| `sessionName` | string | no | Display / beacon name |
+| `autoStartLobby` | bool | no | Default `true`. When false, config is applied but host/join is not started |
+| `launcherPid` | int | no | Writer PID (debug) |
+| `maxClients` | int | no | Host cap; in-mod default **4** (`MpConfig.DefaultMaxClients`) |
+| `rwBuild` | string? | no | Best-effort RimWorld version hint |
+| `createdUtc` | string | no | ISO-8601 UTC |
 
 ## Modlist hash (must match Core)
 
@@ -59,8 +63,18 @@ Identical to `RimworldMP.Core.Session.ModlistHash.Compute`:
 
 Golden vector: `["brrainz.harmony","RimworldMP.Core"]` → run `dotnet run --project tools/RimworldMP.Launcher -- self-test`.
 
-## Consumer notes (in-mod; owned by MP workers)
+## Mod consumer behavior
 
-- Read once; on success rename to `.ack` so a relaunch without the launcher does not re-auto-connect.
-- If missing / stale / `protocol` unsupported → fall back to DevMode lobby actions.
-- Never treat handoff as authenticated; LAN trust model only.
+1. After Harmony bootstrap, `MpLobbyActions.TryConsumeLauncherHandoffAsync` reads the file once.
+2. Applies `modlistHash` / `port` / `maxClients` into `MpConfig`.
+3. Renames to `.ack` so a relaunch without the launcher does not re-auto-connect.
+4. If `autoStartLobby`: host → `HostAsync`, client → `JoinAsync(host)`.
+5. If missing / stale / `protocol` unsupported → fall back to in-mod lobby UI (corner button / **F10**) or DevMode actions.
+
+Never treat handoff as authenticated; LAN trust model only.
+
+## Stability
+
+- Do **not** rename fields or change `protocol: 1` semantics without bumping `protocol` and updating both launcher and mod.
+- Additive optional fields are OK for `protocol: 1` (`maxClients`, `rwBuild`, `createdUtc`, …).
+- Hash algorithm must stay byte-identical to Core `ModlistHash.Compute`.

@@ -50,9 +50,9 @@ public class Phase2ColonyTests
         Assert.Equal(1, ColonyWorld.Current.CaravanCount);
 
         ZoneWorld.Current.Create(1, 0, "A");
-        ZoneWorld.Current.AddCells(1, new[] { 1, 2, 3, 4 });
+        ZoneWorld.Current.AddCells(1, 0, new[] { 1, 2, 3, 4 });
         Assert.Equal(2, ZoneWorld.Current.CellCount(1));
-        ZoneWorld.Current.RemoveCells(1, new[] { 1, 2 });
+        ZoneWorld.Current.RemoveCells(1, 0, new[] { 1, 2 });
         Assert.Equal(1, ZoneWorld.Current.CellCount(1));
     }
 
@@ -84,10 +84,14 @@ public class Phase2ColonyTests
         LoopbackTransport.Pair(hostTransport, clientTransport);
 
         var blob = "SAVEBLOB"u8.ToArray();
+        var mem = new MemorySaveLoad();
         await using var host = new MpSession(hostTransport, isHost: true, sessionSeed: 42);
         host.JoinPointSource = new MemoryJoinPointSource(blob, "mods-hash");
         host.SetModlistHash("mods-hash");
-        await using var client = new MpSession(clientTransport, isHost: false, sessionSeed: 1);
+        await using var client = new MpSession(clientTransport, isHost: false, sessionSeed: 1)
+        {
+            SaveLoad = mem,
+        };
 
         JoinPoint? received = null;
         client.OnJoinPointReceived += jp => received = jp;
@@ -104,6 +108,7 @@ public class Phase2ColonyTests
         Assert.False(client.IsJoinInProgress);
         Assert.NotNull(received);
         Assert.Equal(blob, received!.SaveBlob);
+        Assert.Equal(blob, mem.LastLoaded);
         Assert.Equal(42, client.SessionSeed);
         Assert.Equal("mods-hash", received.ModlistHash);
     }

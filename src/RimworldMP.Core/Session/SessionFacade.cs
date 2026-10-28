@@ -46,11 +46,38 @@ public static class SessionFacade
 
     public static async Task<MpSession> HostLobbyAsync(
         INetTransport? transport = null,
-        int port = NetProtocol.DefaultPort,
+        int port = -1,
         long? sessionSeed = null,
+        string? modlistHash = null,
+        int? maxClients = null,
         CancellationToken cancellationToken = default)
     {
-        var session = new MpSession(transport ?? new LanTcpTransport(), isHost: true, sessionSeed);
+        if (port < 0)
+            port = MpConfig.DefaultPort;
+        var hash = modlistHash ?? MpConfig.ModlistHash;
+        var lan = transport as LanTcpTransport;
+        if (transport is null)
+        {
+            lan = new LanTcpTransport
+            {
+                MaxClients = Math.Max(1, maxClients ?? MpConfig.MaxClients),
+                ExpectedModlistHash = hash,
+            };
+            transport = lan;
+        }
+        else if (lan is not null)
+        {
+            if (maxClients is int mc)
+                lan.MaxClients = Math.Max(1, mc);
+            else if (lan.MaxClients < 1)
+                lan.MaxClients = MpConfig.MaxClients;
+            lan.ExpectedModlistHash = hash;
+        }
+
+        var session = new MpSession(transport, isHost: true, sessionSeed);
+        session.SetModlistHash(hash);
+        if (MpConfig.ReadyRequired)
+            session.Ready.Required = true;
         Attach(session);
         await session.StartAsync(new NetEndpoint("0.0.0.0", port), cancellationToken).ConfigureAwait(false);
         return session;
@@ -58,12 +85,28 @@ public static class SessionFacade
 
     public static async Task<MpSession> JoinLobbyAsync(
         string host,
-        int port = NetProtocol.DefaultPort,
+        int port = -1,
         INetTransport? transport = null,
         long? sessionSeed = null,
+        string? modlistHash = null,
         CancellationToken cancellationToken = default)
     {
-        var session = new MpSession(transport ?? new LanTcpTransport(), isHost: false, sessionSeed);
+        if (port < 0)
+            port = MpConfig.DefaultPort;
+        var hash = modlistHash ?? MpConfig.ModlistHash;
+        var lan = transport as LanTcpTransport;
+        if (transport is null)
+        {
+            lan = new LanTcpTransport { LocalModlistHash = hash };
+            transport = lan;
+        }
+        else if (lan is not null)
+        {
+            lan.LocalModlistHash = hash;
+        }
+
+        var session = new MpSession(transport, isHost: false, sessionSeed);
+        session.SetModlistHash(hash);
         Attach(session);
         await session.StartAsync(new NetEndpoint(host, port), cancellationToken).ConfigureAwait(false);
         return session;

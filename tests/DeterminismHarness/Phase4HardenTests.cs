@@ -77,9 +77,13 @@ public class Phase4HardenTests
         LoopbackTransport.Pair(hostTransport, clientTransport);
 
         var blob = "RECOVER"u8.ToArray();
+        var mem = new MemorySaveLoad();
         await using var host = new MpSession(hostTransport, isHost: true, sessionSeed: 9);
         host.JoinPointSource = new MemoryJoinPointSource(blob, "m");
-        await using var client = new MpSession(clientTransport, isHost: false, sessionSeed: 9);
+        await using var client = new MpSession(clientTransport, isHost: false, sessionSeed: 9)
+        {
+            SaveLoad = mem,
+        };
 
         JoinPoint? jp = null;
         client.OnJoinPointReceived += p => jp = p;
@@ -93,6 +97,7 @@ public class Phase4HardenTests
         await TestHelpers.WaitForJipAsync(client);
         Assert.NotNull(jp);
         Assert.Equal(blob, jp!.SaveBlob);
+        Assert.Equal(blob, mem.LastLoaded);
     }
 
     [Fact]

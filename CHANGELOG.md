@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **P0 sim-correctness:** desync fingerprint folds protocol + tick + RNG seed/draws + named counters + reserved world hash slot; JIP `ISaveLoad` / `VerseSaveLoad` (fails loud if blob present without loader); TCP join hard-gate on protocol + modlist hash (`RMP3` / v3); JobGive/zone payloads carry `mapId` (no `Find.CurrentMap`); MaxClients default **4** via `MpConfig`; non-DevMode lobby (F10 / corner button) + `launcher-handoff.json` ([docs/launcher-handoff.md](docs/launcher-handoff.md), [docs/p0-sim-correctness.md](docs/p0-sim-correctness.md))
+
 ### Fixed
 - Pin compile-time Harmony to NuGet `Lib.Harmony.Ref` `3.0.0-rc.3` (matches HarmonyRimWorld v3.0.1); stop using `Lib.Harmony` `3.0.0-rc.2`
 

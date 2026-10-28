@@ -8,8 +8,8 @@ using Verse;
 namespace RimworldMP.Patches;
 
 /// <summary>
-/// Basic zone mutations → ZoneAdd / ZoneRemove / ZoneClear commands.
-/// Narrow hooks on Zone.AddCell / Zone.RemoveCell; full Designator coverage is Phase 2.
+/// Basic zone mutations → ZoneAdd / ZoneRemove / ZoneClear commands with explicit map id.
+/// Narrow hooks on Zone.AddCell / Zone.RemoveCell; full Designator coverage is later.
 /// </summary>
 [HarmonyPatch]
 internal static class Zone_Patches
@@ -24,9 +24,10 @@ internal static class Zone_Patches
         if (CommandApplyReentry.IsApplying)
             return true;
 
+        var mapId = __instance.Map?.uniqueID ?? 0;
         session.SubmitCommand(
             CommandOpcode.ZoneAdd,
-            CommandPayloads.ZoneCells(ZoneKind(__instance), new[] { c.x, c.z }));
+            CommandPayloads.ZoneCells(ZoneKind(__instance), mapId, new[] { c.x, c.z }));
         return false;
     }
 
@@ -40,15 +41,15 @@ internal static class Zone_Patches
         if (CommandApplyReentry.IsApplying)
             return true;
 
+        var mapId = __instance.Map?.uniqueID ?? 0;
         session.SubmitCommand(
             CommandOpcode.ZoneRemove,
-            CommandPayloads.ZoneCells(ZoneKind(__instance), new[] { c.x, c.z }));
+            CommandPayloads.ZoneCells(ZoneKind(__instance), mapId, new[] { c.x, c.z }));
         return false;
     }
 
     private static byte ZoneKind(Zone zone)
     {
-        // Stable-enough Phase 1 discriminator; real zone type ids arrive with Designator wiring.
         return zone switch
         {
             Zone_Stockpile => 1,

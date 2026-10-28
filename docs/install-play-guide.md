@@ -26,12 +26,21 @@ Without `RIMWORLD_DIR`, assemblies still build under `RIMWORLDMP_NO_GAME_REFS` (
 
 ## Host / join on LAN
 
+Peers must share the same RimWorld **1.7** build, DLC, and **ordered modlist** (hash hard-gated at TCP join; protocol **v3** / magic `RMP3`). Default max clients: **4** (`MpConfig.MaxClients`).
+
+### Preferred (no DevMode)
+
+1. Use the LAN launcher to write `launcher-handoff.json` (see [launcher-handoff.md](./launcher-handoff.md)), **or**
+2. In-game: click the **RimworldMP** button (lower-left) or press **F10** → Host / Join with matching modlist hash.
+
+### DevMode fallback
+
 1. Launch RimWorld 1.7 twice (or two PCs). Identical game build + DLC + modlist.
 2. Enable DevMode on both.
 3. **Host:** DevMode → RimworldMP → **Host lobby (LAN)** (listens `0.0.0.0:30555`).
 4. Load or start the shared colony on the host.
 5. **Client:** DevMode → **Join lobby localhost** (same machine) or call `MpLobbyActions.JoinAsync("<host-lan-ip>")`.
-6. Client receives a join-in-progress freeze-frame when mid-session; load the save blob when game wiring is present, then catch up.
+6. Client receives a join-in-progress freeze-frame when mid-session; `VerseSaveLoad` loads the save blob when game refs exist (fails loudly if bytes arrive without a loader).
 7. Optional: set matching modlist hashes and `session.SetReady(true)` on both before unpausing (Phase 4 ready gate).
 
 ## After join
