@@ -2,7 +2,7 @@
 
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
-Not a fork of Zetrith/RWMT. Deterministic lockstep co-op. This repo currently ships **Phase 1** — smallest playable MP scaffolding (LAN TCP lobby, command stream, tick gate, seeded Rand hooks, desync freeze + log). Full in-game verification needs RimWorld assemblies via `RIMWORLD_DIR`.
+Not a fork of Zetrith/RWMT. Deterministic lockstep co-op. This repo currently ships **Phase 2** — colony-playable scaffolding (bills/research/trade/caravans, JIP, API) (LAN TCP lobby, command stream, tick gate, seeded Rand hooks, desync freeze + log). Full in-game verification needs RimWorld assemblies via `RIMWORLD_DIR`.
 
 ## Locked scope
 
@@ -81,4 +81,4 @@ Install [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463
 
 ## Docs
 
-See `docs/architecture.md` for the design plan.
+See `docs/architecture.md`, `docs/api.md`, and `docs/phase-2-smoke-test.md`.

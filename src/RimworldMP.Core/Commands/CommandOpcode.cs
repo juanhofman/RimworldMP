@@ -1,6 +1,6 @@
 namespace RimworldMP.Core.Commands;
 
-/// <summary>Compact command opcodes for the lockstep queue. Protocol v1 values — bump NetProtocol.Version on breaking changes.</summary>
+/// <summary>Compact command opcodes for the lockstep queue. Protocol v2 values — bump NetProtocol.Version on breaking changes.</summary>
 public enum CommandOpcode : ushort
 {
     None = 0,
@@ -16,6 +16,16 @@ public enum CommandOpcode : ushort
     ZoneAdd = 30,
     ZoneRemove = 31,
     ZoneClear = 32,
+    ZoneCreate = 33,
 
     RestrictAreaSet = 40,
+
+    // Phase 2 — colony systems
+    BillSet = 50,
+    BillDelete = 51,
+    ResearchStart = 60,
+    TradeAccept = 70,
+    CaravanForm = 80,
+    CaravanAddPawn = 81,
+    CaravanRemovePawn = 82,
 }

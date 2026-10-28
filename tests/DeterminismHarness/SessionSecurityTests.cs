@@ -18,6 +18,7 @@ public class SessionSecurityTests
         await using var client = new MpSession(clientTransport, isHost: false, sessionSeed: 1);
         await host.StartAsync(new NetEndpoint("loop", 0));
         await client.StartAsync(new NetEndpoint("loop", 0));
+        await TestHelpers.WaitForJipAsync(client);
 
         // Malicious/buggy client sends a full batch for a future tick directly.
         var injected = CommandBatch.Empty(99);
@@ -46,6 +47,7 @@ public class SessionSecurityTests
         await host.StartAsync(new NetEndpoint("127.0.0.1", port));
         await client.StartAsync(new NetEndpoint("127.0.0.1", port));
         await Task.Delay(100);
+        await TestHelpers.WaitForJipAsync(client);
 
         Assert.Equal(555, host.SessionSeed);
         Assert.Equal(555, client.SessionSeed);

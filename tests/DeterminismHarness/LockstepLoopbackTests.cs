@@ -24,16 +24,15 @@ public class LockstepLoopbackTests
 
         await host.StartAsync(new NetEndpoint("loop", 0));
         await client.StartAsync(new NetEndpoint("loop", 0));
+        await TestHelpers.WaitForJipAsync(client);
 
         host.SubmitCommand(CommandOpcode.Pause, CommandPayloads.Pause(true));
         host.SubmitCommand(CommandOpcode.Speed, CommandPayloads.Speed(2));
         host.HostEmitNextBatch();
 
-        // Allow loopback delivery
         await Task.Delay(50);
 
         Assert.True(host.TryAdvanceSim());
-        // Client may need a moment for the batch to land
         var advanced = false;
         for (var i = 0; i < 20 && !advanced; i++)
         {
@@ -63,6 +62,7 @@ public class LockstepLoopbackTests
 
         await host.StartAsync(new NetEndpoint("loop", 0));
         await client.StartAsync(new NetEndpoint("loop", 0));
+        await TestHelpers.WaitForJipAsync(client);
 
         client.SubmitCommand(CommandOpcode.Draft, CommandPayloads.Draft(5, true));
         await Task.Delay(50);

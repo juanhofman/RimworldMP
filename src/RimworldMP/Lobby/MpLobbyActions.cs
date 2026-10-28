@@ -1,7 +1,8 @@
+using RimworldMP.API;
 using RimworldMP.CommandApply;
+using RimworldMP.Core.Join;
 using RimworldMP.Core.Session;
 using RimworldMP.Net.Protocol;
-using RimworldMP.API;
 
 #if !RIMWORLDMP_NO_GAME_REFS
 using Verse;
@@ -9,16 +10,14 @@ using Verse;
 
 namespace RimworldMP.Lobby;
 
-/// <summary>
-/// Host / join entry points for the Phase 1 lobby. Invoked from DevMode debug actions when game refs exist,
-/// or directly from tests / harnesses without Verse.
-/// </summary>
+/// <summary>Host / join / JIP entry points for DevMode and harnesses.</summary>
 public static class MpLobbyActions
 {
-    public static async Task HostAsync(int port = NetProtocol.DefaultPort, long? seed = null)
+    public static async Task HostAsync(int port = NetProtocol.DefaultPort, long? seed = null, IJoinPointSource? joinPointSource = null)
     {
         await StopAsync().ConfigureAwait(false);
         var session = await SessionFacade.HostLobbyAsync(port: port, sessionSeed: seed).ConfigureAwait(false);
+        session.JoinPointSource = joinPointSource;
         WireSession(session);
 #if !RIMWORLDMP_NO_GAME_REFS
         Log.Message($"[RimworldMP] Hosting lobby on port {port}, seed={session.SessionSeed}");
@@ -28,7 +27,6 @@ public static class MpLobbyActions
     public static async Task JoinAsync(string host, int port = NetProtocol.DefaultPort, long? seed = null)
     {
         await StopAsync().ConfigureAwait(false);
-        // Seed is optional: JoinAck delivers the host session seed over LAN TCP.
         var session = await SessionFacade.JoinLobbyAsync(host, port, sessionSeed: seed).ConfigureAwait(false);
         WireSession(session);
 #if !RIMWORLDMP_NO_GAME_REFS
@@ -57,12 +55,21 @@ public static class MpLobbyActions
 #endif
             MP.DesyncRaise?.Invoke();
         };
+        session.OnJoinPointReceived += jp =>
+        {
+#if !RIMWORLDMP_NO_GAME_REFS
+            Log.Message($"[RimworldMP] JIP received watermark={jp.CommandWatermark} blob={jp.SaveBlob.Length}B modlist={jp.ModlistHash}");
+            // Game layer: load save blob then resume ticks (Phase 2 hook).
+#endif
+            _ = jp;
+        };
 
         MP.Bind(
             () => SessionFacade.IsInSession,
             () => SessionFacade.IsHost,
             () => SessionFacade.LocalPlayerId,
             (opcode, payload) => SessionFacade.Submit((Core.Commands.CommandOpcode)opcode, payload),
-            () => { });
+            () => { },
+            tick: () => SessionFacade.Current?.Tick ?? -1);
     }
 }

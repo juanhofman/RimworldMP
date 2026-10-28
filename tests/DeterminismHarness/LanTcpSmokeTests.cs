@@ -1,7 +1,6 @@
 using RimworldMP.Core.Commands;
 using RimworldMP.Core.Session;
 using RimworldMP.Net;
-using RimworldMP.Net.Protocol;
 
 namespace RimworldMP.Tests.DeterminismHarness;
 
@@ -16,16 +15,14 @@ public class LanTcpSmokeTests
 
         await host.StartAsync(new NetEndpoint("127.0.0.1", port));
         await client.StartAsync(new NetEndpoint("127.0.0.1", port));
-
-        // Give accept/handshake a moment
         await Task.Delay(100);
+        await TestHelpers.WaitForJipAsync(client);
 
         host.SubmitCommand(CommandOpcode.EmptyBatch);
         host.SubmitCommand(CommandOpcode.Pause, CommandPayloads.Pause(true));
         host.HostEmitNextBatch();
 
-        var hostOk = host.TryAdvanceSim();
-        Assert.True(hostOk);
+        Assert.True(host.TryAdvanceSim());
 
         var clientOk = false;
         for (var i = 0; i < 30 && !clientOk; i++)

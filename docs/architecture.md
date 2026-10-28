@@ -1,29 +1,24 @@
 # Architecture
 
-Canonical plan lives in the RimworldMP Project store (`docs/multiplayer-architecture.md`). Summary of locks:
+Canonical plan: Project store `docs/multiplayer-architecture.md`.
 
-- RimWorld **1.7 only** · `net10.0` · Harmony **3**
-- Shared **single colony** · **LAN-first** `INetTransport` · **in-game host only**
-- PackageId `RimworldMP.Core` · MIT
+Locks: RimWorld **1.7** · `net10.0` · Harmony **3** · shared colony · LAN-first TCP · in-game host · PackageId `RimworldMP.Core` · MIT
 
-## Phase 1 status
+## Phase status
 
-Implemented in-repo (compiles without game via `RIMWORLDMP_NO_GAME_REFS`):
-
-| Area | Status |
+| Phase | Status |
 | --- | --- |
-| LAN TCP `INetTransport` + handshake | Done (`LanTcpTransport`, protocol v1 frames; JoinAck carries session seed; max 1 client) |
-| Host lobby + one client join | Done (`SessionFacade` / `MpLobbyActions`) |
-| Tick gate + command batches | Done (`TickGate`, `MpSession`) |
-| Pause / speed / draft / job / zone / restrict opcodes | Done (serialize + host stage + apply stubs) |
-| Seeded `SyncedRand` + Rand Harmony stubs | Done (patches need `RIMWORLD_DIR`) |
-| Hash desync → freeze + log path | Done (`DesyncDetector`) |
-| Determinism harness | Done (`tests/DeterminismHarness`) |
+| 0 Skeleton | Done |
+| 1 Smallest playable MP | Done (merged) |
+| 2 Colony playable | In progress on `phase-2-colony` |
+| 3 Broader compatibility | Next |
+| 4 Harden | Next |
+| 5 Release-ready | Next |
 
-Still needs a real RimWorld 1.7 install (`RIMWORLD_DIR`) to:
+### Phase 2 highlights
 
-- Compile / run Verse Harmony patches and command applicators against live types
-- Smoke-test host+client in-game (DevMode lobby actions)
-- Validate zone apply beyond log stubs and long-session desync exit criteria
-
-Join-in-progress save transfer, bills/research/trade, and LiteNetLib remain Phase 2.
+- Bills / research / trade / caravan opcodes + shadow stores + Harmony stubs
+- Join-in-progress chunked transfer (`JoinPoint*`), command log catch-up
+- Desync dumps with RNG counters + `.cmds.json`
+- `RimworldMP.API` SyncMethod registration + `docs/api.md` + example compat stubs
+- Protocol **v2** (`RMP2` handshake); LAN TCP retained (LiteNetLib deferred)

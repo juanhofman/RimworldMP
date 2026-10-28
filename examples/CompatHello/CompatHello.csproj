@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>RimworldMP.Examples.CompatHello</RootNamespace>
+    <AssemblyName>RimworldMP.Examples.CompatHello</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RimworldMP.API\RimworldMP.API.csproj" />
+  </ItemGroup>
+</Project>

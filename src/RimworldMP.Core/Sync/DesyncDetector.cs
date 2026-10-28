@@ -1,6 +1,3 @@
-using System.Buffers.Binary;
-using System.Security.Cryptography;
-using System.Text;
 using RimworldMP.Core.Commands;
 
 namespace RimworldMP.Core.Sync;
@@ -23,6 +20,7 @@ public sealed class DesyncDetector
     private readonly SyncedRand _rand;
     private readonly string _logDirectory;
     private readonly object _gate = new();
+    private readonly Dictionary<string, long> _rngCounters = new(StringComparer.Ordinal);
     private bool _frozen;
     private DesyncInfo? _last;
 
@@ -46,6 +44,21 @@ public sealed class DesyncDetector
 
     public string LogDirectory => _logDirectory;
 
+    public void IncrementCounter(string name, long delta = 1)
+    {
+        lock (_gate)
+        {
+            _rngCounters.TryGetValue(name, out var cur);
+            _rngCounters[name] = cur + delta;
+        }
+    }
+
+    public IReadOnlyDictionary<string, long> SnapshotCounters()
+    {
+        lock (_gate)
+            return new Dictionary<string, long>(_rngCounters);
+    }
+
     /// <summary>
     /// Non-mutating checkpoint: SHA256(rollingState ‖ tick ‖ drawCount).
     /// </summary>
@@ -54,16 +67,13 @@ public sealed class DesyncDetector
         var state = _hasher.CurrentHash();
         Span<byte> buf = stackalloc byte[32 + 8 + 8];
         state.CopyTo(buf);
-        BinaryPrimitives.WriteInt64LittleEndian(buf[32..], tick);
-        BinaryPrimitives.WriteInt64LittleEndian(buf[40..], _rand.DrawCount);
-        return SHA256.HashData(buf);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(buf[32..], tick);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(buf[40..], _rand.DrawCount);
+        return System.Security.Cryptography.SHA256.HashData(buf);
     }
 
     public string SnapshotHashHex(long tick) => Convert.ToHexString(SnapshotHash(tick)).ToLowerInvariant();
 
-    /// <summary>
-    /// Compare a remote peer hash for the same tick. Returns true if still in sync.
-    /// </summary>
     public bool CheckRemote(long tick, string remoteHashHex, IReadOnlyList<MpCommand>? recentCommands = null)
     {
         var local = SnapshotHashHex(tick);
@@ -82,26 +92,17 @@ public sealed class DesyncDetector
                 return;
             _frozen = true;
 
-            Directory.CreateDirectory(_logDirectory);
-            var fileName = $"desync-tick{tick}-{DateTime.UtcNow:yyyyMMddTHHmmss}.log";
-            var path = Path.Combine(_logDirectory, fileName);
+            var cmds = recentCommands ?? Array.Empty<MpCommand>();
+            var path = DesyncDump.Write(
+                _logDirectory,
+                tick,
+                localHashHex,
+                remoteHashHex,
+                _rand.Seed,
+                _rand.DrawCount,
+                cmds,
+                new Dictionary<string, long>(_rngCounters));
 
-            var sb = new StringBuilder();
-            sb.AppendLine("RimworldMP desync detected");
-            sb.AppendLine($"utc={DateTime.UtcNow:O}");
-            sb.AppendLine($"tick={tick}");
-            sb.AppendLine($"localHash={localHashHex}");
-            sb.AppendLine($"remoteHash={remoteHashHex}");
-            sb.AppendLine($"rngSeed={_rand.Seed}");
-            sb.AppendLine($"rngDraws={_rand.DrawCount}");
-            if (recentCommands is { Count: > 0 })
-            {
-                sb.AppendLine("recentCommands:");
-                foreach (var cmd in recentCommands)
-                    sb.AppendLine($"  tick={cmd.Tick} op={cmd.Opcode} player={cmd.PlayerId} payloadBytes={cmd.Payload.Length}");
-            }
-
-            File.WriteAllText(path, sb.ToString());
             _last = new DesyncInfo
             {
                 Tick = tick,
@@ -118,6 +119,7 @@ public sealed class DesyncDetector
         {
             _frozen = false;
             _last = null;
+            _rngCounters.Clear();
             _hasher.Reset();
         }
     }
