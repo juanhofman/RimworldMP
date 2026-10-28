@@ -1,0 +1,42 @@
+## Build
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+project.lock.json
+artifacts/
+
+## IDE
+.vs/
+.idea/
+*.swp
+*~
+.DS_Store
+
+## Mod build output (keep folder via .gitkeep)
+mod/1.7/Assemblies/*.dll
+mod/1.7/Assemblies/*.pdb
+mod/1.7/Assemblies/*.deps.json
+mod/1.7/Assemblies/*.xml
+!mod/1.7/Assemblies/.gitkeep
+
+## Local game refs (never commit Ludeon assemblies)
+refs/RimWorld/
+*.dll
+!refs/stubs/**
+
+## Secrets / env
+.env
+.env.*
+RIMWORLD_DIR.local.*
+
+## OS / misc
+Thumbs.db
+Desktop.ini
+*.log
+harmony.log.txt

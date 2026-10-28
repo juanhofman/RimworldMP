@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>RimworldMP</RootNamespace>
+    <AssemblyName>RimworldMP</AssemblyName>
+    <Description>RimworldMP main mod assembly (RimWorld 1.7 + Harmony 3).</Description>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\mod\1.7\Assemblies\</OutputPath>
+    <!-- Set BuildGameProject=false to skip this project when RimWorld refs are absent. -->
+    <BuildGameProject Condition="'$(BuildGameProject)' == ''">true</BuildGameProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimworldMP.API\RimworldMP.API.csproj" />
+    <ProjectReference Include="..\RimworldMP.Core\RimworldMP.Core.csproj" />
+    <ProjectReference Include="..\RimworldMP.Net\RimworldMP.Net.csproj" />
+  </ItemGroup>
+
+  <!-- Harmony 3 compile-time API only — do NOT copy 0Harmony.dll into the mod (Workshop Harmony loads it). -->
+  <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="3.0.0-rc.2">
+      <ExcludeAssets>runtime</ExcludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Game assemblies: set RIMWORLD_DIR or place DLLs under refs/RimWorld/. -->
+  <ItemGroup Condition="'$(HasRimWorldRefs)' == 'true'">
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldDir)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Waylith">
+      <HintPath>$(RimWorldDir)\Waylith.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityStubs">
+      <HintPath>$(RimWorldDir)\UnityStubs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Without game refs, compile a no-Verse stub so the solution still builds on CI/VMs. -->
+  <PropertyGroup Condition="'$(HasRimWorldRefs)' != 'true'">
+    <DefineConstants>$(DefineConstants);RIMWORLDMP_NO_GAME_REFS</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="WarnMissingRimWorldRefs" BeforeTargets="Build" Condition="'$(HasRimWorldRefs)' != 'true'">
+    <Warning Text="RIMWORLD_DIR / refs/RimWorld not found — building RimworldMP with RIMWORLDMP_NO_GAME_REFS stubs. Set RIMWORLD_DIR to enable real Verse/Harmony game integration." />
+  </Target>
+</Project>

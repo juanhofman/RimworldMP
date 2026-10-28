@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>RimworldMP.Core</RootNamespace>
+    <AssemblyName>RimworldMP.Core</AssemblyName>
+    <Description>Session, command queue, and tick-sync stubs for RimworldMP.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RimworldMP.API\RimworldMP.API.csproj" />
+    <ProjectReference Include="..\RimworldMP.Net\RimworldMP.Net.csproj" />
+  </ItemGroup>
+</Project>

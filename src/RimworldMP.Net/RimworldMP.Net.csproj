@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>RimworldMP.Net</RootNamespace>
+    <AssemblyName>RimworldMP.Net</AssemblyName>
+    <Description>INetTransport and LAN transport placeholders for RimworldMP.</Description>
+  </PropertyGroup>
+</Project>

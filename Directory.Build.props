@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <DebugType>embedded</DebugType>
+    <Deterministic>true</Deterministic>
+    <!-- Set RIMWORLD_DIR to your RimWorld install to enable game assembly references. -->
+    <RimWorldDir Condition="'$(RIMWORLD_DIR)' != ''">$(RIMWORLD_DIR)</RimWorldDir>
+    <RimWorldDir Condition="'$(RimWorldDir)' == '' and Exists('$(MSBuildThisFileDirectory)refs/RimWorld/Assembly-CSharp.dll')">$(MSBuildThisFileDirectory)refs/RimWorld</RimWorldDir>
+    <HasRimWorldRefs Condition="Exists('$(RimWorldDir)/Assembly-CSharp.dll')">true</HasRimWorldRefs>
+    <HasRimWorldRefs Condition="'$(HasRimWorldRefs)' == ''">false</HasRimWorldRefs>
+  </PropertyGroup>
+</Project>
