@@ -7,7 +7,7 @@ public class CommandSerializationTests
     [Fact]
     public void MpCommand_round_trips()
     {
-        var original = new MpCommand(CommandOpcode.JobGive, 42, 1, CommandPayloads.JobGive(7, 10, 20, "Goto"));
+        var original = new MpCommand(CommandOpcode.JobGive, 42, 1, CommandPayloads.JobGive(0, 7, 10, 20, "Goto"));
         var bytes = original.ToBytes();
         var restored = MpCommand.ReadFrom(bytes, out var consumed);
         Assert.Equal(bytes.Length, consumed);
@@ -46,11 +46,18 @@ public class CommandSerializationTests
         Assert.Equal(99, draft.PawnLoadId);
         Assert.False(draft.Drafted);
 
-        var job = CommandPayloads.ReadJobGive(CommandPayloads.JobGive(1, 2, 3, "HaulToCell"));
-        Assert.Equal((1, 2, 3, "HaulToCell"), job);
+        var job = CommandPayloads.ReadJobGive(CommandPayloads.JobGive(9, 1, 2, 3, "HaulToCell", targetThingId: 8, count: 2));
+        Assert.Equal(9, job.MapId);
+        Assert.Equal(1, job.PawnLoadId);
+        Assert.Equal(2, job.CellX);
+        Assert.Equal(3, job.CellZ);
+        Assert.Equal(8, job.TargetThingId);
+        Assert.Equal(2, job.Count);
+        Assert.Equal("HaulToCell", job.JobDefName);
 
-        var zone = CommandPayloads.ReadZoneCells(CommandPayloads.ZoneCells(1, new[] { 4, 5, 6, 7 }));
+        var zone = CommandPayloads.ReadZoneCells(CommandPayloads.ZoneCells(1, mapId: 5, new[] { 4, 5, 6, 7 }));
         Assert.Equal(1, zone.ZoneKind);
+        Assert.Equal(5, zone.MapId);
         Assert.Equal(new[] { 4, 5, 6, 7 }, zone.CellsPacked);
 
         var area = CommandPayloads.ReadRestrictArea(CommandPayloads.RestrictArea(8, 9));

@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using RimworldMP.API;
 using RimworldMP.Core.Session;
+using RimworldMP.Join;
 using RimworldMP.Lobby;
 using RimworldMP.Net.Protocol;
 
@@ -52,6 +53,8 @@ public sealed class RimworldMPMod : Mod
         var harmony = new Harmony(HarmonyId);
         harmony.PatchAll(Assembly.GetExecutingAssembly());
 
+        Core.Join.GameLoad.Current ??= GameLoadHooks.TryCreateDefault();
+
         MP.Bind(
             () => SessionFacade.IsInSession,
             () => SessionFacade.IsHost,
@@ -64,18 +67,29 @@ public sealed class RimworldMPMod : Mod
             () => { },
             tick: () => SessionFacade.Current?.Tick ?? -1);
 
-        Log.Message("[RimworldMP] Phase 2 colony lockstep loaded. DevMode: Host/Join lobby; JIP on mid-session join.");
+        // Launcher handoff: auto host/join without DevMode when the external launcher wrote JSON.
+        LongEventHandler.ExecuteWhenFinished(() =>
+        {
+            _ = MpLobbyActions.TryConsumeLauncherHandoffAsync();
+        });
+
+        Log.Message(
+            $"[RimworldMP] P0 sim-correctness loaded (protocol v{NetProtocol.Version}, maxClients default {MpConfig.DefaultMaxClients}). " +
+            "Lobby: corner button / F10 / launcher-handoff.json (DevMode actions remain).");
     }
 }
 
-/// <summary>DevMode debug actions for host/join smoke tests.</summary>
+/// <summary>DevMode debug actions — fallback beside the non-DevMode lobby UI.</summary>
 public static class RimworldMPDebugActions
 {
+    [DebugAction("RimworldMP", "Open lobby UI", allowedGameStates = AllowedGameStates.Entry | AllowedGameStates.Playing)]
+    private static void OpenLobbyUi() => Dialog_RimworldMPLobby.Open();
+
     [DebugAction("RimworldMP", "Host lobby (LAN)", allowedGameStates = AllowedGameStates.Entry | AllowedGameStates.Playing)]
     private static void HostLobby()
     {
         _ = MpLobbyActions.HostAsync();
-        Messages.Message("RimworldMP: hosting lobby on port " + NetProtocol.DefaultPort, MessageTypeDefOf.TaskCompletion, false);
+        Messages.Message("RimworldMP: hosting lobby on port " + MpConfig.DefaultPort, MessageTypeDefOf.TaskCompletion, false);
     }
 
     [DebugAction("RimworldMP", "Join lobby localhost", allowedGameStates = AllowedGameStates.Entry | AllowedGameStates.Playing)]
@@ -90,6 +104,13 @@ public static class RimworldMPDebugActions
     {
         _ = MpLobbyActions.StopAsync();
         Messages.Message("RimworldMP: session stopped", MessageTypeDefOf.TaskCompletion, false);
+    }
+
+    [DebugAction("RimworldMP", "Consume launcher handoff", allowedGameStates = AllowedGameStates.Entry | AllowedGameStates.Playing)]
+    private static void ConsumeHandoff()
+    {
+        _ = MpLobbyActions.TryConsumeLauncherHandoffAsync();
+        Messages.Message("RimworldMP: checked launcher-handoff.json", MessageTypeDefOf.TaskCompletion, false);
     }
 }
 #endif

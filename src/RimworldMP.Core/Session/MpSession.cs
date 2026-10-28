@@ -54,6 +54,8 @@ public sealed class MpSession : IAsyncDisposable
     public TickGate TickGate { get; }
     public CommandLog CommandLog => _commandLog;
     public IJoinPointSource? JoinPointSource { get; set; }
+    /// <summary>JIP save capture/load. Required when a join point carries a non-empty blob.</summary>
+    public ISaveLoad? SaveLoad { get; set; }
     public bool IsJoinInProgress => _jipPending;
     public ReadyCheck Ready => _ready;
     public bool PauseOnPeerLeave { get; set; } = true;
@@ -99,25 +101,37 @@ public sealed class MpSession : IAsyncDisposable
         {
             _localPlayerId = 0;
             if (Transport is LanTcpTransport hostLan)
+            {
                 hostLan.HostSessionSeed = _sessionSeed;
+                hostLan.ExpectedModlistHash = _modlistHash;
+                if (hostLan.MaxClients < 1)
+                    hostLan.MaxClients = MpConfig.MaxClients;
+            }
 
             await Transport.StartHostAsync(endpoint, cancellationToken).ConfigureAwait(false);
+            SeedHasherIdentity();
             TickGate.EnqueueBatch(CommandBatch.Empty(0));
             TickGate.TryBeginTick(out _);
             Tick = 0;
         }
         else
         {
+            if (Transport is LanTcpTransport clientLanPre)
+                clientLanPre.LocalModlistHash = _modlistHash;
+
             await Transport.StartClientAsync(endpoint, cancellationToken).ConfigureAwait(false);
             if (Transport is LanTcpTransport clientLan)
             {
                 _localPlayerId = clientLan.AssignedPlayerId ?? 1;
                 if (clientLan.JoinedSessionSeed is long seed)
                     ApplySessionSeed(seed);
+                else
+                    SeedHasherIdentity();
             }
             else
             {
                 _localPlayerId = 1;
+                SeedHasherIdentity();
             }
 
             Tick = 0;
@@ -134,6 +148,14 @@ public sealed class MpSession : IAsyncDisposable
         Rand.ResetSession(seed);
         Hasher.Reset();
         Desync.Reset();
+        SeedHasherIdentity();
+    }
+
+    private void SeedHasherIdentity()
+    {
+        Hasher.AddProtocolVersion(NetProtocol.Version);
+        Hasher.AddSessionSeed(_sessionSeed);
+        Hasher.AddUtf8(_modlistHash);
     }
 
     public void SubmitCommand(CommandOpcode opcode, byte[]? payload = null)
@@ -234,8 +256,15 @@ public sealed class MpSession : IAsyncDisposable
         if (!IsHost)
             throw new InvalidOperationException("Only the host can send a join point.");
 
-        joinPoint ??= JoinPointSource?.TryCreateJoinPoint(Tick + 1, _sessionSeed, Tick)
-                      ?? new JoinPoint(Tick + 1, _sessionSeed, Tick, _modlistHash, Array.Empty<byte>());
+        if (joinPoint is null)
+        {
+            joinPoint = JoinPointSource?.TryCreateJoinPoint(Tick + 1, _sessionSeed, Tick);
+            if (joinPoint is null)
+            {
+                var blob = (SaveLoad ?? GameLoad.Current)?.CaptureSaveBlob() ?? Array.Empty<byte>();
+                joinPoint = new JoinPoint(Tick + 1, _sessionSeed, Tick, _modlistHash, blob);
+            }
+        }
 
         JoinPointTransfer.SendToPeer(Transport, peer, joinPoint, Envelope);
 
@@ -244,11 +273,16 @@ public sealed class MpSession : IAsyncDisposable
             Transport.SendReliable(peer, Envelope(NetMessageType.CommandBatch, batchBytes));
     }
 
-    /// <summary>Apply a received join point locally (tests / game loader hook).</summary>
+    /// <summary>
+    /// Apply a received join point locally. Non-empty save blobs require <see cref="SaveLoad"/>
+    /// (or <see cref="GameLoad.Current"/>) — transfer-only is rejected loudly.
+    /// </summary>
     public void ApplyJoinPoint(JoinPoint joinPoint)
     {
-        ApplySessionSeed(joinPoint.SessionSeed);
+        GameLoad.ApplyJoinPointBlob(joinPoint.SaveBlob, SaveLoad ?? GameLoad.Current);
+
         _modlistHash = joinPoint.ModlistHash;
+        ApplySessionSeed(joinPoint.SessionSeed);
         TickGate.Reset(startingTick: joinPoint.CommandWatermark + 1);
         Tick = joinPoint.CommandWatermark;
         _jipPending = false;

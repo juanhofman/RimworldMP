@@ -9,7 +9,7 @@ using Verse.AI;
 namespace RimworldMP.Patches;
 
 /// <summary>
-/// Ordered job gives → lockstep JobGive commands.
+/// Ordered job gives → lockstep JobGive commands with map id + thickened target payload.
 /// Patches Pawn_JobTracker.TryTakeOrderedJob; applicator re-enters with CommandApplyReentry set.
 /// </summary>
 [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryTakeOrderedJob))]
@@ -31,11 +31,24 @@ internal static class Pawn_JobTracker_TryTakeOrderedJob_Patch
 
         var target = job.targetA;
         var cell = target.IsValid ? target.Cell : pawn.Position;
+        var mapId = pawn.Map?.uniqueID ?? 0;
+        var targetThingId = target.HasThing ? target.Thing.thingIDNumber : -1;
+        var count = job.count;
+
         session.SubmitCommand(
             CommandOpcode.JobGive,
-            CommandPayloads.JobGive(pawn.thingIDNumber, cell.x, cell.z, job.def.defName));
+            CommandPayloads.JobGive(
+                mapId,
+                pawn.thingIDNumber,
+                cell.x,
+                cell.z,
+                job.def.defName,
+                targetThingId,
+                count,
+                queue: 0));
 
-        __result = true; // optimistic local accept; real commit on batch apply
+        // Optimistic UI accept; sim commits only when the shared batch applies.
+        __result = true;
         return false;
     }
 }

@@ -11,6 +11,7 @@ namespace RimworldMP.CommandApply;
 
 /// <summary>
 /// Applies admitted lockstep commands to the local sim / shadow stores.
+/// Deterministic apply paths must not read <c>Find.CurrentMap</c> — map id comes from payloads.
 /// </summary>
 public static class CommandApplicator
 {
@@ -40,16 +41,16 @@ public static class CommandApplicator
             }
             case CommandOpcode.JobGive:
             {
-                var (pawnId, x, z, job) = CommandPayloads.ReadJobGive(cmd.Payload);
-                ApplyJobGive(pawnId, x, z, job);
+                var job = CommandPayloads.ReadJobGive(cmd.Payload);
+                ApplyJobGive(job);
                 break;
             }
             case CommandOpcode.ZoneAdd:
             case CommandOpcode.ZoneRemove:
             case CommandOpcode.ZoneClear:
             {
-                var (kind, cells) = CommandPayloads.ReadZoneCells(cmd.Payload);
-                ApplyZone(cmd.Opcode, kind, cells);
+                var (kind, mapId, cells) = CommandPayloads.ReadZoneCells(cmd.Payload);
+                ApplyZone(cmd.Opcode, kind, mapId, cells);
                 break;
             }
             case CommandOpcode.ZoneCreate:
@@ -131,26 +132,45 @@ public static class CommandApplicator
 #endif
     }
 
-    private static void ApplyJobGive(int pawnLoadId, int cellX, int cellZ, string jobDefName)
+    private static void ApplyJobGive(CommandPayloads.JobGivePayload job)
     {
 #if !RIMWORLDMP_NO_GAME_REFS
-        var pawn = FindPawn(pawnLoadId);
-        if (pawn is null || pawn.Map is null) return;
-        var def = DefDatabase<JobDef>.GetNamedSilentFail(jobDefName);
+        var pawn = FindPawn(job.PawnLoadId);
+        if (pawn is null) return;
+        var map = FindMap(job.MapId) ?? pawn.Map;
+        if (map is null) return;
+        var def = DefDatabase<JobDef>.GetNamedSilentFail(job.JobDefName);
         if (def is null) return;
-        var cell = new IntVec3(cellX, 0, cellZ);
-        var job = JobMaker.MakeJob(def, cell);
-        pawn.jobs?.TryTakeOrderedJob(job, JobTag.Misc);
+
+        Job made;
+        if (job.TargetThingId >= 0)
+        {
+            var thing = FindThingOnMap(map, job.TargetThingId) ?? FindThing(job.TargetThingId);
+            made = thing is not null
+                ? JobMaker.MakeJob(def, thing)
+                : JobMaker.MakeJob(def, new IntVec3(job.CellX, 0, job.CellZ));
+        }
+        else
+        {
+            made = JobMaker.MakeJob(def, new IntVec3(job.CellX, 0, job.CellZ));
+        }
+
+        if (job.Count >= 0)
+            made.count = job.Count;
+
+        // Deterministic stub apply: ordered job path; queue flag reserved for request-queue when RIMWORLD_DIR validates APIs.
+        pawn.jobs?.TryTakeOrderedJob(made, JobTag.Misc);
 #else
-        _ = (pawnLoadId, cellX, cellZ, jobDefName);
+        // Shadow-path: payload is fully decoded for harness determinism; no Verse commit.
+        _ = job;
 #endif
     }
 
-    private static void ApplyZone(CommandOpcode op, byte zoneKind, int[] cellsPacked)
+    private static void ApplyZone(CommandOpcode op, byte zoneKind, int mapId, int[] cellsPacked)
     {
-        ZoneWorld.Current.ApplyOpcode(op, zoneKind, cellsPacked);
+        ZoneWorld.Current.ApplyOpcode(op, zoneKind, mapId, cellsPacked);
 #if !RIMWORLDMP_NO_GAME_REFS
-        var map = Find.CurrentMap;
+        var map = FindMap(mapId);
         if (map?.zoneManager is null) return;
         Zone? zone = null;
         foreach (var z in map.zoneManager.AllZones)
@@ -288,6 +308,17 @@ public static class CommandApplicator
         _ => 0,
     };
 
+    private static Map? FindMap(int mapId)
+    {
+        foreach (var map in Find.Maps)
+        {
+            if (map.uniqueID == mapId)
+                return map;
+        }
+
+        return null;
+    }
+
     private static Pawn? FindPawn(int loadId)
     {
         foreach (var map in Find.Maps)
@@ -306,11 +337,20 @@ public static class CommandApplicator
     {
         foreach (var map in Find.Maps)
         {
-            foreach (var t in map.listerThings.AllThings)
-            {
-                if (t.thingIDNumber == id)
-                    return t;
-            }
+            var t = FindThingOnMap(map, id);
+            if (t is not null)
+                return t;
+        }
+
+        return null;
+    }
+
+    private static Thing? FindThingOnMap(Map map, int id)
+    {
+        foreach (var t in map.listerThings.AllThings)
+        {
+            if (t.thingIDNumber == id)
+                return t;
         }
 
         return null;

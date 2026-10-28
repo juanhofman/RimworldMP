@@ -17,7 +17,8 @@ public static class DesyncDump
         long rngSeed,
         long rngDraws,
         IReadOnlyList<MpCommand> recentCommands,
-        IReadOnlyDictionary<string, long>? rngCounters = null)
+        IReadOnlyDictionary<string, long>? rngCounters = null,
+        byte? protocolVersion = null)
     {
         Directory.CreateDirectory(logDirectory);
         var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmss");
@@ -28,11 +29,14 @@ public static class DesyncDump
         var sb = new StringBuilder();
         sb.AppendLine("RimworldMP desync detected");
         sb.AppendLine($"utc={DateTime.UtcNow:O}");
+        if (protocolVersion is not null)
+            sb.AppendLine($"protocol={protocolVersion.Value}");
         sb.AppendLine($"tick={tick}");
         sb.AppendLine($"localHash={localHashHex}");
         sb.AppendLine($"remoteHash={remoteHashHex}");
         sb.AppendLine($"rngSeed={rngSeed}");
         sb.AppendLine($"rngDraws={rngDraws}");
+        sb.AppendLine("note=worldFingerprint slot reserved; Verse map/world samples need RIMWORLD_DIR");
         if (rngCounters is { Count: > 0 })
         {
             sb.AppendLine("rngCounters:");

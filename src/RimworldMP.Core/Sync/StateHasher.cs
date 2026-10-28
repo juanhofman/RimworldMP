@@ -6,8 +6,9 @@ using RimworldMP.Core.Commands;
 namespace RimworldMP.Core.Sync;
 
 /// <summary>
-/// Lightweight state fingerprint for desync detection. Without game refs this hashes
-/// tick + RNG draw count + applied command stream. With game refs, callers can append map hashes.
+/// Rolling command-stream fingerprint feeding <see cref="DesyncDetector"/> checkpoints.
+/// Callers may also append tick / draw / protocol identity into the rolling hash; the
+/// periodic snapshot additionally folds RNG counters + a reserved world-fingerprint slot.
 /// </summary>
 public sealed class StateHasher
 {
@@ -33,6 +34,22 @@ public sealed class StateHasher
     {
         Span<byte> buf = stackalloc byte[8];
         BinaryPrimitives.WriteInt64LittleEndian(buf, drawCount);
+        Append(buf);
+    }
+
+    /// <summary>Fold protocol version into the rolling stream (session start / join).</summary>
+    public void AddProtocolVersion(byte version)
+    {
+        Span<byte> buf = stackalloc byte[1];
+        buf[0] = version;
+        Append(buf);
+    }
+
+    /// <summary>Fold session seed so peers with mismatched JoinAck seeds diverge immediately.</summary>
+    public void AddSessionSeed(long seed)
+    {
+        Span<byte> buf = stackalloc byte[8];
+        BinaryPrimitives.WriteInt64LittleEndian(buf, seed);
         Append(buf);
     }
 
