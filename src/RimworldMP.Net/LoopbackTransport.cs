@@ -85,10 +85,25 @@ public sealed class LoopbackTransport : INetTransport
 
     public ValueTask DisposeAsync() => new(StopAsync());
 
+    /// <summary>
+    /// When true (default), deliver immediately on the sender thread to avoid harness races.
+    /// Set false to exercise async delivery.
+    /// </summary>
+    public bool SynchronousDelivery { get; set; } = true;
+
     private void Enqueue(NetPeerId from, ReadOnlyMemory<byte> payload)
     {
         _inbox.Enqueue((from, payload.ToArray()));
-        SchedulePump();
+        if (SynchronousDelivery)
+            Pump();
+        else
+            SchedulePump();
+    }
+
+    public void Pump()
+    {
+        while (_inbox.TryDequeue(out var item))
+            OnReceive?.Invoke(item.Peer, item.Payload);
     }
 
     private void SchedulePump()
@@ -100,8 +115,7 @@ public sealed class LoopbackTransport : INetTransport
         {
             try
             {
-                while (_inbox.TryDequeue(out var item))
-                    OnReceive?.Invoke(item.Peer, item.Payload);
+                Pump();
             }
             finally
             {
