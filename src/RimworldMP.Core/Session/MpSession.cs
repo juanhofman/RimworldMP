@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using RimworldMP.Core.Commands;
+using RimworldMP.Core.Join;
 using RimworldMP.Core.Sync;
 using RimworldMP.Net;
 using RimworldMP.Net.Protocol;
@@ -7,8 +8,7 @@ using RimworldMP.Net.Protocol;
 namespace RimworldMP.Core.Session;
 
 /// <summary>
-/// In-game host/client lockstep session. Host collects commands, assigns ticks, broadcasts batches;
-/// every peer (including host) applies the same ordered stream behind <see cref="TickGate"/>.
+/// In-game host/client lockstep session with Phase 2 join-in-progress support.
 /// </summary>
 public sealed class MpSession : IAsyncDisposable
 {
@@ -17,9 +17,13 @@ public sealed class MpSession : IAsyncDisposable
     private readonly List<MpCommand> _hostStaging = new();
     private readonly List<MpCommand> _recentApplied = new();
     private readonly object _applyGate = new();
+    private readonly JoinPointTransfer _jipReceive = new();
+    private readonly CommandLog _commandLog = new();
     private int _localPlayerId;
     private long _sessionSeed;
     private bool _wired;
+    private bool _jipPending;
+    private string _modlistHash = "unknown";
 
     public MpSession(INetTransport transport, bool isHost, long? sessionSeed = null)
     {
@@ -39,16 +43,20 @@ public sealed class MpSession : IAsyncDisposable
     public bool IsFrozen => Desync.IsFrozen;
     public int LocalPlayerId => _localPlayerId;
     public long SessionSeed => _sessionSeed;
+    public string ModlistHash => _modlistHash;
     public SyncedRand Rand { get; }
     public StateHasher Hasher { get; }
     public DesyncDetector Desync { get; }
     public TickGate TickGate { get; }
+    public CommandLog CommandLog => _commandLog;
+    public IJoinPointSource? JoinPointSource { get; set; }
+    public bool IsJoinInProgress => _jipPending;
 
-    /// <summary>Invoked after a batch is admitted (before the tick body continues).</summary>
     public event Action<CommandBatch>? OnBatchApply;
-
-    /// <summary>Invoked when desync freeze engages.</summary>
     public event Action<DesyncInfo>? OnDesync;
+    public event Action<JoinPoint>? OnJoinPointReceived;
+
+    public void SetModlistHash(string hash) => _modlistHash = hash ?? "unknown";
 
     public async Task StartAsync(NetEndpoint endpoint, CancellationToken cancellationToken = default)
     {
@@ -64,7 +72,6 @@ public sealed class MpSession : IAsyncDisposable
                 hostLan.HostSessionSeed = _sessionSeed;
 
             await Transport.StartHostAsync(endpoint, cancellationToken).ConfigureAwait(false);
-            // Consume a synthetic tick-0 empty batch so the first real tick is 1.
             TickGate.EnqueueBatch(CommandBatch.Empty(0));
             TickGate.TryBeginTick(out _);
             Tick = 0;
@@ -74,27 +81,23 @@ public sealed class MpSession : IAsyncDisposable
             await Transport.StartClientAsync(endpoint, cancellationToken).ConfigureAwait(false);
             if (Transport is LanTcpTransport clientLan)
             {
-                if (clientLan.AssignedPlayerId is int assigned)
-                    _localPlayerId = assigned;
-                else
-                    _localPlayerId = 1;
-
+                _localPlayerId = clientLan.AssignedPlayerId ?? 1;
                 if (clientLan.JoinedSessionSeed is long seed)
                     ApplySessionSeed(seed);
             }
             else
             {
-                // Loopback / tests: caller supplies matching seeds out of band.
                 _localPlayerId = 1;
             }
 
             Tick = 0;
+            // Request JIP immediately — host may reply with a freeze-frame or an empty lobby hello.
+            RequestJoinPoint();
         }
 
         IsActive = true;
     }
 
-    /// <summary>Apply the authoritative host session seed (JoinAck / lobby hello).</summary>
     public void ApplySessionSeed(long seed)
     {
         _sessionSeed = seed;
@@ -103,14 +106,11 @@ public sealed class MpSession : IAsyncDisposable
         Desync.Reset();
     }
 
-    /// <summary>
-    /// Queue a player command. Host stages it for the next emitted tick; clients send a proposal to the host.
-    /// </summary>
     public void SubmitCommand(CommandOpcode opcode, byte[]? payload = null)
     {
         if (!IsActive)
             throw new InvalidOperationException("Session is not active.");
-        if (IsFrozen)
+        if (IsFrozen || _jipPending)
             return;
 
         var cmd = new MpCommand(opcode, tick: 0, _localPlayerId, payload);
@@ -125,9 +125,6 @@ public sealed class MpSession : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Host: seal the next tick's command batch and broadcast. Call once per sim step before <see cref="TryAdvanceSim"/>.
-    /// </summary>
     public void HostEmitNextBatch()
     {
         if (!IsHost || !IsActive || IsFrozen)
@@ -145,16 +142,15 @@ public sealed class MpSession : IAsyncDisposable
             batch = new CommandBatch(tick, stamped);
         }
 
+        var bytes = batch.ToBytes();
         TickGate.EnqueueBatch(batch);
-        Transport.BroadcastReliable(Envelope(NetMessageType.CommandBatch, batch.ToBytes()));
+        _commandLog.Record(tick, bytes);
+        Transport.BroadcastReliable(Envelope(NetMessageType.CommandBatch, bytes));
     }
 
-    /// <summary>
-    /// Admit the next tick's batch when ready. Returns false when stalled (waiting / frozen).
-    /// </summary>
     public bool TryAdvanceSim()
     {
-        if (!IsActive || IsFrozen)
+        if (!IsActive || IsFrozen || _jipPending)
             return false;
 
         if (!TickGate.TryBeginTick(out var batch))
@@ -166,11 +162,12 @@ public sealed class MpSession : IAsyncDisposable
             {
                 Hasher.AddCommand(cmd);
                 _recentApplied.Add(cmd);
-                if (_recentApplied.Count > 128)
+                if (_recentApplied.Count > 256)
                     _recentApplied.RemoveAt(0);
             }
 
             Rand.ReseedForTick(batch.Tick);
+            Desync.IncrementCounter("ticks");
             Tick = batch.Tick;
             OnBatchApply?.Invoke(batch);
 
@@ -181,12 +178,45 @@ public sealed class MpSession : IAsyncDisposable
         return true;
     }
 
-    /// <summary>Convenience for harnesses: host emit + try advance.</summary>
     public void AdvanceTickStub()
     {
         if (IsHost)
             HostEmitNextBatch();
         TryAdvanceSim();
+    }
+
+    public void RequestJoinPoint()
+    {
+        _jipPending = true;
+        _jipReceive.Reset();
+        Transport.SendReliable(NetPeerId.Host, Envelope(NetMessageType.JoinPointRequest, JoinPointTransfer.RequestBytes()));
+    }
+
+    /// <summary>Host: push a join point to one peer (or build from <see cref="JoinPointSource"/>).</summary>
+    public void HostSendJoinPoint(NetPeerId peer, JoinPoint? joinPoint = null)
+    {
+        if (!IsHost)
+            throw new InvalidOperationException("Only the host can send a join point.");
+
+        joinPoint ??= JoinPointSource?.TryCreateJoinPoint(Tick + 1, _sessionSeed, Tick)
+                      ?? new JoinPoint(Tick + 1, _sessionSeed, Tick, _modlistHash, Array.Empty<byte>());
+
+        JoinPointTransfer.SendToPeer(Transport, peer, joinPoint, Envelope);
+
+        // Catch-up batches after the save watermark.
+        foreach (var batchBytes in _commandLog.BatchesAfter(joinPoint.CommandWatermark))
+            Transport.SendReliable(peer, Envelope(NetMessageType.CommandBatch, batchBytes));
+    }
+
+    /// <summary>Apply a received join point locally (tests / game loader hook).</summary>
+    public void ApplyJoinPoint(JoinPoint joinPoint)
+    {
+        ApplySessionSeed(joinPoint.SessionSeed);
+        _modlistHash = joinPoint.ModlistHash;
+        TickGate.Reset(startingTick: joinPoint.CommandWatermark + 1);
+        Tick = joinPoint.CommandWatermark;
+        _jipPending = false;
+        OnJoinPointReceived?.Invoke(joinPoint);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
@@ -218,15 +248,21 @@ public sealed class MpSession : IAsyncDisposable
         _wired = false;
     }
 
-    private void HandlePeerJoin(NetPeerId peer) => _ = peer;
+    private void HandlePeerJoin(NetPeerId peer)
+    {
+        if (!IsHost || peer.Value == 0)
+            return;
+        // Mid-session join: push freeze-frame automatically when a source is configured
+        // or when we already have simulation progress.
+        if (JoinPointSource is not null || Tick > 0)
+            HostSendJoinPoint(peer);
+    }
 
     private void HandleReceive(NetPeerId peer, ReadOnlyMemory<byte> data)
     {
         if (data.Length < 1)
             return;
 
-        // Wire format from LanTcpTransport OnReceive and session-layer envelopes:
-        // [NetMessageType][payload…]
         var type = (NetMessageType)data.Span[0];
         var payload = data.Span[1..];
 
@@ -241,14 +277,33 @@ public sealed class MpSession : IAsyncDisposable
             case NetMessageType.DesyncFreeze:
                 HandleRemoteFreeze(payload);
                 break;
+            case NetMessageType.JoinPointRequest:
+                if (IsHost)
+                    HostSendJoinPoint(peer);
+                break;
+            case NetMessageType.JoinPointHeader:
+                _jipReceive.AcceptHeader(payload);
+                break;
+            case NetMessageType.JoinPointChunk:
+                _jipReceive.AcceptChunk(payload);
+                break;
+            case NetMessageType.JoinPointDone:
+            {
+                var jp = _jipReceive.TryComplete();
+                if (jp is not null)
+                    ApplyJoinPoint(jp);
+                else
+                    _jipPending = false; // empty lobby — no blob
+                break;
+            }
         }
     }
 
-    private static byte[] Envelope(NetMessageType type, ReadOnlySpan<byte> payload)
+    private static byte[] Envelope(NetMessageType type, ReadOnlyMemory<byte> payload)
     {
         var buffer = new byte[1 + payload.Length];
         buffer[0] = (byte)type;
-        payload.CopyTo(buffer.AsSpan(1));
+        payload.Span.CopyTo(buffer.AsSpan(1));
         return buffer;
     }
 
@@ -256,8 +311,6 @@ public sealed class MpSession : IAsyncDisposable
     {
         if (IsHost)
         {
-            // Host never enqueues remote batches into its own tick gate — only client proposals.
-            // (A crafted full batch from a client would otherwise desync/corrupt the host sim.)
             if (peer.Value == 0)
                 return;
 
@@ -280,7 +333,9 @@ public sealed class MpSession : IAsyncDisposable
 
         try
         {
-            TickGate.EnqueueBatch(CommandBatch.FromBytes(payload));
+            var batch = CommandBatch.FromBytes(payload);
+            TickGate.EnqueueBatch(batch);
+            _commandLog.Record(batch.Tick, payload.ToArray());
         }
         catch
         {
@@ -313,7 +368,10 @@ public sealed class MpSession : IAsyncDisposable
     {
         var tick = payload.Length >= 8 ? BinaryPrimitives.ReadInt64LittleEndian(payload) : Tick;
         var remoteHex = payload.Length > 8 ? Convert.ToHexString(payload[8..]).ToLowerInvariant() : "remote-freeze";
-        Desync.Freeze(tick, Desync.SnapshotHashHex(tick), remoteHex, null);
+        List<MpCommand> recent;
+        lock (_applyGate)
+            recent = _recentApplied.ToList();
+        Desync.Freeze(tick, Desync.SnapshotHashHex(tick), remoteHex, recent);
         var info = Desync.LastDesync;
         if (info is not null)
             OnDesync?.Invoke(info);

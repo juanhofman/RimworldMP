@@ -55,5 +55,10 @@ public class CommandSerializationTests
 
         var area = CommandPayloads.ReadRestrictArea(CommandPayloads.RestrictArea(8, 9));
         Assert.Equal((8, 9), area);
+
+        var billDel = CommandPayloads.ReadBillDelete(CommandPayloads.BillDelete(4, 1));
+        Assert.Equal((4, 1), billDel);
+        var pawnMove = CommandPayloads.ReadCaravanPawn(CommandPayloads.CaravanPawn(2, 9));
+        Assert.Equal((2, 9), pawnMove);
     }
 }

@@ -1,15 +1,15 @@
 using RimworldMP.Core.Commands;
-using RimworldMP.Core.Session;
+using RimworldMP.Core.World;
 
 #if !RIMWORLDMP_NO_GAME_REFS
+using RimWorld;
 using Verse;
 #endif
 
 namespace RimworldMP.CommandApply;
 
 /// <summary>
-/// Applies admitted lockstep commands to the local sim.
-/// Without game refs this is a no-op recorder; with refs it mutates Verse state.
+/// Applies admitted lockstep commands to the local sim / shadow stores.
 /// </summary>
 public static class CommandApplicator
 {
@@ -51,12 +51,28 @@ public static class CommandApplicator
                 ApplyZone(cmd.Opcode, kind, cells);
                 break;
             }
+            case CommandOpcode.ZoneCreate:
+            {
+                var (kind, mapId, label) = CommandPayloads.ReadZoneCreate(cmd.Payload);
+                ZoneWorld.Current.Create(kind, mapId, label);
+                break;
+            }
             case CommandOpcode.RestrictAreaSet:
             {
                 var (pawnId, areaId) = CommandPayloads.ReadRestrictArea(cmd.Payload);
                 ApplyRestrictArea(pawnId, areaId);
                 break;
             }
+            case CommandOpcode.BillSet:
+            case CommandOpcode.BillDelete:
+            case CommandOpcode.ResearchStart:
+            case CommandOpcode.TradeAccept:
+            case CommandOpcode.CaravanForm:
+            case CommandOpcode.CaravanAddPawn:
+            case CommandOpcode.CaravanRemovePawn:
+                ColonyWorld.Current.ApplyCommand(cmd);
+                ApplyColonyGame(cmd);
+                break;
         }
     }
 
@@ -64,8 +80,7 @@ public static class CommandApplicator
     {
 #if !RIMWORLDMP_NO_GAME_REFS
         var tm = Find.TickManager;
-        if (tm is null)
-            return;
+        if (tm is null) return;
         if (paused)
             tm.CurTimeSpeed = TimeSpeed.Paused;
         else if (tm.CurTimeSpeed == TimeSpeed.Paused)
@@ -79,8 +94,7 @@ public static class CommandApplicator
     {
 #if !RIMWORLDMP_NO_GAME_REFS
         var tm = Find.TickManager;
-        if (tm is null)
-            return;
+        if (tm is null) return;
         tm.CurTimeSpeed = speedIndex switch
         {
             0 => TimeSpeed.Paused,
@@ -99,9 +113,7 @@ public static class CommandApplicator
     {
 #if !RIMWORLDMP_NO_GAME_REFS
         var pawn = FindPawn(pawnLoadId);
-        if (pawn?.drafter is null)
-            return;
-        // Direct set bypasses UI patches that would re-enqueue commands.
+        if (pawn?.drafter is null) return;
         pawn.drafter.Drafted = drafted;
 #else
         _ = (pawnLoadId, drafted);
@@ -112,11 +124,9 @@ public static class CommandApplicator
     {
 #if !RIMWORLDMP_NO_GAME_REFS
         var pawn = FindPawn(pawnLoadId);
-        if (pawn is null || pawn.Map is null)
-            return;
+        if (pawn is null || pawn.Map is null) return;
         var def = DefDatabase<JobDef>.GetNamedSilentFail(jobDefName);
-        if (def is null)
-            return;
+        if (def is null) return;
         var cell = new IntVec3(cellX, 0, cellZ);
         var job = JobMaker.MakeJob(def, cell);
         pawn.jobs?.TryTakeOrderedJob(job, JobTag.Misc);
@@ -127,11 +137,48 @@ public static class CommandApplicator
 
     private static void ApplyZone(CommandOpcode op, byte zoneKind, int[] cellsPacked)
     {
+        ZoneWorld.Current.ApplyOpcode(op, zoneKind, cellsPacked);
 #if !RIMWORLDMP_NO_GAME_REFS
-        // Phase 1 stub: log only — full zone mutation needs Designator/ZoneManager wiring per zoneKind.
-        Log.Message($"[RimworldMP] Zone cmd {op} kind={zoneKind} cells={cellsPacked.Length / 2} (apply stub)");
-#else
-        _ = (op, zoneKind, cellsPacked);
+        var map = Find.CurrentMap;
+        if (map?.zoneManager is null) return;
+        Zone? zone = null;
+        foreach (var z in map.zoneManager.AllZones)
+        {
+            if (ZoneKind(z) == zoneKind)
+            {
+                zone = z;
+                break;
+            }
+        }
+
+        if (zone is null && op == CommandOpcode.ZoneAdd)
+        {
+            zone = zoneKind switch
+            {
+                1 => new Zone_Stockpile(map.zoneManager),
+                2 => new Zone_Growing(map.zoneManager),
+                _ => null,
+            };
+            if (zone is not null)
+                map.zoneManager.RegisterZone(zone);
+        }
+
+        if (zone is null) return;
+
+        if (op == CommandOpcode.ZoneClear)
+        {
+            zone.Delete();
+            return;
+        }
+
+        for (var i = 0; i + 1 < cellsPacked.Length; i += 2)
+        {
+            var cell = new IntVec3(cellsPacked[i], 0, cellsPacked[i + 1]);
+            if (op == CommandOpcode.ZoneAdd)
+                zone.AddCell(cell);
+            else if (op == CommandOpcode.ZoneRemove)
+                zone.RemoveCell(cell);
+        }
 #endif
     }
 
@@ -139,8 +186,7 @@ public static class CommandApplicator
     {
 #if !RIMWORLDMP_NO_GAME_REFS
         var pawn = FindPawn(pawnLoadId);
-        if (pawn?.playerSettings is null || pawn.Map is null)
-            return;
+        if (pawn?.playerSettings is null || pawn.Map is null) return;
         Area? area = null;
         if (areaId >= 0)
         {
@@ -160,16 +206,99 @@ public static class CommandApplicator
 #endif
     }
 
+    private static void ApplyColonyGame(MpCommand cmd)
+    {
 #if !RIMWORLDMP_NO_GAME_REFS
+        switch (cmd.Opcode)
+        {
+            case CommandOpcode.ResearchStart:
+            {
+                var name = CommandPayloads.ReadResearchStart(cmd.Payload);
+                var project = DefDatabase<ResearchProjectDef>.GetNamedSilentFail(name);
+                if (project is not null)
+                    Find.ResearchManager.SetCurrentProject(project);
+                break;
+            }
+            case CommandOpcode.BillSet:
+            {
+                var (benchId, slot, mode, count, recipeName) = CommandPayloads.ReadBillSet(cmd.Payload);
+                var bench = FindThing(benchId) as Building_WorkTable;
+                var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeName);
+                if (bench?.BillStack is null || recipe is null) return;
+                // Structural apply: replace/add bill at slot when possible.
+                while (bench.BillStack.Count <= slot)
+                    bench.BillStack.AddBill(BillUtility.MakeNewBill(recipe));
+                if (slot >= 0 && slot < bench.BillStack.Count)
+                {
+                    var bill = bench.BillStack[slot];
+                    if (bill is Bill_Production prod)
+                    {
+                        prod.repeatMode = mode switch
+                        {
+                            1 => BillRepeatModeDefOf.TargetCount,
+                            2 => BillRepeatModeDefOf.Forever,
+                            _ => BillRepeatModeDefOf.RepeatCount,
+                        };
+                        prod.repeatCount = count;
+                    }
+                }
+
+                break;
+            }
+            case CommandOpcode.BillDelete:
+            {
+                var (benchId, slot) = CommandPayloads.ReadBillDelete(cmd.Payload);
+                var bench = FindThing(benchId) as Building_WorkTable;
+                if (bench?.BillStack is null) return;
+                if (slot >= 0 && slot < bench.BillStack.Count)
+                    bench.BillStack.Delete(bench.BillStack[slot]);
+                break;
+            }
+            case CommandOpcode.TradeAccept:
+                Log.Message($"[RimworldMP] TradeAccept applied fingerprint (deal commit stub)");
+                break;
+            case CommandOpcode.CaravanForm:
+            {
+                var (tile, pawns) = CommandPayloads.ReadCaravanForm(cmd.Payload);
+                Log.Message($"[RimworldMP] CaravanForm tile={tile} pawns={pawns.Length}");
+                break;
+            }
+        }
+#else
+        _ = cmd;
+#endif
+    }
+
+#if !RIMWORLDMP_NO_GAME_REFS
+    private static byte ZoneKind(Zone zone) => zone switch
+    {
+        Zone_Stockpile => 1,
+        Zone_Growing => 2,
+        _ => 0,
+    };
+
     private static Pawn? FindPawn(int loadId)
     {
-        // Prefer thingIDNumber match across maps.
         foreach (var map in Find.Maps)
         {
             foreach (var pawn in map.mapPawns.AllPawns)
             {
                 if (pawn.thingIDNumber == loadId)
                     return pawn;
+            }
+        }
+
+        return null;
+    }
+
+    private static Thing? FindThing(int id)
+    {
+        foreach (var map in Find.Maps)
+        {
+            foreach (var t in map.listerThings.AllThings)
+            {
+                if (t.thingIDNumber == id)
+                    return t;
             }
         }
 

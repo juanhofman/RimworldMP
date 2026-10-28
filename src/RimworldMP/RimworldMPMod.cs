@@ -34,7 +34,8 @@ public sealed class RimworldMPMod
                 if (SessionFacade.IsInSession)
                     SessionFacade.Submit((Core.Commands.CommandOpcode)opcode, payload);
             },
-            () => { });
+            () => { },
+            tick: () => SessionFacade.Current?.Tick ?? -1);
     }
 }
 #else
@@ -60,9 +61,10 @@ public sealed class RimworldMPMod : Mod
                 if (SessionFacade.IsInSession)
                     SessionFacade.Submit((Core.Commands.CommandOpcode)opcode, payload);
             },
-            () => { });
+            () => { },
+            tick: () => SessionFacade.Current?.Tick ?? -1);
 
-        Log.Message("[RimworldMP] Phase 1 lockstep loaded. Use DevMode: 'RimworldMP: Host lobby' / 'Join lobby' (LAN TCP).");
+        Log.Message("[RimworldMP] Phase 2 colony lockstep loaded. DevMode: Host/Join lobby; JIP on mid-session join.");
     }
 }
 

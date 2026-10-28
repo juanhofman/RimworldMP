@@ -146,7 +146,7 @@ public sealed class LanTcpTransport : INetTransport
     }
 
     private static bool IsKnownType(byte value) =>
-        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.KeepAlive;
+        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.AutosaveAnnounce;
 
     /// <summary>Send a typed control message to one peer (hash / desync / keepalive).</summary>
     public void SendControl(NetPeerId peer, NetMessageType type, ReadOnlyMemory<byte> payload)
