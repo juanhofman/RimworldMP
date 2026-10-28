@@ -15,12 +15,9 @@
     <ProjectReference Include="..\RimworldMP.Compat\RimworldMP.Compat.csproj" />
   </ItemGroup>
 
-  <!-- Harmony 3 compile-time API only — do NOT copy 0Harmony.dll into the mod (Workshop Harmony loads it). -->
+  <!-- Harmony 3 compile-time API only (Lib.Harmony.Ref) — Workshop HarmonyRimWorld ≥ v3.0.1 supplies 0Harmony at runtime. -->
   <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="3.0.0-rc.2">
-      <ExcludeAssets>runtime</ExcludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="Lib.Harmony.Ref" Version="3.0.0-rc.3" />
   </ItemGroup>
 
   <!-- Game assemblies: set RIMWORLD_DIR or place DLLs under refs/RimWorld/. -->

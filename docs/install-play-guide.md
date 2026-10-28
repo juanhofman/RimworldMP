@@ -2,7 +2,7 @@
 
 ## Install
 
-1. Install **Harmony 3** for RimWorld 1.7 (Workshop id `2009463077` or GitHub release).
+1. Install **Harmony 3** for RimWorld 1.7 (Workshop id `2009463077` or [GitHub release](https://github.com/pardeike/HarmonyRimWorld/releases) ≥ **v3.0.1**, which ships Harmony lib `3.0.0-rc.3`). This repo compiles against NuGet `Lib.Harmony.Ref` `3.0.0-rc.3` and does not ship `0Harmony.dll`.
 2. Build this repo (see README) **or** copy a release `mod/` folder.
 3. Copy / symlink the repo `mod/` directory to:
    - Steam: `…/RimWorld/Mods/RimworldMP`
