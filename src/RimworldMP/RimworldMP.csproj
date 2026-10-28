@@ -12,6 +12,7 @@
     <ProjectReference Include="..\RimworldMP.API\RimworldMP.API.csproj" />
     <ProjectReference Include="..\RimworldMP.Core\RimworldMP.Core.csproj" />
     <ProjectReference Include="..\RimworldMP.Net\RimworldMP.Net.csproj" />
+    <ProjectReference Include="..\RimworldMP.Compat\RimworldMP.Compat.csproj" />
   </ItemGroup>
 
   <!-- Harmony 3 compile-time API only — do NOT copy 0Harmony.dll into the mod (Workshop Harmony loads it). -->

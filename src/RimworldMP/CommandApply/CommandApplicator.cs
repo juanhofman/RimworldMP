@@ -1,5 +1,6 @@
 using RimworldMP.Core.Commands;
 using RimworldMP.Core.World;
+// DlcWorld / ColonyWorld / ZoneWorld
 
 #if !RIMWORLDMP_NO_GAME_REFS
 using RimWorld;
@@ -72,6 +73,16 @@ public static class CommandApplicator
             case CommandOpcode.CaravanRemovePawn:
                 ColonyWorld.Current.ApplyCommand(cmd);
                 ApplyColonyGame(cmd);
+                break;
+            case CommandOpcode.RoyaltyTitleChange:
+            case CommandOpcode.RoyaltyPermitUse:
+            case CommandOpcode.IdeologyBeliefChange:
+            case CommandOpcode.IdeologyRitualStart:
+            case CommandOpcode.BiotechGrowthVatAssign:
+            case CommandOpcode.BiotechGeneInstall:
+            case CommandOpcode.AnomalyEntityContain:
+            case CommandOpcode.AnomalyStudy:
+                DlcWorld.Current.ApplyCommand(cmd);
                 break;
         }
     }

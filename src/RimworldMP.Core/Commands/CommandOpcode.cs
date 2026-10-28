@@ -28,4 +28,14 @@ public enum CommandOpcode : ushort
     CaravanForm = 80,
     CaravanAddPawn = 81,
     CaravanRemovePawn = 82,
+
+    // Phase 3 — DLC surfaces (structured; apply stubs without DLC DLLs)
+    RoyaltyTitleChange = 100,
+    RoyaltyPermitUse = 101,
+    IdeologyBeliefChange = 110,
+    IdeologyRitualStart = 111,
+    BiotechGrowthVatAssign = 120,
+    BiotechGeneInstall = 121,
+    AnomalyEntityContain = 130,
+    AnomalyStudy = 131,
 }
