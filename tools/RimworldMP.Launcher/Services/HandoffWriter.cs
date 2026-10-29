@@ -35,7 +35,8 @@ public static class HandoffWriter
         string modlistHash,
         string sessionName,
         string? rwBuild = null,
-        bool autoStartLobby = true)
+        bool autoStartLobby = true,
+        int? maxClients = null)
     {
         if (role is not ("host" or "client"))
             throw new ArgumentException("role must be \"host\" or \"client\".", nameof(role));
@@ -50,6 +51,7 @@ public static class HandoffWriter
             SessionName = sessionName,
             AutoStartLobby = autoStartLobby,
             LauncherPid = Environment.ProcessId,
+            MaxClients = maxClients,
             RwBuild = rwBuild,
             CreatedUtc = DateTime.UtcNow.ToString("o"),
         };

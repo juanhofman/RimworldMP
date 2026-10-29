@@ -1,94 +1,95 @@
-# RimworldMP LAN Launcher (MVP)
+# RimworldMP LAN Launcher
 
 External **local-only** helper for RimWorld **1.7**: locate the game, pin Harmony → RimworldMP mod order, LAN host/join discovery, write handoff JSON, launch the process.
+
+**Default UX:** Avalonia 11 desktop UI (steel/ember on ink). **CLI** remains a full fallback (`--cli` or any subcommand).
 
 Lockstep / sim stays **inside** the mod. This tool does **not** upload ModsConfig, saves, or telemetry.
 
 ## Requirements
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
-- RimWorld 1.7 install (Steam or manual folder)
+- RimWorld 1.7 install (Steam or manual folder) to launch the game
 - Workshop **Harmony 3** (`brrainz.harmony`) installed
 - This repo’s `mod/` copied/symlinked into RimWorld `Mods` (PackageId `RimworldMP.Core`)
 
 ## Build & run
 
 ```bash
-dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.sln
-dotnet run --project tools/RimworldMP.Launcher -- help
+dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.sln -c Release
+
+# Avalonia UI (needs a display on Linux)
+dotnet run --project tools/RimworldMP.Launcher -c Release
+
+# Interactive CLI menu
+dotnet run --project tools/RimworldMP.Launcher -c Release -- --cli
+
+# Direct CLI commands (unchanged)
+dotnet run --project tools/RimworldMP.Launcher -c Release -- help
+dotnet run --project tools/RimworldMP.Launcher -c Release -- self-test
 ```
 
-Interactive menu (no args):
+Headless / no `DISPLAY`: the process falls back to CLI help instead of starting Avalonia.
 
-```bash
-dotnet run --project tools/RimworldMP.Launcher
-```
+## UI screens
 
-## User steps
+| Screen | Job |
+| --- | --- |
+| **Home** | Brand hero **RimworldMP** + Host / Join CTAs |
+| **Host** | Session name, port, advertise IP, max clients, beacon + handoff + launch |
+| **Join** | LAN discovery list + manual IP, handoff + launch |
+| **Mods** | Ordered list (Harmony-first badges), hash, prepare/restore, **Sync from host** hooks |
+| **Launch** | Install path, status log, handoff path |
+
+Visual direction: ink `#0E1114`, steel `#7EB0C8`, ember `#E07A3D`; Syne + Space Grotesk + IBM Plex Sans. Screenshots: optional — no screenshot tooling in CI; describe flows instead.
+
+LAN **mod file sync** is stubbed behind `IModSyncClient` / `IModCatalog` — see [launcher-mod-manager-hooks.md](./launcher-mod-manager-hooks.md).
+
+## User steps (CLI or UI)
 
 ### One-time
 
 1. Install Harmony 3 from the Steam Workshop; copy `mod/` → `Mods` as **RimworldMP**.
-2. Locate the game:
-
-```bash
-dotnet run --project tools/RimworldMP.Launcher -- locate
-# or:
-dotnet run --project tools/RimworldMP.Launcher -- locate --path "/path/to/RimWorld"
-```
-
-3. Prepare mods (backs up `ModsConfig.xml`, enforces Harmony first + `RimworldMP.Core` enabled):
-
-```bash
-dotnet run --project tools/RimworldMP.Launcher -- mods prepare
-```
-
-4. Confirm hash:
-
-```bash
-dotnet run --project tools/RimworldMP.Launcher -- hash
-```
-
-Both peers need the **same ordered packageId list** (same hash).
+2. Locate the game (UI → Launch, or `locate [--path …]`).
+3. Prepare mods (UI → Mods → Prepare for MP, or `mods prepare`) — backs up `ModsConfig.xml`, enforces Harmony first + `RimworldMP.Core`.
+4. Confirm hash (`hash` or Mods screen). Both peers need the **same ordered packageId list**.
 
 ### Host
 
+UI: **Host** → Start hosting. CLI:
+
 ```bash
-dotnet run --project tools/RimworldMP.Launcher -- host --name "Colony Night"
+dotnet run --project tools/RimworldMP.Launcher -c Release -- host --name "Colony Night"
 ```
 
-What happens:
-
 1. ModsConfig backup + MP order (unless `--no-mods`)
-2. Writes `launcher-handoff.json` with `role=host`, port **30555**
+2. Writes `launcher-handoff.json` with `role=host`, port **30555** (optional `maxClients`)
 3. UDP broadcast beacon every 1s on **30556**
 4. Launches RimWorld (unless `--no-launch`)
-5. Press Enter in the launcher to stop the beacon
+5. UI: Stop beacon on Host; CLI: Press Enter to stop
 
-In-game: when handoff consumption is wired, lobby auto-hosts. Until then use DevMode → **RimworldMP: Host lobby (LAN)**.
+In-game: handoff consumer auto-hosts when wired; else DevMode / F10 lobby.
 
 ### Join
 
-```bash
-# Discover LAN hosts, then launch:
-dotnet run --project tools/RimworldMP.Launcher -- join
-
-# Or manual IP:
-dotnet run --project tools/RimworldMP.Launcher -- join --ip 192.168.1.20
-```
-
-### Restore ModsConfig after a session
+UI: **Join** → Scan LAN or enter IP → Join session. CLI:
 
 ```bash
-dotnet run --project tools/RimworldMP.Launcher -- mods restore
+dotnet run --project tools/RimworldMP.Launcher -c Release -- join
+dotnet run --project tools/RimworldMP.Launcher -c Release -- join --ip 192.168.1.20
 ```
+
+### Restore ModsConfig
+
+UI: Mods → Restore backup. CLI: `mods restore`.
 
 ## Ports
 
 | Port | Use |
 | --- | --- |
-| **30555** | Game MP TCP (`LanTcpTransport` / `NetProtocol.DefaultPort`) |
-| **30556** | Launcher UDP discovery beacon only |
+| **30555** | Game MP TCP |
+| **30556** | Launcher UDP discovery beacon |
+| **30557** | Suggested LAN mod-sync control (hooks only; see mod-manager-hooks doc) |
 
 ## Handoff file
 
@@ -104,13 +105,11 @@ See [launcher-handoff.md](./launcher-handoff.md).
 Mirrors `src/RimworldMP.Core/Session/ModlistHash.cs` exactly (UTF-8, `\n`-joined trimmed packageIds, lowercase SHA256 hex).
 
 ```bash
-dotnet run --project tools/RimworldMP.Launcher -- self-test
+dotnet run --project tools/RimworldMP.Launcher -c Release -- self-test
 ```
 
 Golden vector `["brrainz.harmony","RimworldMP.Core"]` →
 `f2046ab21e526aae4469bdf1418310b553a2c34b9b9b617cc148a00d76e963f6`.
-
-If Core’s algorithm changes, rebase onto `main` and remirror `tools/RimworldMP.Launcher/Services/ModlistHasher.cs`.
 
 ## Privacy
 
@@ -119,32 +118,25 @@ If Core’s algorithm changes, rebase onto `main` and remirror `tools/RimworldMP
 - Join IPs are user-entered or taken from local UDP beacons
 - Backups stay under the RimworldMP data folder
 
-## Known gaps (MVP)
+## Known gaps
 
-- In-mod handoff reader / auto Host-Join still needed (DevMode fallback works today)
-- No Avalonia UI (console is enough for MVP)
-- Discovery uses UDP broadcast + directed broadcast + loopback unicast; no mDNS
+- Real LAN mod transfer behind `IModSyncClient` still stubbed ([hooks](./launcher-mod-manager-hooks.md))
+- Discovery: UDP broadcast only (no mDNS)
 - Windows/Linux primary (macOS path probe is best-effort)
 - Does not Workshop-subscribe missing mods
-- `-mod=` launch args not used yet — ModsConfig backup/restore is the identity path
-- Beacon continues until Enter; no tray/minimize UX
-- Hash compare UI vs host beacon is print-only (join prints host hash; no auto-diff apply)
+- `-mod=` launch args not used — ModsConfig backup/restore is the identity path
+- UI screenshots not checked into the repo
 
 ## Layout
 
 ```
 tools/RimworldMP.Launcher/
-  RimworldMP.Launcher.sln
-  Program.cs                 # CLI + interactive menu
-  Services/
-    RimWorldLocator.cs
-    ModsConfigService.cs
-    ModlistHasher.cs         # mirror of Core.ModlistHash
-    LanDiscovery.cs
-    HandoffWriter.cs
-    ProcessLauncher.cs
-    LauncherPaths.cs
+  Program.cs                 # UI vs --cli / subcommands
+  Cli/CliApp.cs
+  Gui/                       # Avalonia 11 App, Theme, MainWindow
+  ViewModels/
+  Services/                  # locate, mods, discovery, handoff, launch
+  Services/ModSync/          # IModCatalog, IModSyncClient + stubs
   Models/
-    HandoffDocument.cs
-    DiscoveryBeacon.cs
+  Assets/Fonts/              # Syne, Space Grotesk, IBM Plex Sans (OFL)
 ```
