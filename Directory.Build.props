@@ -4,20 +4,28 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Modern net10: fail the build on any compiler/analyzer warning. -->
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>5</WarningLevel>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <DebugType>embedded</DebugType>
     <Deterministic>true</Deterministic>
+
+    <!-- Quality gates: zero compiler/analyzer warnings (CI and local). See docs/code-quality.md. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>5</WarningLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Recommended CA set; noise suppressed in .editorconfig. -->
+    <AnalysisMode>Recommended</AnalysisMode>
+    <!-- Style-as-error deferred until .editorconfig IDE rules are curated. -->
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+
     <!-- Set RIMWORLD_DIR to your RimWorld install to enable game assembly references. -->
     <RimWorldDir Condition="'$(RIMWORLD_DIR)' != ''">$(RIMWORLD_DIR)</RimWorldDir>
     <RimWorldDir Condition="'$(RimWorldDir)' == '' and Exists('$(MSBuildThisFileDirectory)refs/RimWorld/Assembly-CSharp.dll')">$(MSBuildThisFileDirectory)refs/RimWorld</RimWorldDir>
-    <HasRimWorldRefs Condition="Exists('$(RimWorldDir)/Assembly-CSharp.dll')">true</HasRimWorldRefs>
+    <!-- Explicit stub mode (CI / VMs): env or MSBuild RIMWORLDMP_NO_GAME_REFS=true forces no game refs. -->
+    <ForceNoGameRefs Condition="'$(RIMWORLDMP_NO_GAME_REFS)' == 'true' or '$(RIMWORLDMP_NO_GAME_REFS)' == '1'">true</ForceNoGameRefs>
+    <HasRimWorldRefs Condition="'$(ForceNoGameRefs)' == 'true'">false</HasRimWorldRefs>
+    <HasRimWorldRefs Condition="'$(HasRimWorldRefs)' == '' and Exists('$(RimWorldDir)/Assembly-CSharp.dll')">true</HasRimWorldRefs>
     <HasRimWorldRefs Condition="'$(HasRimWorldRefs)' == ''">false</HasRimWorldRefs>
   </PropertyGroup>
 </Project>

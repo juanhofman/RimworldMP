@@ -13,7 +13,7 @@ Stay on **0.6.0** until a deliberate 0.7 cut (LiteNetLib / session QoL / packagi
 - **JIP** `SaveBlobPipeline` + fail-loud chunk reassembly (`CompleteOrThrow`)
 - **Feature completeness matrix** + command catalog / Verse-blocked notes ([docs/feature-completeness.md](docs/feature-completeness.md), [docs/track-a-p1-syncmethod.md](docs/track-a-p1-syncmethod.md))
 - **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md))
-- **Zero-warning builds:** `TreatWarningsAsErrors` / `AnalysisLevel=latest` in `Directory.Build.props`; CI builds with warnings-as-errors
+- **Zero-warning builds:** `TreatWarningsAsErrors` / `AnalysisLevel=latest` / `AnalysisMode=Recommended` in `Directory.Build.props`; CI builds with warnings-as-errors ([docs/code-quality.md](docs/code-quality.md))
 - DeterminismHarness: Session QoL / SyncMethod / catalog / JIP / draw-order / API registration / desync dump tests
 
 ### In flight

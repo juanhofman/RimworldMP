@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Xml.Linq;
 
 namespace RimworldMP.ModSync;
@@ -5,6 +6,8 @@ namespace RimworldMP.ModSync;
 /// <summary>Parse RimWorld mod About/About.xml metadata.</summary>
 public static class AboutXmlParser
 {
+    private static readonly SearchValues<char> WorkshopIdTerminators = SearchValues.Create("& #");
+
     public sealed record AboutInfo(
         string PackageId,
         string Name,
@@ -67,7 +70,7 @@ public static class AboutXmlParser
         if (idIdx >= 0)
         {
             var rest = s[(idIdx + marker.Length)..];
-            var end = rest.IndexOfAny(new[] { '&', '#', ' ' });
+            var end = rest.AsSpan().IndexOfAny(WorkshopIdTerminators);
             var token = end < 0 ? rest : rest[..end];
             if (ulong.TryParse(token, out _))
                 return token;

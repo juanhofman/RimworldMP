@@ -11,7 +11,11 @@ public class ApiRegistrationTests : IDisposable
 {
     public ApiRegistrationTests() => MP.ResetForTests();
 
-    public void Dispose() => MP.ResetForTests();
+    public void Dispose()
+    {
+        MP.ResetForTests();
+        GC.SuppressFinalize(this);
+    }
 
     [Fact]
     public void RegisterSyncMethod_manual_and_attribute_scan()

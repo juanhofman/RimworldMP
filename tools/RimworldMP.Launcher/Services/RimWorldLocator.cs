@@ -21,6 +21,8 @@ public static class RimWorldLocator
 {
     public const int SteamAppId = 294100;
 
+    private static readonly JsonSerializerOptions SettingsJsonOptions = new() { WriteIndented = true };
+
     public static LauncherSettings LoadSettings()
     {
         LauncherPaths.EnsureDataDirs();
@@ -40,7 +42,7 @@ public static class RimWorldLocator
     public static void SaveSettings(LauncherSettings settings)
     {
         LauncherPaths.EnsureDataDirs();
-        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(settings, SettingsJsonOptions);
         File.WriteAllText(LauncherPaths.SettingsPath, json);
     }
 

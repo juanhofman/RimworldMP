@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml.Linq;
 
 namespace RimworldMP.Launcher.Services;
@@ -104,7 +105,7 @@ public sealed class ModsConfigService
         if (!File.Exists(modsConfigPath))
             throw new FileNotFoundException("ModsConfig.xml not found; cannot backup.", modsConfigPath);
 
-        var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+        var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
         var name = string.IsNullOrWhiteSpace(label) ? $"ModsConfig-{stamp}.xml" : $"ModsConfig-{label}-{stamp}.xml";
         var dest = Path.Combine(LauncherPaths.BackupsDir, name);
         File.Copy(modsConfigPath, dest, overwrite: false);

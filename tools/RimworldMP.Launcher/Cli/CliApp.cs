@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using RimworldMP.Launcher.Models;
 using RimworldMP.Launcher.Services;
@@ -9,6 +10,15 @@ namespace RimworldMP.Launcher.Cli;
 /// <summary>Console fallback (`--cli` and subcommands).</summary>
 public static class CliApp
 {
+    private static readonly string[] InteractiveLocate = ["locate"];
+    private static readonly string[] InteractiveModsPrepare = ["mods", "prepare"];
+    private static readonly string[] InteractiveHash = ["hash"];
+    private static readonly string[] InteractiveHost = ["host", "--share-mods"];
+    private static readonly string[] InteractiveJoin = ["join"];
+    private static readonly string[] InteractiveModsRestore = ["mods", "restore"];
+    private static readonly string[] InteractiveModsList = ["mods", "list"];
+    private static readonly string[] InteractiveModsSync = ["mods", "sync"];
+
     public static async Task<int> RunAsync(string[] args)
     {
         ModlistHasher.AssertGoldenMatchesCoreExpectation();
@@ -64,14 +74,14 @@ public static class CliApp
         var line = Console.ReadLine()?.Trim();
         return line switch
         {
-            "1" => await DispatchAsync(new[] { "locate" }).ConfigureAwait(false),
-            "2" => await DispatchAsync(new[] { "mods", "prepare" }).ConfigureAwait(false),
-            "3" => await DispatchAsync(new[] { "hash" }).ConfigureAwait(false),
-            "4" => await DispatchAsync(new[] { "host", "--share-mods" }).ConfigureAwait(false),
-            "5" => await DispatchAsync(new[] { "join" }).ConfigureAwait(false),
-            "6" => await DispatchAsync(new[] { "mods", "restore" }).ConfigureAwait(false),
-            "7" => await DispatchAsync(new[] { "mods", "list" }).ConfigureAwait(false),
-            "8" => await DispatchAsync(new[] { "mods", "sync" }).ConfigureAwait(false),
+            "1" => await DispatchAsync(InteractiveLocate).ConfigureAwait(false),
+            "2" => await DispatchAsync(InteractiveModsPrepare).ConfigureAwait(false),
+            "3" => await DispatchAsync(InteractiveHash).ConfigureAwait(false),
+            "4" => await DispatchAsync(InteractiveHost).ConfigureAwait(false),
+            "5" => await DispatchAsync(InteractiveJoin).ConfigureAwait(false),
+            "6" => await DispatchAsync(InteractiveModsRestore).ConfigureAwait(false),
+            "7" => await DispatchAsync(InteractiveModsList).ConfigureAwait(false),
+            "8" => await DispatchAsync(InteractiveModsSync).ConfigureAwait(false),
             "9" => PrintHelp(),
             "0" or null or "" => 0,
             _ => Fail("Unknown choice."),
@@ -234,7 +244,7 @@ public static class CliApp
             if (!string.IsNullOrEmpty(choice) && (!int.TryParse(choice, out var n) || n < 1 || n > beacons.Count))
                 return Fail("Invalid selection.");
             if (!string.IsNullOrEmpty(choice))
-                idx = int.Parse(choice) - 1;
+                idx = int.Parse(choice, CultureInfo.InvariantCulture) - 1;
 
             var selected = beacons[idx];
             host = selected.Host;
@@ -448,7 +458,7 @@ public static class CliApp
             if (!string.IsNullOrEmpty(choice) && (!int.TryParse(choice, out var n) || n < 1 || n > beacons.Count))
                 return Fail("Invalid selection.");
             if (!string.IsNullOrEmpty(choice))
-                idx = int.Parse(choice) - 1;
+                idx = int.Parse(choice, CultureInfo.InvariantCulture) - 1;
 
             var selected = beacons[idx];
             ip = selected.Host;

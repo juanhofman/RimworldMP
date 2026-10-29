@@ -123,7 +123,9 @@ public static class FieldWatch
     }
 
     private static string WatchInstanceKey(object? target, string fieldKey) =>
-        fieldKey + "#" + (target is null ? "static" : RuntimeHelpers.GetHashCode(target).ToString());
+        fieldKey + "#" + (target is null
+            ? "static"
+            : RuntimeHelpers.GetHashCode(target).ToString(System.Globalization.CultureInfo.InvariantCulture));
 
     private static object? ReadValue(object? target, MemberInfo member) =>
         member switch
