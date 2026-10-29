@@ -22,4 +22,9 @@
     <ProjectReference Include="..\..\src\RimworldMP.Net\RimworldMP.Net.csproj" />
     <ProjectReference Include="..\..\src\RimworldMP.Compat\RimworldMP.Compat.csproj" />
   </ItemGroup>
+  <!-- Compile launcher ModlistHasher (no Avalonia/UI) so CI can assert byte-identical Core mirror. -->
+  <ItemGroup>
+    <Compile Include="..\..\tools\RimworldMP.Launcher\Services\ModlistHasher.cs" Link="LauncherMirror\ModlistHasher.cs" />
+    <Compile Include="..\..\tools\RimworldMP.Launcher\Services\LauncherPaths.cs" Link="LauncherMirror\LauncherPaths.cs" />
+  </ItemGroup>
 </Project>

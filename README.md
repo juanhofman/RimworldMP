@@ -1,10 +1,16 @@
 # RimworldMP
 
+[![CI](https://github.com/juanhofman/RimworldMP/actions/workflows/ci.yml/badge.svg)](https://github.com/juanhofman/RimworldMP/actions/workflows/ci.yml)
+
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
+<<<<<<< HEAD
 Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release): LAN launcher MVP, protocol **v3** lockstep with modlist join hard-gate, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff). PackageId **`RimworldMP.Core`**. License **MIT**.
 
 **Known limitation:** untested in live RimWorld 1.7 — full Verse patches need `RIMWORLD_DIR` / game DLLs.
+=======
+Not a fork of Zetrith/RWMT. **v0.5.0** + **P0 sim-correctness**: LAN TCP lockstep (protocol **v3**), join hard-gate on modlist hash, thickened job/zone payloads with map ids, JIP save-load hooks, MaxClients default **4**, in-mod lobby (F10 / button / launcher handoff). Full Verse proof still needs `RIMWORLD_DIR`. CI (no game install): [`docs/ci.md`](docs/ci.md).
+>>>>>>> 41bf275 (Add GitHub Actions CI for Core tests without RimWorld.)
 
 ## Locked scope
 
