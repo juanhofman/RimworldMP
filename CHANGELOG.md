@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, LiteNetLib, session QoL chat/kick, Compat API expansions). See [docs/feature-completeness.md](docs/feature-completeness.md).
+
 ### Added
+- **Feature completeness matrix:** Feature → Done / Partial / Blocked on `RIMWORLD_DIR` / Won’t do per prefs ([docs/feature-completeness.md](docs/feature-completeness.md))
 - **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md)). Freeze overlay shows dump path. DeterminismHarness `DesyncDumpTests` covers forced fingerprint mismatch sections.
+
+### In flight (not on `main` yet / incomplete)
+- SyncMethod colony applicators and RNG thicken (registration exists; invoke/apply pipeline incomplete)
+- LiteNetLib LAN transport behind `INetTransport`
+- Compat API expansions + richer example mods
+- Session QoL: chat, host kick, ready polish
 
 ## 0.6.0 — UI + launcher release (2026-10-29)
 
