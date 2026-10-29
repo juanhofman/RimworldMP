@@ -24,4 +24,9 @@
     <!-- Lobby presentation + MpLobbyActions (builds under RIMWORLDMP_NO_GAME_REFS). -->
     <ProjectReference Include="..\..\src\RimworldMP\RimworldMP.csproj" />
   </ItemGroup>
+  <!-- Compile launcher ModlistHasher (no Avalonia/UI) so CI can assert byte-identical Core mirror. -->
+  <ItemGroup>
+    <Compile Include="..\..\tools\RimworldMP.Launcher\Services\ModlistHasher.cs" Link="LauncherMirror\ModlistHasher.cs" />
+    <Compile Include="..\..\tools\RimworldMP.Launcher\Services\LauncherPaths.cs" Link="LauncherMirror\LauncherPaths.cs" />
+  </ItemGroup>
 </Project>

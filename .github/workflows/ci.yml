@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Force no-Verse stubs even if a runner has RimWorld refs mounted.
+  RIMWORLDMP_NO_GAME_REFS: "true"
+  RIMWORLD_DIR: ""
+
+jobs:
+  build-and-test:
+    name: Build + DeterminismHarness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore RimworldMP.sln
+
+      - name: Build solution (no game refs)
+        run: dotnet build RimworldMP.sln -c Release --no-restore
+
+      - name: DeterminismHarness + Core important paths
+        run: dotnet test tests/DeterminismHarness -c Release --no-build --verbosity normal
+
+      - name: Build launcher (headless)
+        run: dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.csproj -c Release
+
+      - name: Launcher ModlistHasher self-test
+        run: dotnet run --project tools/RimworldMP.Launcher -c Release --no-build -- self-test
