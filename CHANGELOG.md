@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md)). Freeze overlay shows dump path. DeterminismHarness `DesyncDumpTests` covers forced fingerprint mismatch sections.
+
 ## 0.6.0 — UI + launcher release (2026-10-29)
 
 Workshop-style packaging for the LAN launcher + P0 sim stack. Semver **0.6.0**; PackageId remains **`RimworldMP.Core`**.

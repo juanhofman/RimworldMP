@@ -12,6 +12,9 @@ public sealed class DesyncInfo
     public required string LocalHashHex { get; init; }
     public required string RemoteHashHex { get; init; }
     public required string LogPath { get; init; }
+    public string? CommandsJsonPath { get; init; }
+    public string? BatchesJsonPath { get; init; }
+    public string? ModlistHashShort { get; init; }
 }
 
 /// <summary>
@@ -20,6 +23,7 @@ public sealed class DesyncInfo
 /// P0 fingerprint includes protocol version, tick, RNG seed/draw counters, named counters, and the
 /// rolling command-stream hash. A 32-byte world-fingerprint slot is reserved (zeros until
 /// RIMWORLD_DIR can sample Verse map/world state — see docs/p0-sim-correctness.md).
+/// Dump layout: docs/desync-dumps.md (local-only; never uploaded).
 /// </summary>
 public sealed class DesyncDetector
 {
@@ -36,8 +40,7 @@ public sealed class DesyncDetector
     {
         _hasher = hasher;
         _rand = rand;
-        _logDirectory = logDirectory
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RimworldMP", "desync");
+        _logDirectory = logDirectory ?? DesyncDump.DefaultLogDirectory;
     }
 
     public bool IsFrozen
@@ -121,17 +124,26 @@ public sealed class DesyncDetector
 
     public string SnapshotHashHex(long tick) => Convert.ToHexString(SnapshotHash(tick)).ToLowerInvariant();
 
-    public bool CheckRemote(long tick, string remoteHashHex, IReadOnlyList<MpCommand>? recentCommands = null)
+    public bool CheckRemote(
+        long tick,
+        string remoteHashHex,
+        IReadOnlyList<MpCommand>? recentCommands = null,
+        DesyncDumpContext? dumpContext = null)
     {
         var local = SnapshotHashHex(tick);
         if (string.Equals(local, remoteHashHex, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        Freeze(tick, local, remoteHashHex, recentCommands);
+        Freeze(tick, local, remoteHashHex, recentCommands, dumpContext);
         return false;
     }
 
-    public void Freeze(long tick, string localHashHex, string remoteHashHex, IReadOnlyList<MpCommand>? recentCommands = null)
+    public void Freeze(
+        long tick,
+        string localHashHex,
+        string remoteHashHex,
+        IReadOnlyList<MpCommand>? recentCommands = null,
+        DesyncDumpContext? dumpContext = null)
     {
         lock (_gate)
         {
@@ -140,7 +152,7 @@ public sealed class DesyncDetector
             _frozen = true;
 
             var cmds = recentCommands ?? Array.Empty<MpCommand>();
-            var path = DesyncDump.Write(
+            var paths = DesyncDump.WriteAll(
                 _logDirectory,
                 tick,
                 localHashHex,
@@ -149,14 +161,18 @@ public sealed class DesyncDetector
                 _rand.DrawCount,
                 cmds,
                 new Dictionary<string, long>(_rngCounters),
-                protocolVersion: NetProtocol.Version);
+                protocolVersion: NetProtocol.Version,
+                context: dumpContext);
 
             _last = new DesyncInfo
             {
                 Tick = tick,
                 LocalHashHex = localHashHex,
                 RemoteHashHex = remoteHashHex,
-                LogPath = path,
+                LogPath = paths.LogPath,
+                CommandsJsonPath = paths.CommandsJsonPath,
+                BatchesJsonPath = paths.BatchesJsonPath,
+                ModlistHashShort = DesyncDump.ShortModlistHash(dumpContext?.ModlistHash),
             };
         }
     }

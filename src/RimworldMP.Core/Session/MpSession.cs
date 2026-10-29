@@ -482,7 +482,7 @@ public sealed class MpSession : IAsyncDisposable
         lock (_applyGate)
             recent = _recentApplied.ToList();
 
-        if (!Desync.CheckRemote(tick, remoteHex, recent))
+        if (!Desync.CheckRemote(tick, remoteHex, recent, BuildDumpContext()))
         {
             AnnounceFreeze();
             var info = Desync.LastDesync;
@@ -498,10 +498,31 @@ public sealed class MpSession : IAsyncDisposable
         List<MpCommand> recent;
         lock (_applyGate)
             recent = _recentApplied.ToList();
-        Desync.Freeze(tick, Desync.SnapshotHashHex(tick), remoteHex, recent);
+        Desync.Freeze(tick, Desync.SnapshotHashHex(tick), remoteHex, recent, BuildDumpContext());
         var info = Desync.LastDesync;
         if (info is not null)
             OnDesync?.Invoke(info);
+    }
+
+    /// <summary>Local-only dump metadata: peer ids, modlist hash short, optional batch ring.</summary>
+    private DesyncDumpContext BuildDumpContext()
+    {
+        var peerIds = new SortedSet<int> { _localPlayerId };
+        foreach (var id in _ready.Snapshot().Keys)
+            peerIds.Add(id);
+        if (Transport is LanTcpTransport lan)
+        {
+            foreach (var peer in lan.ConnectedPeers)
+                peerIds.Add(peer.Value);
+        }
+
+        return new DesyncDumpContext
+        {
+            LocalPeerId = _localPlayerId,
+            PeerIds = peerIds.ToList(),
+            ModlistHash = _modlistHash,
+            RecentBatches = _commandLog.SnapshotRecent(),
+        };
     }
 
     private void PublishHash(long tick)

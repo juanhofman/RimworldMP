@@ -1,14 +1,36 @@
+using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
 using RimworldMP.Core.Commands;
+using RimworldMP.Net.Protocol;
 
 namespace RimworldMP.Core.Sync;
 
-/// <summary>Structured desync dump: RNG counters + last N commands with payload hex.</summary>
+/// <summary>
+/// Structured local-only desync dump: RNG counters/seed, tick/protocol/peer ids,
+/// short modlist hash, last N commands, and an optional recent-batch ring buffer.
+/// Files stay under the caller's log directory — never uploaded.
+/// </summary>
 public static class DesyncDump
 {
     public const int DefaultCommandHistory = 128;
+    public const int DefaultBatchHistory = 64;
+    public const int BatchHexPreviewBytes = 64;
+    public const int ModlistHashShortChars = 12;
 
+    private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
+
+    public static string DefaultLogDirectory =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RimworldMP", "desync");
+
+    public static string ShortModlistHash(string? hash)
+    {
+        if (string.IsNullOrEmpty(hash))
+            return "—";
+        return hash.Length <= ModlistHashShortChars ? hash : hash[..ModlistHashShortChars];
+    }
+
+    /// <summary>Backward-compatible entry: returns the primary <c>.log</c> path.</summary>
     public static string Write(
         string logDirectory,
         long tick,
@@ -18,43 +40,133 @@ public static class DesyncDump
         long rngDraws,
         IReadOnlyList<MpCommand> recentCommands,
         IReadOnlyDictionary<string, long>? rngCounters = null,
-        byte? protocolVersion = null)
+        byte? protocolVersion = null,
+        DesyncDumpContext? context = null)
+    {
+        var paths = WriteAll(
+            logDirectory,
+            tick,
+            localHashHex,
+            remoteHashHex,
+            rngSeed,
+            rngDraws,
+            recentCommands,
+            rngCounters,
+            protocolVersion ?? NetProtocol.Version,
+            context);
+        return paths.LogPath;
+    }
+
+    public static DesyncDumpPaths WriteAll(
+        string logDirectory,
+        long tick,
+        string localHashHex,
+        string remoteHashHex,
+        long rngSeed,
+        long rngDraws,
+        IReadOnlyList<MpCommand>? recentCommands,
+        IReadOnlyDictionary<string, long>? rngCounters = null,
+        byte protocolVersion = NetProtocol.Version,
+        DesyncDumpContext? context = null)
     {
         Directory.CreateDirectory(logDirectory);
         var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmss");
         var baseName = $"desync-tick{tick}-{stamp}";
         var logPath = Path.Combine(logDirectory, baseName + ".log");
         var jsonPath = Path.Combine(logDirectory, baseName + ".cmds.json");
+        string? batchesJsonPath = null;
+
+        var cmdLimit = context?.CommandHistoryLimit > 0
+            ? context.CommandHistoryLimit
+            : DefaultCommandHistory;
+        var batchLimit = context?.BatchHistoryLimit > 0
+            ? context.BatchHistoryLimit
+            : DefaultBatchHistory;
+
+        var cmds = TakeLast(recentCommands ?? Array.Empty<MpCommand>(), cmdLimit);
+        var batches = TakeLast(context?.RecentBatches ?? Array.Empty<DesyncBatchSnapshot>(), batchLimit);
 
         var sb = new StringBuilder();
+        sb.AppendLine("=== RimworldMP desync dump ===");
+        sb.AppendLine("section=header");
         sb.AppendLine("RimworldMP desync detected");
         sb.AppendLine($"utc={DateTime.UtcNow:O}");
-        if (protocolVersion is not null)
-            sb.AppendLine($"protocol={protocolVersion.Value}");
+        sb.AppendLine("localOnly=true");
+        sb.AppendLine("upload=never");
+        sb.AppendLine("note=dumps stay on this machine; RimworldMP never uploads them");
+
+        sb.AppendLine();
+        sb.AppendLine("section=session");
+        sb.AppendLine($"protocol={protocolVersion}");
         sb.AppendLine($"tick={tick}");
+        if (context?.LocalPeerId is int localPeer)
+            sb.AppendLine($"localPeerId={localPeer}");
+        if (context?.PeerIds is { Count: > 0 } peers)
+            sb.AppendLine($"peerIds={string.Join(',', peers.OrderBy(p => p))}");
+        var modlist = context?.ModlistHash;
+        if (!string.IsNullOrEmpty(modlist))
+        {
+            sb.AppendLine($"modlistHashShort={ShortModlistHash(modlist)}");
+            sb.AppendLine($"modlistHash={modlist}");
+        }
+        else
+        {
+            sb.AppendLine("modlistHashShort=—");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("section=fingerprint");
         sb.AppendLine($"localHash={localHashHex}");
         sb.AppendLine($"remoteHash={remoteHashHex}");
+        sb.AppendLine("note=worldFingerprint slot reserved; Verse map/world samples need RIMWORLD_DIR");
+
+        sb.AppendLine();
+        sb.AppendLine("section=rng");
         sb.AppendLine($"rngSeed={rngSeed}");
         sb.AppendLine($"rngDraws={rngDraws}");
-        sb.AppendLine("note=worldFingerprint slot reserved; Verse map/world samples need RIMWORLD_DIR");
         if (rngCounters is { Count: > 0 })
         {
             sb.AppendLine("rngCounters:");
-            foreach (var (key, value) in rngCounters.OrderBy(kv => kv.Key))
+            foreach (var (key, value) in rngCounters.OrderBy(kv => kv.Key, StringComparer.Ordinal))
                 sb.AppendLine($"  {key}={value}");
         }
+        else
+        {
+            sb.AppendLine("rngCounters: (none)");
+        }
 
-        sb.AppendLine($"recentCommands={recentCommands.Count}");
-        foreach (var cmd in recentCommands)
+        sb.AppendLine();
+        sb.AppendLine("section=recentCommands");
+        sb.AppendLine($"recentCommands={cmds.Count}");
+        sb.AppendLine($"recentCommandsLimit={cmdLimit}");
+        foreach (var cmd in cmds)
         {
             sb.AppendLine(
                 $"  tick={cmd.Tick} op={cmd.Opcode}({(ushort)cmd.Opcode}) player={cmd.PlayerId} payloadHex={Convert.ToHexString(cmd.Payload)}");
         }
 
+        sb.AppendLine();
+        sb.AppendLine("section=recentBatches");
+        sb.AppendLine($"recentBatches={batches.Count}");
+        sb.AppendLine($"recentBatchesLimit={batchLimit}");
+        foreach (var batch in batches)
+        {
+            sb.AppendLine(
+                $"  tick={batch.Tick} bytes={batch.ByteLength} cmds={batch.CommandCount} hexPreview={batch.PayloadHexPreview}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("section=files");
         sb.AppendLine($"cmdsJson={jsonPath}");
+        if (batches.Count > 0)
+        {
+            batchesJsonPath = Path.Combine(logDirectory, baseName + ".batches.json");
+            sb.AppendLine($"batchesJson={batchesJsonPath}");
+        }
+
         File.WriteAllText(logPath, sb.ToString());
 
-        var dto = recentCommands.Select(c => new
+        var cmdDto = cmds.Select(c => new
         {
             tick = c.Tick,
             opcode = c.Opcode.ToString(),
@@ -62,7 +174,57 @@ public static class DesyncDump
             playerId = c.PlayerId,
             payloadHex = Convert.ToHexString(c.Payload),
         });
-        File.WriteAllText(jsonPath, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
-        return logPath;
+        File.WriteAllText(jsonPath, JsonSerializer.Serialize(cmdDto, JsonOpts));
+
+        if (batchesJsonPath is not null)
+        {
+            var batchDto = batches.Select(b => new
+            {
+                tick = b.Tick,
+                byteLength = b.ByteLength,
+                commandCount = b.CommandCount,
+                payloadHexPreview = b.PayloadHexPreview,
+            });
+            File.WriteAllText(batchesJsonPath, JsonSerializer.Serialize(batchDto, JsonOpts));
+        }
+
+        return new DesyncDumpPaths
+        {
+            LogPath = logPath,
+            CommandsJsonPath = jsonPath,
+            BatchesJsonPath = batchesJsonPath,
+        };
+    }
+
+    /// <summary>Build a ring-buffer snapshot entry from a raw <see cref="CommandBatch"/> frame.</summary>
+    public static DesyncBatchSnapshot SnapshotBatch(long tick, byte[] batchBytes, int hexPreviewBytes = BatchHexPreviewBytes)
+    {
+        ArgumentNullException.ThrowIfNull(batchBytes);
+        var cmdCount = 0;
+        if (batchBytes.Length >= 12)
+            cmdCount = BinaryPrimitives.ReadInt32LittleEndian(batchBytes.AsSpan(8));
+        var take = Math.Min(Math.Max(0, hexPreviewBytes), batchBytes.Length);
+        var preview = take == 0 ? string.Empty : Convert.ToHexString(batchBytes.AsSpan(0, take));
+        if (batchBytes.Length > take)
+            preview += "…";
+        return new DesyncBatchSnapshot
+        {
+            Tick = tick,
+            ByteLength = batchBytes.Length,
+            CommandCount = cmdCount,
+            PayloadHexPreview = preview,
+        };
+    }
+
+    private static List<T> TakeLast<T>(IReadOnlyList<T> source, int limit)
+    {
+        if (limit <= 0 || source.Count == 0)
+            return new List<T>();
+        if (source.Count <= limit)
+            return source.ToList();
+        var list = new List<T>(limit);
+        for (var i = source.Count - limit; i < source.Count; i++)
+            list.Add(source[i]);
+        return list;
     }
 }
