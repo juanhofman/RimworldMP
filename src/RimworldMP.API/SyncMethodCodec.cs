@@ -11,6 +11,7 @@ namespace RimworldMP.API;
 public static class SyncMethodCodec
 {
     /// <summary>Wire type tag for a SyncMethod argument.</summary>
+#pragma warning disable CA1720 // Wire tags intentionally mirror CLR type names (stable protocol docs).
     public enum ArgTag : byte
     {
         /// <summary>Null reference.</summary>
@@ -30,6 +31,7 @@ public static class SyncMethodCodec
         /// <summary>Raw bytes (u16 length prefix).</summary>
         Bytes = 7,
     }
+#pragma warning restore CA1720
 
     /// <summary>Default key form; prefer <see cref="MP.KeyOf"/> when attribute name overrides apply.</summary>
     public static string MethodKey(System.Reflection.MethodInfo method)

@@ -4,24 +4,19 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Modern net10: fail the build on any compiler/analyzer warning. -->
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningLevel>5</WarningLevel>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <DebugType>embedded</DebugType>
     <Deterministic>true</Deterministic>
 
-    <!-- Quality gates: zero compiler/analyzer warnings (CI and local). -->
+    <!-- Quality gates: zero compiler/analyzer warnings (CI and local). See docs/code-quality.md. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>5</WarningLevel>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
-    <!-- Recommended CA set; noise suppressed in .editorconfig (see docs/code-quality.md). -->
+    <!-- Recommended CA set; noise suppressed in .editorconfig. -->
     <AnalysisMode>Recommended</AnalysisMode>
-    <!-- Style rules that ship as warnings; keep off until .editorconfig is curated. -->
+    <!-- Style-as-error deferred until .editorconfig IDE rules are curated. -->
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
 
     <!-- Set RIMWORLD_DIR to your RimWorld install to enable game assembly references. -->
