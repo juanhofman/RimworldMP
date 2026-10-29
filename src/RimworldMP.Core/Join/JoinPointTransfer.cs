@@ -94,8 +94,7 @@ public sealed class JoinPointTransfer
             if (index < 0 || index >= total)
                 throw new InvalidOperationException("JoinPoint chunk index out of range.");
 
-<<<<<<< HEAD
-            var offset = index * NetProtocol.JoinPointChunkBytes;
+            var offset = index * _chunkBytes;
             if (_buffer.Length == 0)
             {
                 if (data.Length != 0)
@@ -105,16 +104,10 @@ public sealed class JoinPointTransfer
             {
                 if (offset >= _buffer.Length)
                     throw new InvalidOperationException("JoinPoint chunk overflows blob.");
-                var expectedLen = Math.Min(NetProtocol.JoinPointChunkBytes, _buffer.Length - offset);
+                var expectedLen = Math.Min(_chunkBytes, _buffer.Length - offset);
                 if (data.Length != expectedLen)
                     throw new InvalidOperationException(
                         $"JoinPoint chunk length mismatch at index {index}: got {data.Length}, expected {expectedLen}.");
-=======
-            var offset = index * _chunkBytes;
-            if (offset + data.Length > _buffer.Length && _buffer.Length > 0)
-                throw new InvalidOperationException("JoinPoint chunk overflows blob.");
-            if (_buffer.Length > 0)
->>>>>>> 2ccd06b (Add LiteNetLib LAN transport behind INetTransport.)
                 data.CopyTo(_buffer.AsSpan(offset));
             }
 

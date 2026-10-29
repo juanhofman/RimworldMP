@@ -6,7 +6,7 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 | --- | --- |
 | **Audited tip** | (update on merge of SyncMethod / colony catalog PR) |
 | **Tagged release** | **0.6.0** (`VERSION` / `About.xml` `modVersion`) |
-| **Toward 0.7.0?** | **Candidate slice landed offline** — SyncMethod schedule + full colony catalog + public Compat/API (stay on 0.6.0 until LiteNetLib / QoL or a deliberate cut) |
+| **Toward 0.7.0?** | **Candidate slice landed offline** — SyncMethod + colony catalog + Compat/API + LiteNetLib (stay on 0.6.0 until QoL / packaging or a deliberate cut) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
 
 Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **Won’t do per prefs**.
@@ -20,10 +20,10 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 | **Lockstep** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (live proof) | `TickGate`, host command batches, client stall, pause/speed opcodes, DeterminismHarness soak | Live `TickManager` Harmony path unproven without game DLLs |
 | **Commands** | **Partial** (offline catalog **Done**) | Full Phase 1–3 opcode catalog + map/thing ids; policies/schedules/designators/forbid; shadow stores (`ColonyWorld` / `PolicyWorld` / `ZoneWorld` / `DlcWorld`); harness serialize/apply | Verse apply stubby for trade/caravan/policies; live apply needs `RIMWORLD_DIR` |
 | **SyncMethod** | **Done** (offline) | `MP.CallSyncMethod` → opcode `90` → applicator invoke; `SyncMethodCodec`; `[SyncMethod]` attribute scan; `ColonyCommands` | Live author mods still need game session |
-| **JIP** | **Partial** / **Blocked on RIMWORLD_DIR** | Chunked transfer + `CompleteOrThrow` fail-loud; `SaveBlobPipeline` / `ISaveLoad` / `MemorySaveLoad`; join hard-gate | `VerseSaveLoad` SaveGame/LoadGame needs install |
+| **JIP** | **Partial** / **Blocked on RIMWORLD_DIR** | Chunked transfer + paced LiteNetLib chunks + `CompleteOrThrow` fail-loud; `SaveBlobPipeline` / `ISaveLoad` / `MemorySaveLoad`; join hard-gate (`RMP3` v4 / MinSupported 3) | `VerseSaveLoad` SaveGame/LoadGame needs install |
 | **Launcher** | **Done** | Avalonia 11 UI + CLI: locate RW, mod prepare/hash, UDP discovery, host/join, `launcher-handoff.json`, process launch ([launcher-mvp.md](./launcher-mvp.md)) | Avalonia visual QA optional; launching game binary needs a real install |
 | **Mod sync** | **Done** | `RimworldMP.ModSync` host share TCP **30557**, client compare/pull + content-hash verify, Workshop **cache** secondary ([mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) | Live Workshop **download** / SteamCMD: stub only |
-| **Transports** | **Partial** (+ **Won’t do** rows) | `INetTransport`: **Loopback** + **LAN TCP** (`LanTcpTransport`, port **30555**) | **LiteNetLib** in flight. **Steam** / **dedicated host**: **Won’t do per prefs** |
+| **Transports** | **Done** (LAN) (+ **Won’t do** rows) | `INetTransport`: **Loopback** + **LAN TCP** (default) + **LiteNetLib** UDP (`MpConfig.TransportKind` / handoff `transport`, port **30555**) — [transport-litenetlib.md](./transport-litenetlib.md) | **Steam** / **dedicated host**: **Won’t do per prefs** |
 | **API** | **Done** (offline) / **Partial** (live watches) | `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute registration, `CallSyncMethod` schedule, XML docs; examples + `ApiRegistrationTests`; [mod-author-api.md](./mod-author-api.md) | Live field-watch → command emission still stub-bound |
 | **DLC hooks** | **Partial** / **Blocked on RIMWORLD_DIR** | Phase 3 opcodes + `DlcHooks.*` + `DlcStateStore` shadow apply | Live DLC Harmony targets need DLC assemblies |
 | **Desync** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (world hash samples) | Fingerprint folds protocol/tick/RNG seed/**drawCount**/**OpinionHash**/counters/cmd hash + world slot; local-only dumps ([desync-dumps.md](./desync-dumps.md)) | Live world-fingerprint fill + multi-peer proof need install |
@@ -35,7 +35,7 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 | --- | --- |
 | RimWorld **1.7 only** (no 1.6) | **Done** (`About.xml` `supportedVersions`) |
 | Shared single colony (not multi-faction) | **Done** (architecture lock) |
-| LAN-first play | **Done** (TCP + launcher discovery + mod sync) |
+| LAN-first play | **Done** (TCP default + LiteNetLib opt-in + launcher discovery + mod sync) |
 | In-game host only | **Done** |
 | Dedicated / headless server | **Won’t do per prefs** |
 | Steam networking as primary transport | **Won’t do per prefs** (LAN-first) |

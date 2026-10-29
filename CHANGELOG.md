@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-<<<<<<< HEAD
-Stay on **0.6.0** until a deliberate 0.7 cut (LiteNetLib / session QoL / packaging). See [docs/feature-completeness.md](docs/feature-completeness.md).
+Stay on **0.6.0** until a deliberate 0.7 cut (session QoL / packaging). See [docs/feature-completeness.md](docs/feature-completeness.md).
 
 ### Added
+- **LiteNetLib** `INetTransport` (LAN reliable UDP) selectable via `MpConfig.TransportKind` / handoff `transport`; TCP remains default fallback ([docs/transport-litenetlib.md](docs/transport-litenetlib.md))
+- Protocol **v4** (magic still `RMP3`, MinSupported **3**): optional handshake trailer + paced JIP chunk sizing for LiteNetLib
+- Client connect reconnect/backoff (`ReconnectPolicy`) for transient UDP failures
 - **SyncMethod execution** via `CommandOpcode.SyncMethodInvoke` (90): `MP.CallSyncMethod` / `SyncMethodCodec` / applicator invoke ([docs/api.md](docs/api.md), [docs/mod-author-api.md](docs/mod-author-api.md))
 - **Full colony command catalog** offline: designators/forbid, work/timetable/food/outfit/drug/medical/hostility policies, bill reorder, research stop, trade cancel, caravan disband; shadow stores + `ColonyCommands` API constants
 - **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute/type/assembly registration ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo`
@@ -14,35 +16,9 @@ Stay on **0.6.0** until a deliberate 0.7 cut (LiteNetLib / session QoL / packagi
 - **Feature completeness matrix** + command catalog / Verse-blocked notes ([docs/feature-completeness.md](docs/feature-completeness.md), [docs/track-a-p1-syncmethod.md](docs/track-a-p1-syncmethod.md))
 - **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md))
 - **Zero-warning builds:** `TreatWarningsAsErrors` / `AnalysisLevel=latest` in `Directory.Build.props`; CI builds with warnings-as-errors
-- DeterminismHarness: SyncMethod / catalog / JIP / draw-order / API registration / desync dump tests
+- DeterminismHarness: SyncMethod / catalog / JIP / draw-order / API registration / desync dump / LiteNetLib transport tests
 
 ### In flight
-=======
-<<<<<<< HEAD
-Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, LiteNetLib, session QoL chat/kick). See [docs/feature-completeness.md](docs/feature-completeness.md).
-
-### Added
-- **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch` begin/end stubs, `HostInject` host-only+inject helpers, attribute/type/assembly registration, XML docs on `RimworldMP.API` ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo` build with `NO_GAME_REFS`. DeterminismHarness `ApiRegistrationTests` covers registration, watch, and host-inject. `TreatWarningsAsErrors` enabled repo-wide; no obsolete Compat attribute duplicates.
-=======
-Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, session QoL chat/kick, Compat API expansions). See [docs/feature-completeness.md](docs/feature-completeness.md).
-
-### Added
-- **LiteNetLib** `INetTransport` (LAN reliable UDP) selectable via `MpConfig.TransportKind` / handoff `transport`; TCP remains default fallback ([docs/transport-litenetlib.md](docs/transport-litenetlib.md))
-- Protocol **v4** (magic still `RMP3`, MinSupported **3**): optional handshake trailer + paced JIP chunk sizing for LiteNetLib
-- Client connect reconnect/backoff (`ReconnectPolicy`) for transient UDP failures
->>>>>>> 2abba58 (Add LiteNetLib LAN transport behind INetTransport.)
-- **Feature completeness matrix:** Feature → Done / Partial / Blocked on `RIMWORLD_DIR` / Won’t do per prefs ([docs/feature-completeness.md](docs/feature-completeness.md))
-- **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md)). Freeze overlay shows dump path. DeterminismHarness `DesyncDumpTests` covers forced fingerprint mismatch sections.
-
-### In flight (not on `main` yet / incomplete)
-<<<<<<< HEAD
-- SyncMethod colony applicators and RNG thicken (API registration + invoke helpers exist; Core→Verse apply pipeline incomplete)
->>>>>>> 2ccd06b (Add LiteNetLib LAN transport behind INetTransport.)
-- LiteNetLib LAN transport behind `INetTransport`
-=======
-- SyncMethod colony applicators and RNG thicken (registration exists; invoke/apply pipeline incomplete)
-- Compat API expansions + richer example mods
->>>>>>> 2abba58 (Add LiteNetLib LAN transport behind INetTransport.)
 - Session QoL: chat, host kick, ready polish
 
 ## 0.6.0 — UI + launcher release (2026-10-29)

@@ -4,7 +4,7 @@
 
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
-Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release) + LiteNetLib LAN option: Avalonia LAN launcher with mod manager + LAN mod sync, protocol **v4** lockstep (MinSupported **3**) with modlist join hard-gate, TCP default / LiteNetLib opt-in, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff), [local desync dumps](docs/desync-dumps.md). PackageId **`RimworldMP.Core`**. License **MIT**.
+Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release): Avalonia LAN launcher with mod manager + LAN mod sync, protocol **v4** lockstep (MinSupported **3**) with modlist join hard-gate, TCP default / LiteNetLib opt-in, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff), [local desync dumps](docs/desync-dumps.md). PackageId **`RimworldMP.Core`**. License **MIT**.
 
 **Known limitation:** untested in live RimWorld 1.7 — full Verse patches need `RIMWORLD_DIR` / game DLLs. CI (no game install): [`docs/ci.md`](docs/ci.md).
 
@@ -49,12 +49,8 @@ docs/          architecture, API, install, release notes, phase notes
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md)
-<<<<<<< HEAD
-- [`docs/api.md`](docs/api.md) · [`docs/mod-author-api.md`](docs/mod-author-api.md)
-=======
 - [`docs/transport-litenetlib.md`](docs/transport-litenetlib.md)
-- [`docs/api.md`](docs/api.md)
->>>>>>> 2abba58 (Add LiteNetLib LAN transport behind INetTransport.)
+- [`docs/api.md`](docs/api.md) · [`docs/mod-author-api.md`](docs/mod-author-api.md)
 - [`docs/install-play-guide.md`](docs/install-play-guide.md)
 - [`examples/`](examples/) — CompatHello / CompatHostIo (`NO_GAME_REFS`)
 - [`CHANGELOG.md`](CHANGELOG.md)

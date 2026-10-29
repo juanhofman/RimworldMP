@@ -268,7 +268,8 @@ public sealed class LiteNetLibTransport : ISessionLanTransport
             {
                 try
                 {
-                    _manager?.PollEvents();
+                    // LiteNetLib 1.3.x: process all queued events (default max = int.MaxValue).
+                    _manager?.PollEvents(int.MaxValue);
                 }
                 catch
                 {

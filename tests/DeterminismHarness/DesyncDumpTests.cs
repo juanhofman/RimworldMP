@@ -61,7 +61,7 @@ public class DesyncDumpTests
         var text = File.ReadAllText(detector.LastDesync.LogPath);
         AssertExpectedSections(text);
 
-        Assert.Contains("protocol=3", text);
+        Assert.Contains($"protocol={NetProtocol.Version}", text);
         Assert.Contains("tick=60", text);
         Assert.Contains("localPeerId=0", text);
         Assert.Contains("peerIds=0,1", text);
