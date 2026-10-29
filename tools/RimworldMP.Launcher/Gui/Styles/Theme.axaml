@@ -1,0 +1,126 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource BrushInk}" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushFog}" />
+  </Style>
+
+  <Style Selector="TextBlock.brand">
+    <Setter Property="FontFamily" Value="{DynamicResource FontBrand}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushFog}" />
+    <Setter Property="LetterSpacing" Value="-0.5" />
+  </Style>
+
+  <Style Selector="TextBlock.display">
+    <Setter Property="FontFamily" Value="{DynamicResource FontDisplay}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushFog}" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource BrushFogMuted}" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+  </Style>
+
+  <Style Selector="TextBlock.steel">
+    <Setter Property="Foreground" Value="{DynamicResource BrushSteel}" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBodyMedium}" />
+  </Style>
+
+  <Style Selector="Button.nav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushFogMuted}" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBodyMedium}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Padding" Value="14,10" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#1A2229" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushFog}" />
+  </Style>
+  <Style Selector="Button.nav.active">
+    <Setter Property="Foreground" Value="{DynamicResource BrushSteel}" />
+  </Style>
+
+  <Style Selector="Button.cta">
+    <Setter Property="Background" Value="{DynamicResource BrushEmber}" />
+    <Setter Property="Foreground" Value="#0E1114" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBodySemi}" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Padding" Value="22,12" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+      </Transitions>
+    </Setter>
+    <Setter Property="RenderTransform" Value="scale(1)" />
+  </Style>
+  <Style Selector="Button.cta:pointerover">
+    <Setter Property="Background" Value="{DynamicResource EmberHot}" />
+  </Style>
+  <Style Selector="Button.cta:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.97)" />
+  </Style>
+
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushSteel}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushInkLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Padding" Value="18,10" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBodyMedium}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#1A2229" />
+  </Style>
+
+  <Style Selector="TextBox.field">
+    <Setter Property="Background" Value="#12171C" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushInkLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushFog}" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+    <Setter Property="CaretBrush" Value="{DynamicResource BrushSteel}" />
+  </Style>
+
+  <Style Selector="CheckBox">
+    <Setter Property="Foreground" Value="{DynamicResource BrushFog}" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+  </Style>
+
+  <Style Selector="Border.row">
+    <Setter Property="Background" Value="#12171C" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushInkLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Padding" Value="14,12" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Border.row:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushSteelDim}" />
+  </Style>
+  <Style Selector="Border.row.selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushSteel}" />
+    <Setter Property="Background" Value="#182028" />
+  </Style>
+
+  <Style Selector="Border.live-dot">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Background" Value="{DynamicResource BrushEmber}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+</Styles>

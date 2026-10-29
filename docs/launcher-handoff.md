@@ -78,3 +78,11 @@ Never treat handoff as authenticated; LAN trust model only.
 - Do **not** rename fields or change `protocol: 1` semantics without bumping `protocol` and updating both launcher and mod.
 - Additive optional fields are OK for `protocol: 1` (`maxClients`, `rwBuild`, `createdUtc`, …).
 - Hash algorithm must stay byte-identical to Core `ModlistHash.Compute`.
+
+## Additive fields (protocol 1)
+
+| Field | Added | Notes |
+| --- | --- | --- |
+| `maxClients` | launcher UI / CLI `--max-clients` | Optional int; host handoff. In-mod default **4**. Already listed in the schema table above. |
+
+No protocol bump required. LAN mod-sync uses a separate control port (**30557** convention) and does **not** extend this handoff file — see [launcher-mod-manager-hooks.md](./launcher-mod-manager-hooks.md).

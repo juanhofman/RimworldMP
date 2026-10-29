@@ -34,6 +34,10 @@ public sealed class HandoffDocument
     [JsonPropertyName("launcherPid")]
     public int LauncherPid { get; init; }
 
+    /// <summary>Optional host cap (protocol 1 additive). In-mod default 4.</summary>
+    [JsonPropertyName("maxClients")]
+    public int? MaxClients { get; init; }
+
     [JsonPropertyName("rwBuild")]
     public string? RwBuild { get; init; }
 
