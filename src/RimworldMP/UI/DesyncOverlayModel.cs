@@ -17,6 +17,9 @@ public sealed class DesyncOverlayModel
         if (info is null)
             return null;
 
+        var modShort = string.IsNullOrEmpty(info.ModlistHashShort) || info.ModlistHashShort == "—"
+            ? null
+            : info.ModlistHashShort;
         return new DesyncOverlayModel
         {
             Tick = info.Tick,
@@ -28,7 +31,9 @@ public sealed class DesyncOverlayModel
                 $"Peers diverged at tick {info.Tick}.\n" +
                 $"Local  {ShortHash(info.LocalHashHex)}\n" +
                 $"Remote {ShortHash(info.RemoteHashHex)}\n" +
-                "Open the lobby (F10) to disconnect, or inspect the dump log.",
+                (modShort is null ? "" : $"Mods   {modShort}\n") +
+                $"Dump (local only):\n{info.LogPath}\n" +
+                "Open the lobby (F10) to disconnect.",
         };
     }
 

@@ -22,7 +22,7 @@ On either peer, exercise:
 
 ## Desync dumps
 
-On hash mismatch: sim freezes; `%LocalAppData%/RimworldMP/desync/` gets `.log` (RNG counters + last N cmds) and `.cmds.json`.
+On hash mismatch: sim freezes; local-only dumps under `%LocalAppData%/RimworldMP/desync/` (`.log` + `.cmds.json` + optional `.batches.json`). Full layout: [desync-dumps.md](./desync-dumps.md).
 
 ## Offline harness
 

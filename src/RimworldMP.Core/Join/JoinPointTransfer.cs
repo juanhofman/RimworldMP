@@ -157,6 +157,26 @@ public sealed class CommandLog
         }
     }
 
+    /// <summary>
+    /// Last <paramref name="max"/> ring entries as desync-dump snapshots (ascending tick order).
+    /// Used only for local diagnostics — never uploaded.
+    /// </summary>
+    public IReadOnlyList<Sync.DesyncBatchSnapshot> SnapshotRecent(int max = Sync.DesyncDump.DefaultBatchHistory)
+    {
+        lock (_gate)
+        {
+            if (max <= 0 || _items.Count == 0)
+                return Array.Empty<Sync.DesyncBatchSnapshot>();
+
+            var take = Math.Min(max, _items.Count);
+            var skip = _items.Count - take;
+            return _items
+                .Skip(skip)
+                .Select(i => Sync.DesyncDump.SnapshotBatch(i.Tick, i.Bytes))
+                .ToList();
+        }
+    }
+
     public void Clear()
     {
         lock (_gate) _items.Clear();

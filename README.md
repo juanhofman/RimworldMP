@@ -4,7 +4,7 @@
 
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
-Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release): Avalonia LAN launcher with mod manager + LAN mod sync, protocol **v3** lockstep with modlist join hard-gate, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff). PackageId **`RimworldMP.Core`**. License **MIT**.
+Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release): Avalonia LAN launcher with mod manager + LAN mod sync, protocol **v3** lockstep with modlist join hard-gate, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff), [local desync dumps](docs/desync-dumps.md). PackageId **`RimworldMP.Core`**. License **MIT**.
 
 **Known limitation:** untested in live RimWorld 1.7 — full Verse patches need `RIMWORLD_DIR` / game DLLs. CI (no game install): [`docs/ci.md`](docs/ci.md).
 

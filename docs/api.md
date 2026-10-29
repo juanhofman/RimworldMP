@@ -34,4 +34,6 @@ Registrations are discoverable via `MP.RegisteredSyncMethodKeys`. Host-only I/O 
 MP.OnDesync += () => { /* freeze UI, show dump path from logs */ };
 ```
 
+Local dump layout (never uploaded): [desync-dumps.md](./desync-dumps.md).
+
 Dumps include RNG counters and last-N commands (`.log` + `.cmds.json`) under the local RimworldMP desync folder.

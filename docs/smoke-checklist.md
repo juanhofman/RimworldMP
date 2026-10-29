@@ -33,5 +33,5 @@
 - [ ] Zone add/remove
 - [ ] Bill add/delete + research select
 - [ ] Ready + modlist hash reject mismatched peer (if enabled)
-- [ ] Forced desync dump writes log + cmds json
+- [ ] Forced desync dump writes log + cmds json (+ optional batches json); see [desync-dumps.md](./desync-dumps.md)
 - [ ] Client recovery rejoin requests a new JoinPoint

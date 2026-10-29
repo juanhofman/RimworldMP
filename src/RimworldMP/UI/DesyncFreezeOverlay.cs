@@ -39,11 +39,11 @@ public static class DesyncFreezeOverlay
         var screen = new Rect(0f, 0f, UI.screenWidth, UI.screenHeight);
         Widgets.DrawBoxSolid(screen, new Color(MpUiPalette.Ink.R, MpUiPalette.Ink.G, MpUiPalette.Ink.B, 0.72f * a));
 
-        var panelW = Mathf.Min(520f, UI.screenWidth - 40f);
-        var panelH = 210f;
+        var panelW = Mathf.Min(560f, UI.screenWidth - 40f);
+        var panelH = 248f;
         var panel = new Rect(
             (UI.screenWidth - panelW) * 0.5f,
-            (UI.screenHeight - panelH) * 0.38f,
+            (UI.screenHeight - panelH) * 0.36f,
             panelW,
             panelH);
         Widgets.DrawBoxSolid(panel, new Color(MpUiPalette.Panel.R, MpUiPalette.Panel.G, MpUiPalette.Panel.B, 0.98f * a));
@@ -61,11 +61,11 @@ public static class DesyncFreezeOverlay
 
         GUI.color = new Color(MpUiPalette.Soft.R, MpUiPalette.Soft.G, MpUiPalette.Soft.B, a);
         Text.Font = GameFont.Tiny;
-        Widgets.Label(new Rect(panel.x + 18f, panel.y + 78f, panel.width - 28f, 90f), model.Body);
+        Widgets.Label(new Rect(panel.x + 18f, panel.y + 78f, panel.width - 28f, 120f), model.Body);
 
         GUI.color = new Color(MpUiPalette.Steel.R, MpUiPalette.Steel.G, MpUiPalette.Steel.B, a);
         Widgets.Label(new Rect(panel.x + 18f, panel.yMax - 36f, panel.width - 28f, 20f),
-            $"Dump · {Truncate(model.LogPath, 64)}");
+            $"Local dump · {Truncate(model.LogPath, 72)}");
         GUI.color = Color.white;
         Text.Font = GameFont.Small;
     }

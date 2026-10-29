@@ -103,7 +103,8 @@ public class LobbyUiTests
             Tick = 120,
             LocalHashHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             RemoteHashHex = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
-            LogPath = "/tmp/desync.log",
+            LogPath = "/tmp/rimworldmp/desync/desync-tick120.log",
+            ModlistHashShort = "f2046ab21e52",
         };
         var model = DesyncOverlayModel.From(info);
         Assert.NotNull(model);
@@ -111,6 +112,10 @@ public class LobbyUiTests
         Assert.Equal("0123456789ab…", model.LocalHashShort);
         Assert.Contains("frozen", model.Headline, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("120", model.Body, StringComparison.Ordinal);
+        Assert.Contains("local only", model.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(info.LogPath, model.Body, StringComparison.Ordinal);
+        Assert.Contains("f2046ab21e52", model.Body, StringComparison.Ordinal);
+        Assert.Equal(info.LogPath, model.LogPath);
     }
 
     [Fact]
