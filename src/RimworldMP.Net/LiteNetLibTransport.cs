@@ -209,6 +209,25 @@ public sealed class LiteNetLibTransport : ISessionLanTransport
             WriteTyped(netPeer, type, payload);
     }
 
+    /// <summary>Host (or self): drop a connected peer (kick / leave). Mirrors <see cref="LanTcpTransport.DisconnectPeer"/>.</summary>
+    public void DisconnectPeer(NetPeerId peer)
+    {
+        if (_mode == Mode.Idle)
+            return;
+        if (!_peers.TryGetValue(peer, out var netPeer))
+            return;
+        try
+        {
+            netPeer.Disconnect();
+        }
+        catch
+        {
+            // ignore
+        }
+
+        ForgetPeer(peer, raiseLeave: true);
+    }
+
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
         if (_mode == Mode.Idle)
@@ -502,7 +521,7 @@ public sealed class LiteNetLibTransport : ISessionLanTransport
     }
 
     private static bool IsKnownType(byte value) =>
-        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.JoinReject;
+        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.KickNotice;
 
     private void ForgetPeer(NetPeerId id, bool raiseLeave)
     {

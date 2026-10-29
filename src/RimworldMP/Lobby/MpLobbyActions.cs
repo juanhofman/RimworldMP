@@ -115,6 +115,8 @@ public static class MpLobbyActions
             MpConfig.DefaultPort = doc.Port;
         if (NetTransportFactory.TryParse(doc.Transport, out var transportKind))
             MpConfig.TransportKind = transportKind;
+        if (!string.IsNullOrWhiteSpace(doc.PlayerDisplayName))
+            MpConfig.PlayerDisplayName = doc.PlayerDisplayName!.Trim();
 
         LauncherHandoff.Acknowledge(path);
 

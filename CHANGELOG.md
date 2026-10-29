@@ -8,6 +8,7 @@ Stay on **0.6.0** until a deliberate 0.7 cut (session QoL / packaging). See [doc
 - **LiteNetLib** `INetTransport` (LAN reliable UDP) selectable via `MpConfig.TransportKind` / handoff `transport`; TCP remains default fallback ([docs/transport-litenetlib.md](docs/transport-litenetlib.md))
 - Protocol **v4** (magic still `RMP3`, MinSupported **3**): optional handshake trailer + paced JIP chunk sizing for LiteNetLib
 - Client connect reconnect/backoff (`ReconnectPolicy`) for transient UDP failures
+- **Session QoL:** synced chat / system notices (out-of-band), player display names + handoff `playerDisplayName`, host kick, ready-check hard gate on unpause, recovery polish, EN/NL mismatch strings ([docs/session-qol.md](docs/session-qol.md)). Lobby UI exposes kick / ready / chat. DeterminismHarness `SessionQolTests`.
 - **SyncMethod execution** via `CommandOpcode.SyncMethodInvoke` (90): `MP.CallSyncMethod` / `SyncMethodCodec` / applicator invoke ([docs/api.md](docs/api.md), [docs/mod-author-api.md](docs/mod-author-api.md))
 - **Full colony command catalog** offline: designators/forbid, work/timetable/food/outfit/drug/medical/hostility policies, bill reorder, research stop, trade cancel, caravan disband; shadow stores + `ColonyCommands` API constants
 - **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute/type/assembly registration ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo`
@@ -16,10 +17,10 @@ Stay on **0.6.0** until a deliberate 0.7 cut (session QoL / packaging). See [doc
 - **Feature completeness matrix** + command catalog / Verse-blocked notes ([docs/feature-completeness.md](docs/feature-completeness.md), [docs/track-a-p1-syncmethod.md](docs/track-a-p1-syncmethod.md))
 - **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md))
 - **Zero-warning builds:** `TreatWarningsAsErrors` / `AnalysisLevel=latest` in `Directory.Build.props`; CI builds with warnings-as-errors
-- DeterminismHarness: SyncMethod / catalog / JIP / draw-order / API registration / desync dump / LiteNetLib transport tests
+- DeterminismHarness: Session QoL / LiteNetLib / SyncMethod / catalog / JIP / draw-order / API registration / desync dump tests
 
 ### In flight
-- Session QoL: chat, host kick, ready polish
+- Packaging / live RimWorld smoke when install available
 
 ## 0.6.0 — UI + launcher release (2026-10-29)
 

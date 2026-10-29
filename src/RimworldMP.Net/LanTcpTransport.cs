@@ -179,7 +179,15 @@ public sealed class LanTcpTransport : ISessionLanTransport
     }
 
     private static bool IsKnownType(byte value) =>
-        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.JoinReject;
+        value is >= (byte)NetMessageType.Handshake and <= (byte)NetMessageType.KickNotice;
+
+    /// <summary>Host (or self): drop a connected peer. Does not change <see cref="INetTransport"/>.</summary>
+    public void DisconnectPeer(NetPeerId peer)
+    {
+        if (_mode == Mode.Idle)
+            return;
+        RemovePeer(peer);
+    }
 
     /// <summary>Send a typed control message to one peer (hash / desync / keepalive).</summary>
     public void SendControl(NetPeerId peer, NetMessageType type, ReadOnlyMemory<byte> payload)

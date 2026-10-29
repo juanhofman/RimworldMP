@@ -30,6 +30,7 @@ dotnet run --project tools/RimworldMP.Launcher -- handoff-path
   "port": 30555,
   "modlistHash": "lowercase-hex-sha256…",
   "sessionName": "Colony Night",
+  "playerDisplayName": "Ada",
   "autoStartLobby": true,
   "launcherPid": 12345,
   "maxClients": 4,
@@ -47,6 +48,7 @@ dotnet run --project tools/RimworldMP.Launcher -- handoff-path
 | `port` | int | no | Game MP TCP port (default **30555**). Discovery uses **30556** and is launcher-only |
 | `modlistHash` | string | recommended | `ModlistHash.Compute(ordered packageIds)` — hard-gated at TCP join (protocol v3) |
 | `sessionName` | string | no | Display / beacon name |
+| `playerDisplayName` | string | no | Local player name for lobby + chat (session QoL) |
 | `autoStartLobby` | bool | no | Default `true`. When false, config is applied but host/join is not started |
 | `launcherPid` | int | no | Writer PID (debug) |
 | `maxClients` | int | no | Host cap; in-mod default **4** (`MpConfig.DefaultMaxClients`) |

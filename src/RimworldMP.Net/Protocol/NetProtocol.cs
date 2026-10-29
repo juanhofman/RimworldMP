@@ -53,6 +53,14 @@ public enum NetMessageType : byte
     PeerLeaveNotice = 13,
     /// <summary>Host → client: hard reject (protocol / modlist). Payload: u8 reason + utf8 message.</summary>
     JoinReject = 14,
+    /// <summary>Synced lobby/game chat. Payload: i32 playerId + u16 len + utf8 text. Not a sim command.</summary>
+    Chat = 15,
+    /// <summary>System notice (kick, leave, ready, mismatch). Payload: u8 kind + u16 len + utf8 text.</summary>
+    SystemNotice = 16,
+    /// <summary>Player display-name announce. Payload: i32 playerId + u16 len + utf8 name.</summary>
+    PlayerInfo = 17,
+    /// <summary>Host → client: you were kicked. Payload: u16 len + utf8 reason.</summary>
+    KickNotice = 18,
 }
 
 /// <summary>Reasons for <see cref="NetMessageType.JoinReject"/>.</summary>
@@ -61,5 +69,20 @@ public enum JoinRejectReason : byte
     ProtocolMismatch = 1,
     ModlistMismatch = 2,
     LobbyFull = 3,
+    DlcMismatch = 4,
     Unspecified = 255,
+}
+
+/// <summary>Kinds for <see cref="NetMessageType.SystemNotice"/>.</summary>
+public enum SystemNoticeKind : byte
+{
+    Info = 0,
+    PeerJoined = 1,
+    PeerLeft = 2,
+    PeerKicked = 3,
+    ReadyChanged = 4,
+    ProtocolMismatch = 5,
+    ModlistMismatch = 6,
+    DlcMismatch = 7,
+    Recovery = 8,
 }

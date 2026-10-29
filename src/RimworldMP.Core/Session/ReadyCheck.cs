@@ -22,6 +22,8 @@ public sealed class ReadyCheck
         _peers[playerId] = new PeerReady(ready, modlistHash);
     }
 
+    public void RemovePeer(int playerId) => _peers.TryRemove(playerId, out _);
+
     public bool AllReady(int expectedPeers, string hostModlistHash)
     {
         if (!_required)
@@ -38,6 +40,10 @@ public sealed class ReadyCheck
 
         return true;
     }
+
+    /// <summary>True when the hard gate allows starting / unpausing the shared sim.</summary>
+    public bool CanStartOrUnpause(int expectedPeers, string hostModlistHash) =>
+        AllReady(expectedPeers, hostModlistHash);
 
     public IReadOnlyDictionary<int, PeerReady> Snapshot() =>
         new Dictionary<int, PeerReady>(_peers);

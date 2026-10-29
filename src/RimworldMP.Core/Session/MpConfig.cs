@@ -25,7 +25,10 @@ public static class MpConfig
     /// </summary>
     public static string ModlistHash { get; set; } = string.Empty;
 
-    /// <summary>When true, host stalls <see cref="MpSession.HostEmitNextBatch"/> until ready gate passes.</summary>
+    /// <summary>
+    /// When true, host stalls <see cref="MpSession.HostEmitNextBatch"/> and blocks unpause/speed
+    /// until the ready gate passes. Lobby UI enables this on host; harness defaults stay false.
+    /// </summary>
     public static bool ReadyRequired { get; set; }
 
     /// <summary>
@@ -34,6 +37,9 @@ public static class MpConfig
     /// </summary>
     public static NetTransportKind TransportKind { get; set; } = NetTransportKind.Tcp;
 
+    /// <summary>Optional local display name applied on host/join (handoff or lobby field).</summary>
+    public static string PlayerDisplayName { get; set; } = string.Empty;
+
     public static void ResetToDefaults()
     {
         MaxClients = DefaultMaxClients;
@@ -41,5 +47,6 @@ public static class MpConfig
         ModlistHash = string.Empty;
         ReadyRequired = false;
         TransportKind = NetTransportKind.Tcp;
+        PlayerDisplayName = string.Empty;
     }
 }

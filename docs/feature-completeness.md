@@ -6,7 +6,7 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 | --- | --- |
 | **Audited tip** | (update on merge of SyncMethod / colony catalog PR) |
 | **Tagged release** | **0.6.0** (`VERSION` / `About.xml` `modVersion`) |
-| **Toward 0.7.0?** | **Candidate slice landed offline** — SyncMethod + colony catalog + Compat/API + LiteNetLib (stay on 0.6.0 until QoL / packaging or a deliberate cut) |
+| **Toward 0.7.0?** | **Candidate slice landed offline** — SyncMethod + colony catalog + Compat/API + LiteNetLib + Session QoL (stay on 0.6.0 until packaging / live smoke or a deliberate cut) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
 
 Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **Won’t do per prefs**.
@@ -27,7 +27,7 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 | **API** | **Done** (offline) / **Partial** (live watches) | `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute registration, `CallSyncMethod` schedule, XML docs; examples + `ApiRegistrationTests`; [mod-author-api.md](./mod-author-api.md) | Live field-watch → command emission still stub-bound |
 | **DLC hooks** | **Partial** / **Blocked on RIMWORLD_DIR** | Phase 3 opcodes + `DlcHooks.*` + `DlcStateStore` shadow apply | Live DLC Harmony targets need DLC assemblies |
 | **Desync** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (world hash samples) | Fingerprint folds protocol/tick/RNG seed/**drawCount**/**OpinionHash**/counters/cmd hash + world slot; local-only dumps ([desync-dumps.md](./desync-dumps.md)) | Live world-fingerprint fill + multi-peer proof need install |
-| **QoL** | **Partial** | Lobby UI, ready gate, `PauseOnPeerLeave`, recovery rejoin, handoff, desync overlay | Chat, host kick, ready polish (RMP-27) |
+| **QoL** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (live Immediate GUI) | Lobby UI (F10 / button), synced **chat** / system notices, display names + handoff `playerDisplayName`, host **kick**, ready hard gate (emit + unpause), recovery polish, EN/NL mismatch strings ([session-qol.md](./session-qol.md)) | Live lobby layout / kick buttons need `RIMWORLD_DIR` |
 
 ### Prefs / explicit non-goals
 
@@ -80,6 +80,8 @@ Public API: `MP.CallSyncMethod` / `SyncMethodCodec` / `ColonyCommands.*` — see
 3. World fingerprint samples into desync hash.
 4. Live 2P smoke 30+ min.
 5. Confirm `Rand.Chance` / `Bool` signatures on installed 1.7.
+
+Session QoL (chat / kick / ready / i18n) is offline-testable — see [session-qol.md](./session-qol.md). LiteNetLib LAN transport is selectable — see [transport-litenetlib.md](./transport-litenetlib.md).
 
 ---
 
