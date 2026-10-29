@@ -1,14 +1,14 @@
 #if !RIMWORLDMP_NO_GAME_REFS
 using HarmonyLib;
-using RimworldMP.Lobby;
+using RimworldMP.UI;
 using UnityEngine;
 using Verse;
 
 namespace RimworldMP.Patches;
 
 /// <summary>
-/// Non-DevMode entry: F10 opens the lobby window; persistent corner button on entry + play UI roots.
-/// Avoids fragile MainMenuDrawer / PauseMenu signature patches — re-check under RIMWORLD_DIR if desired.
+/// Non-DevMode entry: F10 toggles lobby; corner brand button; desync freeze overlay.
+/// Avoids fragile MainMenuDrawer / PauseMenu signature patches — re-check under RIMWORLD_DIR.
 /// </summary>
 [HarmonyPatch(typeof(UIRoot), nameof(UIRoot.UIRootOnGUI))]
 internal static class LobbyUi_Patches
@@ -21,14 +21,20 @@ internal static class LobbyUi_Patches
             && !Event.current.alt
             && !Event.current.shift)
         {
-            Dialog_RimworldMPLobby.Open();
+            LobbyUi.Open();
             Event.current.Use();
         }
 
-        // Obvious always-on entry (main menu + pause/play) without DevMode archaeology.
+        // Desync veil first so it sits under the corner button / open windows as needed.
+        DesyncFreezeOverlay.DrawIfNeeded();
+
+        // Always-on brand entry (main menu + pause/play) without DevMode.
         var btn = new Rect(12f, UI.screenHeight - 44f, 150f, 28f);
-        if (Widgets.ButtonText(btn, "RimworldMP"))
-            Dialog_RimworldMPLobby.Open();
+        var prev = GUI.color;
+        GUI.color = new Color(MpUiPalette.Ember.R, MpUiPalette.Ember.G, MpUiPalette.Ember.B, 1f);
+        if (Widgets.ButtonText(btn, MpUiPalette.BrandName))
+            LobbyUi.Open();
+        GUI.color = prev;
     }
 }
 #endif

@@ -5,6 +5,7 @@ using RimworldMP.Core.Lobby;
 using RimworldMP.Core.Session;
 using RimworldMP.Join;
 using RimworldMP.Net.Protocol;
+using RimworldMP.UI;
 
 #if !RIMWORLDMP_NO_GAME_REFS
 using Verse;
@@ -78,9 +79,11 @@ public static class MpLobbyActions
     /// <summary>
     /// Consume <c>launcher-handoff.json</c> if present: apply config and optionally auto host/join.
     /// Returns true when a handoff file was found (whether or not auto-start ran).
+    /// Updates <see cref="HandoffUiTracker"/> for lobby status copy.
     /// </summary>
     public static async Task<bool> TryConsumeLauncherHandoffAsync(string? path = null)
     {
+        path ??= LauncherHandoff.DefaultPath;
         LauncherHandoffDocument? doc;
         try
         {
@@ -88,6 +91,7 @@ public static class MpLobbyActions
         }
         catch (Exception ex)
         {
+            HandoffUiTracker.RecordFailed(path, ex.Message);
 #if !RIMWORLDMP_NO_GAME_REFS
             Log.Error($"[RimworldMP] launcher-handoff read failed: {ex.Message}");
 #else
@@ -97,7 +101,10 @@ public static class MpLobbyActions
         }
 
         if (doc is null)
+        {
+            HandoffUiTracker.RecordMissing(path);
             return false;
+        }
 
         if (!string.IsNullOrEmpty(doc.ModlistHash))
             MpConfig.ModlistHash = doc.ModlistHash!;
@@ -108,18 +115,28 @@ public static class MpLobbyActions
 
         LauncherHandoff.Acknowledge(path);
 
-        if (!doc.AutoStartLobby)
+        var autoStart = doc.AutoStartLobby;
+        if (!autoStart)
+        {
+            HandoffUiTracker.RecordConsumed(path, doc, autoStarted: false);
             return true;
+        }
 
         if (doc.IsHostRole)
         {
             await HostAsync(port: doc.Port, modlistHash: doc.ModlistHash, maxClients: doc.MaxClients)
                 .ConfigureAwait(false);
+            HandoffUiTracker.RecordConsumed(path, doc, autoStarted: true);
         }
         else if (doc.IsClientRole)
         {
             var host = string.IsNullOrWhiteSpace(doc.Host) ? "127.0.0.1" : doc.Host!;
             await JoinAsync(host, port: doc.Port, modlistHash: doc.ModlistHash).ConfigureAwait(false);
+            HandoffUiTracker.RecordConsumed(path, doc, autoStarted: true);
+        }
+        else
+        {
+            HandoffUiTracker.RecordConsumed(path, doc, autoStarted: false);
         }
 
         return true;
