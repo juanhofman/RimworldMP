@@ -43,7 +43,7 @@ public class LobbyUiTests
         Assert.True(vm.CanJoin);
         Assert.False(vm.CanDisconnect);
         Assert.Equal(30555, vm.Port);
-        Assert.Contains("v3", vm.ProtocolLabel, StringComparison.Ordinal);
+        Assert.Contains("v4", vm.ProtocolLabel, StringComparison.Ordinal);
         Assert.Equal(HandoffUiKind.Missing, vm.Handoff.Kind);
         Assert.Empty(vm.Peers);
         Assert.Contains("handoff", vm.StatusLine, StringComparison.OrdinalIgnoreCase);
@@ -166,7 +166,7 @@ public class LobbyUiTests
         Assert.True(vm.IsFrozen);
         Assert.NotNull(vm.Desync);
         Assert.Contains("DESYNC", vm.StatusLine, StringComparison.Ordinal);
-        Assert.Equal(NetProtocol.Version, (byte)3);
+        Assert.Equal(NetProtocol.Version, (byte)4);
     }
 
     private static int FreePort()

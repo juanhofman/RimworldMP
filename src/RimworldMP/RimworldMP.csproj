@@ -45,4 +45,15 @@
     <!-- Message (not Warning) so TreatWarningsAsErrors / CI stays at 0 warnings under NO_GAME_REFS. -->
     <Message Importance="High" Text="RIMWORLD_DIR / refs/RimWorld not found — building RimworldMP with RIMWORLDMP_NO_GAME_REFS stubs. Set RIMWORLD_DIR to enable real Verse/Harmony game integration." />
   </Target>
+
+  <!-- LiteNetLib ships beside RimworldMP.Net; copy into the Workshop Assemblies folder. -->
+  <Target Name="CopyLiteNetLibToModAssemblies" AfterTargets="Build">
+    <PropertyGroup>
+      <_NetOut>$(MSBuildThisFileDirectory)..\RimworldMP.Net\bin\$(Configuration)\</_NetOut>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Lnl Include="$(_NetOut)LiteNetLib.dll" Condition="Exists('$(_NetOut)LiteNetLib.dll')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_Lnl)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="'@(_Lnl)' != ''" />
+  </Target>
 </Project>

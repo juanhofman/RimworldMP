@@ -33,6 +33,7 @@ dotnet run --project tools/RimworldMP.Launcher -- handoff-path
   "autoStartLobby": true,
   "launcherPid": 12345,
   "maxClients": 4,
+  "transport": "tcp",
   "rwBuild": "1.7",
   "createdUtc": "2026-10-28T00:00:00.0000000Z"
 }
@@ -49,6 +50,7 @@ dotnet run --project tools/RimworldMP.Launcher -- handoff-path
 | `autoStartLobby` | bool | no | Default `true`. When false, config is applied but host/join is not started |
 | `launcherPid` | int | no | Writer PID (debug) |
 | `maxClients` | int | no | Host cap; in-mod default **4** (`MpConfig.DefaultMaxClients`) |
+| `transport` | string | no | `"tcp"` (default) or `"litenetlib"` / `"udp"` / `"lnl"` — sets `MpConfig.TransportKind`. Both peers must match. See [transport-litenetlib.md](./transport-litenetlib.md) |
 | `rwBuild` | string? | no | Best-effort RimWorld version hint |
 | `createdUtc` | string | no | ISO-8601 UTC |
 
@@ -66,7 +68,7 @@ Golden vector: `["brrainz.harmony","RimworldMP.Core"]` → run `dotnet run --pro
 ## Mod consumer behavior
 
 1. After Harmony bootstrap, `MpLobbyActions.TryConsumeLauncherHandoffAsync` reads the file once.
-2. Applies `modlistHash` / `port` / `maxClients` into `MpConfig`.
+2. Applies `modlistHash` / `port` / `maxClients` / optional `transport` into `MpConfig`.
 3. Renames to `.ack` so a relaunch without the launcher does not re-auto-connect.
 4. If `autoStartLobby`: host → `HostAsync`, client → `JoinAsync(host)`.
 5. If missing / stale / `protocol` unsupported → fall back to in-mod lobby UI (corner button / **F10**) or DevMode actions.

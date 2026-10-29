@@ -29,20 +29,25 @@ public sealed class JoinPoint
     public string ModlistHash { get; }
     public byte[] SaveBlob { get; }
 
-    public byte[] ToHeaderBytes()
+    public byte[] ToHeaderBytes(int? chunkBytes = null)
     {
         var hashBytes = Encoding.UTF8.GetBytes(ModlistHash);
-        var buf = new byte[8 + 8 + 8 + 4 + 2 + hashBytes.Length];
+        // Optional u32 chunk-size trailer after the hash. v3 readers stop at the hash;
+        // v4+ receivers (and AcceptHeader) pick it up when present.
+        var trailer = chunkBytes is int ? 4 : 0;
+        var buf = new byte[8 + 8 + 8 + 4 + 2 + hashBytes.Length + trailer];
         BinaryPrimitives.WriteInt64LittleEndian(buf, NextTick);
         BinaryPrimitives.WriteInt64LittleEndian(buf.AsSpan(8), SessionSeed);
         BinaryPrimitives.WriteInt64LittleEndian(buf.AsSpan(16), CommandWatermark);
         BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(24), SaveBlob.Length);
         BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(28), (ushort)hashBytes.Length);
         hashBytes.CopyTo(buf.AsSpan(30));
+        if (trailer > 0)
+            BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(30 + hashBytes.Length), chunkBytes!.Value);
         return buf;
     }
 
-    public static (long NextTick, long SessionSeed, long Watermark, int BlobLength, string ModlistHash) ReadHeader(
+    public static (long NextTick, long SessionSeed, long Watermark, int BlobLength, string ModlistHash, int ChunkBytes) ReadHeader(
         ReadOnlySpan<byte> payload)
     {
         if (payload.Length < 30)
@@ -55,7 +60,16 @@ public sealed class JoinPoint
         if (payload.Length < 30 + hashLen)
             throw new InvalidOperationException("JoinPoint modlist hash truncated.");
         var hash = hashLen == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(30, hashLen));
-        return (nextTick, seed, watermark, blobLen, hash);
+        var chunkBytes = NetProtocol.JoinPointChunkBytes;
+        var afterHash = 30 + hashLen;
+        if (payload.Length >= afterHash + 4)
+        {
+            var advertised = BinaryPrimitives.ReadInt32LittleEndian(payload[afterHash..]);
+            if (advertised > 0 && advertised <= NetProtocol.JoinPointChunkBytes)
+                chunkBytes = advertised;
+        }
+
+        return (nextTick, seed, watermark, blobLen, hash, chunkBytes);
     }
 
     /// <summary>Split save blob into wire chunks: [i32 index][i32 total][bytes…].</summary>

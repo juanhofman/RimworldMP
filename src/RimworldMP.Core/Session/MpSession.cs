@@ -100,7 +100,7 @@ public sealed class MpSession : IAsyncDisposable
         if (IsHost)
         {
             _localPlayerId = 0;
-            if (Transport is LanTcpTransport hostLan)
+            if (Transport is ISessionLanTransport hostLan)
             {
                 hostLan.HostSessionSeed = _sessionSeed;
                 hostLan.ExpectedModlistHash = _modlistHash;
@@ -116,11 +116,11 @@ public sealed class MpSession : IAsyncDisposable
         }
         else
         {
-            if (Transport is LanTcpTransport clientLanPre)
+            if (Transport is ISessionLanTransport clientLanPre)
                 clientLanPre.LocalModlistHash = _modlistHash;
 
             await Transport.StartClientAsync(endpoint, cancellationToken).ConfigureAwait(false);
-            if (Transport is LanTcpTransport clientLan)
+            if (Transport is ISessionLanTransport clientLan)
             {
                 _localPlayerId = clientLan.AssignedPlayerId ?? 1;
                 if (clientLan.JoinedSessionSeed is long seed)

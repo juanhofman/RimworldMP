@@ -50,19 +50,19 @@ public static class SessionFacade
         long? sessionSeed = null,
         string? modlistHash = null,
         int? maxClients = null,
+        NetTransportKind? transportKind = null,
         CancellationToken cancellationToken = default)
     {
         if (port < 0)
             port = MpConfig.DefaultPort;
         var hash = modlistHash ?? MpConfig.ModlistHash;
-        var lan = transport as LanTcpTransport;
+        var kind = transportKind ?? MpConfig.TransportKind;
+        var lan = transport as ISessionLanTransport;
         if (transport is null)
         {
-            lan = new LanTcpTransport
-            {
-                MaxClients = Math.Max(1, maxClients ?? MpConfig.MaxClients),
-                ExpectedModlistHash = hash,
-            };
+            lan = (ISessionLanTransport)NetTransportFactory.Create(kind);
+            lan.MaxClients = Math.Max(1, maxClients ?? MpConfig.MaxClients);
+            lan.ExpectedModlistHash = hash;
             transport = lan;
         }
         else if (lan is not null)
@@ -89,15 +89,18 @@ public static class SessionFacade
         INetTransport? transport = null,
         long? sessionSeed = null,
         string? modlistHash = null,
+        NetTransportKind? transportKind = null,
         CancellationToken cancellationToken = default)
     {
         if (port < 0)
             port = MpConfig.DefaultPort;
         var hash = modlistHash ?? MpConfig.ModlistHash;
-        var lan = transport as LanTcpTransport;
+        var kind = transportKind ?? MpConfig.TransportKind;
+        var lan = transport as ISessionLanTransport;
         if (transport is null)
         {
-            lan = new LanTcpTransport { LocalModlistHash = hash };
+            lan = (ISessionLanTransport)NetTransportFactory.Create(kind);
+            lan.LocalModlistHash = hash;
             transport = lan;
         }
         else if (lan is not null)

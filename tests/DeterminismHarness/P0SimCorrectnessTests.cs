@@ -155,9 +155,10 @@ public class P0SimCorrectnessTests
     }
 
     [Fact]
-    public void Protocol_v3_hard_gate_helpers()
+    public void Protocol_v4_hard_gate_helpers_keep_rmp3_magic()
     {
-        Assert.Equal(3, NetProtocol.Version);
+        Assert.Equal(4, NetProtocol.Version);
+        Assert.Equal(3, NetProtocol.MinSupportedVersion);
         Assert.Equal("RMP3"u8.ToArray(), NetProtocol.HandshakeMagic);
         var payload = LanTcpTransport.BuildHandshakePayload(NetProtocol.Version, "deadbeef");
         Assert.Equal("deadbeef", LanTcpTransport.ReadHandshakeModlistHash(payload));

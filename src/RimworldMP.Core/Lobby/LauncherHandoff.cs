@@ -40,6 +40,13 @@ public sealed class LauncherHandoffDocument
     [JsonPropertyName("maxClients")]
     public int? MaxClients { get; set; }
 
+    /// <summary>
+    /// Optional game transport: <c>tcp</c> (default) or <c>litenetlib</c>.
+    /// Additive protocol-1 field — both peers must match. Does not change ports 30556/30557.
+    /// </summary>
+    [JsonPropertyName("transport")]
+    public string? Transport { get; set; }
+
     /// <summary>Best-effort RimWorld version hint from the launcher (optional).</summary>
     [JsonPropertyName("rwBuild")]
     public string? RwBuild { get; set; }
