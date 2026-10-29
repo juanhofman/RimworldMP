@@ -5,6 +5,7 @@ using RimworldMP.API;
 
 namespace RimworldMP.Tests.DeterminismHarness;
 
+[Collection("MpApi")]
 public class Phase3DlcTests
 {
     public Phase3DlcTests() => DlcWorld.Current.Reset();

@@ -3,6 +3,12 @@
     <RootNamespace>RimworldMP.Examples.CompatHello</RootNamespace>
     <AssemblyName>RimworldMP.Examples.CompatHello</AssemblyName>
     <IsPackable>false</IsPackable>
+    <Description>
+      Example third-party compat mod using RimworldMP.API only.
+      Builds with NO_GAME_REFS / without RIMWORLD_DIR — no Verse or Harmony references.
+    </Description>
+    <!-- Examples never need game assemblies. -->
+    <DefineConstants>$(DefineConstants);NO_GAME_REFS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\RimworldMP.API\RimworldMP.API.csproj" />

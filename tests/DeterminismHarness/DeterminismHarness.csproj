@@ -23,6 +23,8 @@
     <ProjectReference Include="..\..\src\RimworldMP.Compat\RimworldMP.Compat.csproj" />
     <!-- Lobby presentation + MpLobbyActions (builds under RIMWORLDMP_NO_GAME_REFS). -->
     <ProjectReference Include="..\..\src\RimworldMP\RimworldMP.csproj" />
+    <ProjectReference Include="..\..\examples\CompatHello\CompatHello.csproj" />
+    <ProjectReference Include="..\..\examples\CompatHostIo\CompatHostIo.csproj" />
   </ItemGroup>
   <!-- Compile launcher ModlistHasher (no Avalonia/UI) so CI can assert byte-identical Core mirror. -->
   <ItemGroup>

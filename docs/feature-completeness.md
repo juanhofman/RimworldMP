@@ -4,7 +4,7 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 
 | Field | Value |
 | --- | --- |
-| **Audited tip** | `6e47d50` (merge #14 desync dumps) |
+| **Audited tip** | `dev-compat-api-examples` (Compat/API public surface; rebase tip after merge) |
 | **Tagged release** | **0.6.0** (`VERSION` / `About.xml` `modVersion`) |
 | **Toward 0.7.0?** | **Not yet** — see [Version policy](#version-policy) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
@@ -23,7 +23,7 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 | **Launcher** | **Done** | Avalonia 11 UI + CLI: locate RW, mod prepare/hash, UDP discovery, host/join, `launcher-handoff.json`, process launch ([launcher-mvp.md](./launcher-mvp.md)) | Avalonia visual QA optional; launching game binary needs a real install |
 | **Mod sync** | **Done** | `RimworldMP.ModSync` host share TCP **30557**, client compare/pull + content-hash verify, Workshop **cache** secondary, Mods UI/CLI hooks ([mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) | Live Workshop **download** / SteamCMD: stub only — prefer LAN transfer (by design) |
 | **Transports** | **Partial** (+ **Won’t do** rows) | `INetTransport`: **Loopback** + **LAN TCP** (`LanTcpTransport`, port **30555**) | **LiteNetLib** not implemented (RMP-23 in flight). **Steam net** / **dedicated/headless host**: **Won’t do per prefs** |
-| **API** | **Partial** | `RimworldMP.API` `MP.*`: session flags, `ExecuteCommand`, `OnDesync`, `RegisterSyncMethod` registry; Compat `SimPatterns` / attributes; examples `CompatHello` / `CompatHostIo` | SyncMethod **invoke/applicator** pipeline incomplete (RMP-22); richer Compat examples (RMP-26) |
+| **API** | **Partial** | `RimworldMP.API`: `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute/type/assembly registration + `TryInvokeSyncMethod`, XML docs; examples `CompatHello` / `CompatHostIo` (`NO_GAME_REFS`); harness `ApiRegistrationTests`; [mod-author-api.md](./mod-author-api.md) | Core→Verse **applicator** pipeline still incomplete (RMP-22); live session command emission for field watches stub-bound |
 | **DLC hooks** | **Partial** / **Blocked on RIMWORLD_DIR** | Phase 3 opcodes + `DlcHooks.*` + `DlcStateStore` shadow apply | Live Royalty/Ideology/Biotech/Anomaly Harmony targets need DLC assemblies under `RIMWORLD_DIR` |
 | **Desync** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (world hash samples) | Fingerprint (protocol/tick/RNG/counters/cmd hash + reserved world slot), freeze, **local-only** dumps + overlay path ([desync-dumps.md](./desync-dumps.md)), harness coverage | Live world-fingerprint fill + multi-peer desync proof need game install |
 | **QoL** | **Partial** | Lobby UI (F10 / button), ready gate + modlist peer display, `PauseOnPeerLeave`, recovery rejoin API, handoff status, desync freeze overlay | In-session **chat**, host **kick**, ready UX polish (RMP-27) |
@@ -58,7 +58,7 @@ Tracked in Project notes as RMP-22…27 (excluding this matrix doc):
 | --- | --- |
 | SyncMethod + colony applicators / RNG | Finish registration→deterministic invoke and thicken Verse apply paths |
 | LiteNetLib LAN transport | Alternate `INetTransport` behind the same facade |
-| Compat API + examples | Broader third-party surface beyond stubs |
+| Compat API + examples | **Landed** on `dev-compat-api-examples` (public API + examples + docs + harness); Core applicators remain separate |
 | Session QoL | Chat, kick, ready polish |
 
 Live RimWorld **1.7 smoke** remains queued until a Mac/PC with `RIMWORLD_DIR` is available.
