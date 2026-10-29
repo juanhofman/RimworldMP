@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace RimworldMP.Core.Session;
 
 /// <summary>
@@ -101,7 +103,7 @@ public static class SessionMessages
         var template = Get(key);
         try
         {
-            return string.Format(template, args);
+            return string.Format(CultureInfo.InvariantCulture, template, args);
         }
         catch (FormatException)
         {
