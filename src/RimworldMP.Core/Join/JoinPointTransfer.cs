@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using RimworldMP.Net;
 using RimworldMP.Net.Protocol;
 
@@ -19,6 +18,7 @@ public sealed class JoinPointTransfer
     private byte[]? _buffer;
     private readonly HashSet<int> _receivedIndexes = new();
     private int _totalChunks = -1;
+    private int _chunkBytes = NetProtocol.JoinPointChunkBytes;
     private bool _headerReceived;
 
     public bool IsReceiving
@@ -51,13 +51,14 @@ public sealed class JoinPointTransfer
             _buffer = null;
             _receivedIndexes.Clear();
             _totalChunks = -1;
+            _chunkBytes = NetProtocol.JoinPointChunkBytes;
             Completed = null;
         }
     }
 
     public void AcceptHeader(ReadOnlySpan<byte> payload)
     {
-        var (next, seed, watermark, blobLen, hash) = JoinPoint.ReadHeader(payload);
+        var (next, seed, watermark, blobLen, hash, chunkBytes) = JoinPoint.ReadHeader(payload);
         if (blobLen < 0 || blobLen > NetProtocol.MaxFrameBytes * 64)
             throw new InvalidOperationException($"JoinPoint blob too large: {blobLen}");
 
@@ -68,6 +69,7 @@ public sealed class JoinPointTransfer
             _expectedWatermark = watermark;
             _expectedBlobLength = blobLen;
             _expectedModlistHash = hash;
+            _chunkBytes = chunkBytes > 0 ? chunkBytes : NetProtocol.JoinPointChunkBytes;
             _buffer = blobLen == 0 ? Array.Empty<byte>() : new byte[blobLen];
             _receivedIndexes.Clear();
             _totalChunks = -1;
@@ -92,7 +94,7 @@ public sealed class JoinPointTransfer
             if (index < 0 || index >= total)
                 throw new InvalidOperationException("JoinPoint chunk index out of range.");
 
-            var offset = index * NetProtocol.JoinPointChunkBytes;
+            var offset = index * _chunkBytes;
             if (_buffer.Length == 0)
             {
                 if (data.Length != 0)
@@ -102,7 +104,7 @@ public sealed class JoinPointTransfer
             {
                 if (offset >= _buffer.Length)
                     throw new InvalidOperationException("JoinPoint chunk overflows blob.");
-                var expectedLen = Math.Min(NetProtocol.JoinPointChunkBytes, _buffer.Length - offset);
+                var expectedLen = Math.Min(_chunkBytes, _buffer.Length - offset);
                 if (data.Length != expectedLen)
                     throw new InvalidOperationException(
                         $"JoinPoint chunk length mismatch at index {index}: got {data.Length}, expected {expectedLen}.");
@@ -181,9 +183,21 @@ public sealed class JoinPointTransfer
         JoinPoint joinPoint,
         Func<NetMessageType, ReadOnlyMemory<byte>, byte[]> envelope)
     {
-        transport.SendReliable(peer, envelope(NetMessageType.JoinPointHeader, joinPoint.ToHeaderBytes()));
-        foreach (var chunk in joinPoint.EnumerateChunks())
-            transport.SendReliable(peer, envelope(NetMessageType.JoinPointChunk, chunk));
+        var remoteVersion = transport switch
+        {
+            LiteNetLibTransport lnl => lnl.RemoteProtocolVersion,
+            LanTcpTransport tcp => tcp.RemoteProtocolVersion,
+            _ => NetProtocol.Version,
+        };
+        var chunkBytes = PayloadPacing.ResolveChunkBytes(transport, remoteVersion);
+        var header = joinPoint.ToHeaderBytes(chunkBytes);
+        transport.SendReliable(peer, envelope(NetMessageType.JoinPointHeader, header));
+
+        var chunkEnvelopes = new List<ReadOnlyMemory<byte>>();
+        foreach (var chunk in joinPoint.EnumerateChunks(chunkBytes))
+            chunkEnvelopes.Add(envelope(NetMessageType.JoinPointChunk, chunk));
+
+        PayloadPacing.SendPaced(transport, peer, chunkEnvelopes);
         transport.SendReliable(peer, envelope(NetMessageType.JoinPointDone, Array.Empty<byte>()));
     }
 

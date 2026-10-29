@@ -47,11 +47,12 @@ public class CiImportantPathTests
     }
 
     [Fact]
-    public void Protocol_v3_hard_gate_helpers_and_rejects()
+    public void Protocol_v4_hard_gate_helpers_and_rejects()
     {
-        Assert.Equal(3, NetProtocol.Version);
+        Assert.Equal(4, NetProtocol.Version);
         Assert.Equal(3, NetProtocol.MinSupportedVersion);
         Assert.True(NetProtocol.IsCompatible(3));
+        Assert.True(NetProtocol.IsCompatible(4));
         Assert.False(NetProtocol.IsCompatible(2));
         Assert.False(NetProtocol.IsCompatible(1));
 

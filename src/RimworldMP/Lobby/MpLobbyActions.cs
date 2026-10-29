@@ -4,6 +4,7 @@ using RimworldMP.Core.Join;
 using RimworldMP.Core.Lobby;
 using RimworldMP.Core.Session;
 using RimworldMP.Join;
+using RimworldMP.Net;
 using RimworldMP.Net.Protocol;
 using RimworldMP.UI;
 
@@ -112,6 +113,8 @@ public static class MpLobbyActions
             MpConfig.MaxClients = mc;
         if (doc.Port > 0)
             MpConfig.DefaultPort = doc.Port;
+        if (NetTransportFactory.TryParse(doc.Transport, out var transportKind))
+            MpConfig.TransportKind = transportKind;
         if (!string.IsNullOrWhiteSpace(doc.PlayerDisplayName))
             MpConfig.PlayerDisplayName = doc.PlayerDisplayName!.Trim();
 

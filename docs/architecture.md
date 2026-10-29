@@ -19,6 +19,6 @@ Locks: RimWorld **1.7** · `net10.0` · Harmony **3** (`Lib.Harmony.Ref` `3.0.0-
 | v0.6.0 packaging | UI + launcher release — [release-notes-v0.6.0.md](./release-notes-v0.6.0.md) |
 | Track A P1 + full colony catalog | SyncMethod schedule, policy/schedule opcodes, RNG opinion hash — [feature-completeness.md](./feature-completeness.md) |
 
-Protocol: magic `RMP3`, version **3** (modlist hard-gate). LiteNetLib / Steam / dedicated host deferred by design. MaxClients default **4**. Launcher handoff: [launcher-handoff.md](./launcher-handoff.md). **Known limitation:** untested in live RW 1.7 without game refs.
+Protocol: magic `RMP3`, version **4** (MinSupported **3**; modlist hard-gate). Game transport: **TCP default** or opt-in **LiteNetLib** UDP — [transport-litenetlib.md](./transport-litenetlib.md). Steam / dedicated host still deferred. MaxClients default **4**. Launcher handoff: [launcher-handoff.md](./launcher-handoff.md). **Known limitation:** untested in live RW 1.7 without game refs.
 
 **Feature completeness (maintained):** [feature-completeness.md](./feature-completeness.md) — lockstep, commands, JIP, launcher, mod sync, transports, API, DLC, desync, QoL.

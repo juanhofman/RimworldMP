@@ -2,6 +2,21 @@
   <PropertyGroup>
     <RootNamespace>RimworldMP.Net</RootNamespace>
     <AssemblyName>RimworldMP.Net</AssemblyName>
-    <Description>INetTransport and LAN transport placeholders for RimworldMP.</Description>
+    <Description>INetTransport implementations (LAN TCP + LiteNetLib) for RimworldMP.</Description>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="LiteNetLib" Version="1.3.1" GeneratePathProperty="true" />
+  </ItemGroup>
+  <Target Name="CopyLiteNetLibBesideOutput" AfterTargets="Build">
+    <PropertyGroup>
+      <_LiteNetLibSrc Condition="Exists('$(PkgLiteNetLib)\lib\net8.0\LiteNetLib.dll')">$(PkgLiteNetLib)\lib\net8.0\LiteNetLib.dll</_LiteNetLibSrc>
+      <_LiteNetLibSrc Condition="'$(_LiteNetLibSrc)' == '' and Exists('$(PkgLiteNetLib)\lib\netstandard2.1\LiteNetLib.dll')">$(PkgLiteNetLib)\lib\netstandard2.1\LiteNetLib.dll</_LiteNetLibSrc>
+    </PropertyGroup>
+    <Copy
+      SourceFiles="$(_LiteNetLibSrc)"
+      DestinationFolder="$(OutputPath)"
+      SkipUnchangedFiles="true"
+      Condition="'$(_LiteNetLibSrc)' != ''" />
+  </Target>
 </Project>

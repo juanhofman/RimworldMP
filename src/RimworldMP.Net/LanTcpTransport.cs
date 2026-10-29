@@ -1,17 +1,15 @@
-using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using RimworldMP.Net.Protocol;
 
 namespace RimworldMP.Net;
 
 /// <summary>
 /// LAN TCP transport: length-prefixed frames, protocol version + modlist hash handshake,
-/// one-host / N-client (default max 4).
+/// one-host / N-client (default max 4). Default / fallback transport.
 /// </summary>
-public sealed class LanTcpTransport : INetTransport
+public sealed class LanTcpTransport : ISessionLanTransport
 {
     private enum Mode
     {
@@ -56,6 +54,9 @@ public sealed class LanTcpTransport : INetTransport
     /// <summary>Client: last join-reject message.</summary>
     public string? LastJoinRejectMessage { get; private set; }
 
+    /// <summary>Highest protocol version observed on a peer handshake (host) or JoinAck (client).</summary>
+    public byte RemoteProtocolVersion { get; private set; } = NetProtocol.Version;
+
     public bool IsRunning => _mode != Mode.Idle;
     public NetEndpoint? Endpoint => _endpoint;
     public IReadOnlyCollection<NetPeerId> ConnectedPeers => _peers.Keys.ToArray();
@@ -95,8 +96,12 @@ public sealed class LanTcpTransport : INetTransport
         await client.ConnectAsync(endpoint.Host, endpoint.Port, cancellationToken).ConfigureAwait(false);
         var stream = client.GetStream();
 
-        // Client → host handshake: magic + version + modlist hash
-        var handshake = BuildHandshakePayload(NetProtocol.Version, LocalModlistHash);
+        // Client → host handshake: magic + version + modlist hash (+ v4 trailer)
+        var handshake = BuildHandshakePayload(
+            NetProtocol.Version,
+            LocalModlistHash,
+            NetTransportKind.Tcp,
+            HandshakeCodec.FlagPacingCapable);
         await FrameCodec.WriteFrameAsync(stream, NetMessageType.Handshake, handshake, cancellationToken)
             .ConfigureAwait(false);
 
@@ -112,22 +117,23 @@ public sealed class LanTcpTransport : INetTransport
         }
 
         // JoinAck: version(1) + peerId(i32 LE) + sessionSeed(i64 LE)
-        if (type != NetMessageType.JoinAck || payload.Length < 13)
+        if (type != NetMessageType.JoinAck
+            || !HandshakeCodec.TryParseJoinAck(payload, out var hostVersion, out var assignedId, out var seed))
         {
             client.Dispose();
             throw new InvalidOperationException("Host rejected handshake / join.");
         }
 
-        if (!NetProtocol.IsCompatible(payload[0]))
+        if (!NetProtocol.IsCompatible(hostVersion))
         {
             client.Dispose();
             throw new InvalidOperationException(
-                $"Protocol version mismatch: host={payload[0]} local={NetProtocol.Version} (min={NetProtocol.MinSupportedVersion})");
+                $"Protocol version mismatch: host={hostVersion} local={NetProtocol.Version} (min={NetProtocol.MinSupportedVersion})");
         }
 
-        var assignedId = BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(1));
+        RemoteProtocolVersion = hostVersion;
         AssignedPlayerId = assignedId;
-        JoinedSessionSeed = BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(5));
+        JoinedSessionSeed = seed;
         var peerId = new NetPeerId(assignedId);
         var conn = new PeerConnection(peerId, client, stream);
         if (!_peers.TryAdd(NetPeerId.Host, conn))
@@ -244,58 +250,21 @@ public sealed class LanTcpTransport : INetTransport
     public override string ToString() =>
         _mode == Mode.Idle ? "LanTcpTransport(idle)" : $"LanTcpTransport({_mode} {_endpoint} peers={_peers.Count})";
 
-    public static byte[] BuildHandshakePayload(byte version, string modlistHash)
-    {
-        var hashBytes = Encoding.UTF8.GetBytes(modlistHash ?? string.Empty);
-        if (hashBytes.Length > 65535)
-            hashBytes = hashBytes.AsSpan(0, 65535).ToArray();
-        var buf = new byte[NetProtocol.HandshakeMagic.Length + 1 + 2 + hashBytes.Length];
-        NetProtocol.HandshakeMagic.CopyTo(buf, 0);
-        buf[NetProtocol.HandshakeMagic.Length] = version;
-        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(NetProtocol.HandshakeMagic.Length + 1), (ushort)hashBytes.Length);
-        hashBytes.CopyTo(buf.AsSpan(NetProtocol.HandshakeMagic.Length + 3));
-        return buf;
-    }
+    public static byte[] BuildHandshakePayload(
+        byte version,
+        string modlistHash,
+        NetTransportKind transportKind = NetTransportKind.Tcp,
+        byte flags = 0) =>
+        HandshakeCodec.BuildHandshakePayload(version, modlistHash, transportKind, flags);
 
-    public static string ReadHandshakeModlistHash(ReadOnlySpan<byte> payload)
-    {
-        var min = NetProtocol.HandshakeMagic.Length + 1 + 2;
-        if (payload.Length < min)
-            return string.Empty;
-        var hashLen = BinaryPrimitives.ReadUInt16LittleEndian(payload[(NetProtocol.HandshakeMagic.Length + 1)..]);
-        var start = NetProtocol.HandshakeMagic.Length + 3;
-        if (payload.Length < start + hashLen)
-            return string.Empty;
-        return hashLen == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(start, hashLen));
-    }
+    public static string ReadHandshakeModlistHash(ReadOnlySpan<byte> payload) =>
+        HandshakeCodec.ReadModlistHash(payload);
 
-    public static byte[] BuildJoinReject(JoinRejectReason reason, string message)
-    {
-        var msgBytes = Encoding.UTF8.GetBytes(message ?? string.Empty);
-        if (msgBytes.Length > 1024)
-            msgBytes = msgBytes.AsSpan(0, 1024).ToArray();
-        var buf = new byte[1 + 2 + msgBytes.Length];
-        buf[0] = (byte)reason;
-        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(1), (ushort)msgBytes.Length);
-        msgBytes.CopyTo(buf.AsSpan(3));
-        return buf;
-    }
+    public static byte[] BuildJoinReject(JoinRejectReason reason, string message) =>
+        HandshakeCodec.BuildJoinReject(reason, message);
 
-    private static void ParseJoinReject(ReadOnlySpan<byte> payload, out JoinRejectReason reason, out string message)
-    {
-        if (payload.Length < 3)
-        {
-            reason = JoinRejectReason.Unspecified;
-            message = "rejected";
-            return;
-        }
-
-        reason = (JoinRejectReason)payload[0];
-        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[1..]);
-        message = payload.Length < 3 + len || len == 0
-            ? reason.ToString()
-            : Encoding.UTF8.GetString(payload.Slice(3, len));
-    }
+    private static void ParseJoinReject(ReadOnlySpan<byte> payload, out JoinRejectReason reason, out string message) =>
+        HandshakeCodec.ParseJoinReject(payload, out reason, out message);
 
     private async Task AcceptLoopAsync(CancellationToken cancellationToken)
     {
@@ -315,16 +284,14 @@ public sealed class LanTcpTransport : INetTransport
 
                 var stream = client.GetStream();
                 var (type, payload) = await FrameCodec.ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
-                if (type != NetMessageType.Handshake
-                    || payload.Length < NetProtocol.HandshakeMagic.Length + 1
-                    || !payload.AsSpan(0, NetProtocol.HandshakeMagic.Length).SequenceEqual(NetProtocol.HandshakeMagic))
+                if (type != NetMessageType.Handshake || !HandshakeCodec.HasValidMagic(payload))
                 {
                     client.Dispose();
                     client = null;
                     continue;
                 }
 
-                var remoteVersion = payload[NetProtocol.HandshakeMagic.Length];
+                var remoteVersion = HandshakeCodec.ReadRemoteVersion(payload);
                 if (!NetProtocol.IsCompatible(remoteVersion))
                 {
                     await WriteRejectAndCloseAsync(
@@ -337,13 +304,14 @@ public sealed class LanTcpTransport : INetTransport
                     continue;
                 }
 
+                RemoteProtocolVersion = remoteVersion;
                 var clientHash = ReadHandshakeModlistHash(payload);
                 if (!string.Equals(clientHash, ExpectedModlistHash ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                 {
                     await WriteRejectAndCloseAsync(
                             client,
                             JoinRejectReason.ModlistMismatch,
-                            $"Modlist hash mismatch: client='{Truncate(clientHash)}' host='{Truncate(ExpectedModlistHash)}'",
+                            $"Modlist hash mismatch: client='{HandshakeCodec.Truncate(clientHash)}' host='{HandshakeCodec.Truncate(ExpectedModlistHash)}'",
                             cancellationToken)
                         .ConfigureAwait(false);
                     client = null;
@@ -351,10 +319,7 @@ public sealed class LanTcpTransport : INetTransport
                 }
 
                 var peerId = new NetPeerId(Interlocked.Increment(ref _nextPeerId));
-                var ack = new byte[13];
-                ack[0] = NetProtocol.Version;
-                BinaryPrimitives.WriteInt32LittleEndian(ack.AsSpan(1), peerId.Value);
-                BinaryPrimitives.WriteInt64LittleEndian(ack.AsSpan(5), HostSessionSeed);
+                var ack = HandshakeCodec.BuildJoinAck(peerId.Value, HostSessionSeed);
                 await FrameCodec.WriteFrameAsync(stream, NetMessageType.JoinAck, ack, cancellationToken)
                     .ConfigureAwait(false);
 
@@ -401,12 +366,6 @@ public sealed class LanTcpTransport : INetTransport
         {
             client.Dispose();
         }
-    }
-
-    private static string Truncate(string? value)
-    {
-        value ??= string.Empty;
-        return value.Length <= 16 ? value : value[..16] + "…";
     }
 
     private async Task ReceiveLoopAsync(PeerConnection conn, CancellationToken cancellationToken)

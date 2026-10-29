@@ -40,7 +40,7 @@ public static class LobbyPresenter
         string endpointLabel;
         string lanStatus;
         int connected = 0;
-        if (session?.Transport is LanTcpTransport lan)
+        if (session?.Transport is ISessionLanTransport lan)
         {
             connected = lan.ConnectedPeers.Count;
             if (lan.Endpoint is { } ep)
@@ -53,13 +53,14 @@ public static class LobbyPresenter
                 endpointLabel = isHost ? $"0.0.0.0:{port}" : $"—:{port}";
             }
 
+            var transportTag = lan is LiteNetLibTransport ? "LiteNetLib" : "TCP";
             lanStatus = !lan.IsRunning
                 ? "LAN idle"
                 : isHost
-                    ? $"Hosting · {connected} peer(s) · max {lan.MaxClients}"
+                    ? $"Hosting ({transportTag}) · {connected} peer(s) · max {lan.MaxClients}"
                     : lan.LastJoinRejectReason is { } reject
                         ? FormatJoinReject(reject, lan.LastJoinRejectMessage)
-                        : $"Connected as P{localId}";
+                        : $"Connected as P{localId} ({transportTag})";
             maxClients = lan.MaxClients > 0 ? lan.MaxClients : maxClients;
         }
         else if (inSession)
@@ -158,7 +159,7 @@ public static class LobbyPresenter
             ids.Add(id);
         if (localId >= 0)
             ids.Add(localId);
-        if (session.Transport is LanTcpTransport lan)
+        if (session.Transport is ISessionLanTransport lan)
         {
             foreach (var peer in lan.ConnectedPeers)
                 ids.Add(peer.Value);

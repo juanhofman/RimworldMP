@@ -1,6 +1,6 @@
 # P0 sim-correctness notes
 
-Implements the P0 gap list from the Project store theory checkup (desync truth, JIP load, join gate, map-safe jobs/zones, MaxClients, non-DevMode entry). Protocol magic **`RMP3`**, version **3**.
+Implements the P0 gap list from the Project store theory checkup (desync truth, JIP load, join gate, map-safe jobs/zones, MaxClients, non-DevMode entry). Protocol magic **`RMP3`**, version **4** (MinSupported **3**). LiteNetLib: [transport-litenetlib.md](./transport-litenetlib.md).
 
 ## What landed (offline / NO_GAME_REFS)
 
@@ -29,3 +29,4 @@ Implements the P0 gap list from the Project store theory checkup (desync truth, 
 - `MpConfig.ModlistHash` (handshake gate)
 - `MpConfig.DefaultPort` (30555)
 - `MpConfig.ReadyRequired` (opt-in ready gate)
+- `MpConfig.TransportKind` (`Tcp` default / `LiteNetLib`)
