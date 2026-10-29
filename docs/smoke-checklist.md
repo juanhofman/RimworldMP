@@ -5,7 +5,8 @@
 ## Offline (no RimWorld)
 
 - [ ] `dotnet build RimworldMP.sln -c Release` succeeds (NO_GAME_REFS warning OK)
-- [ ] `dotnet test tests/DeterminismHarness -c Release` — all green
+- [ ] `dotnet test tests/DeterminismHarness -c Release` — all green (SyncMethod, command catalog, JIP fail-loud, RNG opinion)
+- [ ] Review [feature-completeness.md](./feature-completeness.md) for Verse-blocked apply gaps
 - [ ] `dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.sln -c Release` succeeds
 - [ ] `dotnet run --project tools/RimworldMP.Launcher -- help` prints usage
 - [ ] `mod/1.7/Assemblies/` contains Core/API/Net/Compat/main DLLs

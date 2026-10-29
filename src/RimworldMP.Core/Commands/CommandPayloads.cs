@@ -155,113 +155,144 @@ public static class CommandPayloads
             BinaryPrimitives.ReadInt32LittleEndian(payload[4..]));
     }
 
-    /// <summary>Bill set: bench thing id + bill slot + recipe def + repeat mode + count.</summary>
-    public static byte[] BillSet(int benchThingId, int billSlot, string recipeDef, byte repeatMode, int count)
+    /// <summary>
+    /// Bill set: map id + bench thing id + bill slot + recipe def + repeat mode + count.
+    /// Map id is mandatory so apply never reads <c>Find.CurrentMap</c>.
+    /// </summary>
+    public static byte[] BillSet(
+        int mapId,
+        int benchThingId,
+        int billSlot,
+        string recipeDef,
+        byte repeatMode,
+        int count)
     {
         var nameBytes = Encoding.UTF8.GetBytes(recipeDef ?? string.Empty);
-        var buf = new byte[4 + 4 + 1 + 4 + 2 + nameBytes.Length];
-        BinaryPrimitives.WriteInt32LittleEndian(buf, benchThingId);
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), billSlot);
-        buf[8] = repeatMode;
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(9), count);
-        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(13), (ushort)nameBytes.Length);
-        nameBytes.CopyTo(buf.AsSpan(15));
+        // map(4) bench(4) slot(4) mode(1) count(4) nameLen(2) name
+        var buf = new byte[4 + 4 + 4 + 1 + 4 + 2 + nameBytes.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), benchThingId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8), billSlot);
+        buf[12] = repeatMode;
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(13), count);
+        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(17), (ushort)nameBytes.Length);
+        nameBytes.CopyTo(buf.AsSpan(19));
         return buf;
     }
 
-    public static (int BenchThingId, int BillSlot, byte RepeatMode, int Count, string RecipeDef) ReadBillSet(
-        ReadOnlySpan<byte> payload)
+    public static BillSetPayload ReadBillSet(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 15)
+        if (payload.Length < 19)
             throw new InvalidOperationException("BillSet payload truncated.");
-        var bench = BinaryPrimitives.ReadInt32LittleEndian(payload);
-        var slot = BinaryPrimitives.ReadInt32LittleEndian(payload[4..]);
-        var mode = payload[8];
-        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[9..]);
-        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[13..]);
-        if (payload.Length < 15 + len)
+        var mapId = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var bench = BinaryPrimitives.ReadInt32LittleEndian(payload[4..]);
+        var slot = BinaryPrimitives.ReadInt32LittleEndian(payload[8..]);
+        var mode = payload[12];
+        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[13..]);
+        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[17..]);
+        if (payload.Length < 19 + len)
             throw new InvalidOperationException("BillSet recipe truncated.");
-        var recipe = len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(15, len));
-        return (bench, slot, mode, count, recipe);
+        var recipe = len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(19, len));
+        return new BillSetPayload(mapId, bench, slot, mode, count, recipe);
     }
 
-    public static byte[] BillDelete(int benchThingId, int billSlot)
+    public readonly record struct BillSetPayload(
+        int MapId,
+        int BenchThingId,
+        int BillSlot,
+        byte RepeatMode,
+        int Count,
+        string RecipeDef);
+
+    public static byte[] BillDelete(int mapId, int benchThingId, int billSlot)
     {
-        var buf = new byte[8];
-        BinaryPrimitives.WriteInt32LittleEndian(buf, benchThingId);
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), billSlot);
+        var buf = new byte[12];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), benchThingId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8), billSlot);
         return buf;
     }
 
-    public static (int BenchThingId, int BillSlot) ReadBillDelete(ReadOnlySpan<byte> payload)
+    public static (int MapId, int BenchThingId, int BillSlot) ReadBillDelete(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 8)
+        if (payload.Length < 12)
             throw new InvalidOperationException("BillDelete payload truncated.");
         return (
             BinaryPrimitives.ReadInt32LittleEndian(payload),
-            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]));
+            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[8..]));
     }
 
-    public static byte[] ResearchStart(string projectDef)
+    /// <summary>Research start: map id (colony context) + project def name.</summary>
+    public static byte[] ResearchStart(int mapId, string projectDef)
     {
         var nameBytes = Encoding.UTF8.GetBytes(projectDef ?? string.Empty);
-        var buf = new byte[2 + nameBytes.Length];
-        BinaryPrimitives.WriteUInt16LittleEndian(buf, (ushort)nameBytes.Length);
-        nameBytes.CopyTo(buf.AsSpan(2));
+        var buf = new byte[4 + 2 + nameBytes.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteUInt16LittleEndian(buf.AsSpan(4), (ushort)nameBytes.Length);
+        nameBytes.CopyTo(buf.AsSpan(6));
         return buf;
     }
 
-    public static string ReadResearchStart(ReadOnlySpan<byte> payload)
+    public static (int MapId, string ProjectDef) ReadResearchStart(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 2)
+        if (payload.Length < 6)
             throw new InvalidOperationException("ResearchStart payload truncated.");
-        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload);
-        if (payload.Length < 2 + len)
+        var mapId = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var len = BinaryPrimitives.ReadUInt16LittleEndian(payload[4..]);
+        if (payload.Length < 6 + len)
             throw new InvalidOperationException("ResearchStart name truncated.");
-        return len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(2, len));
+        var name = len == 0 ? string.Empty : Encoding.UTF8.GetString(payload.Slice(6, len));
+        return (mapId, name);
     }
 
-    /// <summary>Trade accept: trader pawn/thing id + deal fingerprint (hash of offered silver/goods).</summary>
-    public static byte[] TradeAccept(int traderThingId, long dealFingerprint)
+    /// <summary>
+    /// Trade accept: map id + trader thing id + deal fingerprint (hash of offered silver/goods).
+    /// </summary>
+    public static byte[] TradeAccept(int mapId, int traderThingId, long dealFingerprint)
     {
-        var buf = new byte[12];
-        BinaryPrimitives.WriteInt32LittleEndian(buf, traderThingId);
-        BinaryPrimitives.WriteInt64LittleEndian(buf.AsSpan(4), dealFingerprint);
+        var buf = new byte[16];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), traderThingId);
+        BinaryPrimitives.WriteInt64LittleEndian(buf.AsSpan(8), dealFingerprint);
         return buf;
     }
 
-    public static (int TraderThingId, long DealFingerprint) ReadTradeAccept(ReadOnlySpan<byte> payload)
+    public static (int MapId, int TraderThingId, long DealFingerprint) ReadTradeAccept(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 12)
+        if (payload.Length < 16)
             throw new InvalidOperationException("TradeAccept payload truncated.");
         return (
             BinaryPrimitives.ReadInt32LittleEndian(payload),
-            BinaryPrimitives.ReadInt64LittleEndian(payload[4..]));
+            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]),
+            BinaryPrimitives.ReadInt64LittleEndian(payload[8..]));
     }
 
-    /// <summary>Caravan form: starting tile + packed pawn thing ids.</summary>
-    public static byte[] CaravanForm(int tileId, int[] pawnThingIds)
+    /// <summary>Caravan form: departure map id + starting tile + packed pawn thing ids.</summary>
+    public static byte[] CaravanForm(int mapId, int tileId, int[] pawnThingIds)
     {
-        var buf = new byte[4 + 4 + pawnThingIds.Length * 4];
-        BinaryPrimitives.WriteInt32LittleEndian(buf, tileId);
-        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), pawnThingIds.Length);
+        var buf = new byte[4 + 4 + 4 + pawnThingIds.Length * 4];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), tileId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8), pawnThingIds.Length);
         for (var i = 0; i < pawnThingIds.Length; i++)
-            BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8 + i * 4), pawnThingIds[i]);
+            BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(12 + i * 4), pawnThingIds[i]);
         return buf;
     }
 
-    public static (int TileId, int[] PawnThingIds) ReadCaravanForm(ReadOnlySpan<byte> payload)
+    public static (int MapId, int TileId, int[] PawnThingIds) ReadCaravanForm(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < 8)
+        if (payload.Length < 12)
             throw new InvalidOperationException("CaravanForm payload truncated.");
-        var tile = BinaryPrimitives.ReadInt32LittleEndian(payload);
-        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[4..]);
-        if (count < 0 || payload.Length < 8 + count * 4)
+        var mapId = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var tile = BinaryPrimitives.ReadInt32LittleEndian(payload[4..]);
+        var count = BinaryPrimitives.ReadInt32LittleEndian(payload[8..]);
+        if (count < 0 || payload.Length < 12 + count * 4)
             throw new InvalidOperationException("CaravanForm pawns truncated.");
         var pawns = new int[count];
         for (var i = 0; i < count; i++)
-            pawns[i] = BinaryPrimitives.ReadInt32LittleEndian(payload[(8 + i * 4)..]);
-        return (tile, pawns);
+            pawns[i] = BinaryPrimitives.ReadInt32LittleEndian(payload[(12 + i * 4)..]);
+        return (mapId, tile, pawns);
     }
 
     public static byte[] CaravanPawn(int caravanId, int pawnThingId)
@@ -387,11 +418,199 @@ public static class CommandPayloads
     public static (int EntityThingId, int ChamberThingId) ReadEntityContain(ReadOnlySpan<byte> payload) =>
         ReadGrowthVatAssign(payload);
 
-    private static byte[] Combine(byte[] a, byte[] b)
+    /// <summary>Designator cell paint: designator kind + map id + cell + optional thing id.</summary>
+    public static byte[] DesignatorCell(byte designatorKind, int mapId, int cellX, int cellZ, int thingId = -1)
     {
-        var buf = new byte[a.Length + b.Length];
-        a.CopyTo(buf, 0);
-        b.CopyTo(buf, a.Length);
+        var buf = new byte[1 + 4 + 4 + 4 + 4];
+        buf[0] = designatorKind;
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(1), mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(5), cellX);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(9), cellZ);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(13), thingId);
         return buf;
+    }
+
+    public static (byte Kind, int MapId, int CellX, int CellZ, int ThingId) ReadDesignatorCell(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 17)
+            throw new InvalidOperationException("DesignatorCell payload truncated.");
+        return (
+            payload[0],
+            BinaryPrimitives.ReadInt32LittleEndian(payload[1..]),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[5..]),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[9..]),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[13..]));
+    }
+
+    public static byte[] ForbidSet(int mapId, int thingId, bool forbidden)
+    {
+        var buf = new byte[9];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), thingId);
+        buf[8] = forbidden ? (byte)1 : (byte)0;
+        return buf;
+    }
+
+    public static (int MapId, int ThingId, bool Forbidden) ReadForbidSet(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 9)
+            throw new InvalidOperationException("ForbidSet payload truncated.");
+        return (
+            BinaryPrimitives.ReadInt32LittleEndian(payload),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]),
+            payload[8] != 0);
+    }
+
+    /// <summary>Work priority: pawn + workType def + priority 0–4.</summary>
+    public static byte[] WorkPrioritySet(int pawnThingId, string workTypeDef, byte priority)
+    {
+        var name = Utf8Prefixed(workTypeDef);
+        var buf = new byte[4 + name.Length + 1];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnThingId);
+        name.CopyTo(buf.AsSpan(4));
+        buf[^1] = priority;
+        return buf;
+    }
+
+    public static (int PawnThingId, string WorkTypeDef, byte Priority) ReadWorkPrioritySet(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 7)
+            throw new InvalidOperationException("WorkPrioritySet payload truncated.");
+        var pawn = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var work = ReadUtf8Prefixed(payload[4..], out var c);
+        if (payload.Length < 4 + c + 1)
+            throw new InvalidOperationException("WorkPrioritySet priority truncated.");
+        return (pawn, work, payload[4 + c]);
+    }
+
+    /// <summary>24-hour timetable: pawn + 24 assignment bytes (0=Anything …).</summary>
+    public static byte[] TimetableSet(int pawnThingId, ReadOnlySpan<byte> hourAssignments24)
+    {
+        if (hourAssignments24.Length != 24)
+            throw new ArgumentException("Timetable requires exactly 24 hour assignments.", nameof(hourAssignments24));
+        var buf = new byte[4 + 24];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnThingId);
+        hourAssignments24.CopyTo(buf.AsSpan(4));
+        return buf;
+    }
+
+    public static (int PawnThingId, byte[] Hours) ReadTimetableSet(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 28)
+            throw new InvalidOperationException("TimetableSet payload truncated.");
+        var pawn = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var hours = payload.Slice(4, 24).ToArray();
+        return (pawn, hours);
+    }
+
+    /// <summary>Assign named policy (food / outfit / drug) to a pawn.</summary>
+    public static byte[] PolicyAssign(int pawnThingId, string policyId)
+    {
+        var name = Utf8Prefixed(policyId);
+        var buf = new byte[4 + name.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnThingId);
+        name.CopyTo(buf.AsSpan(4));
+        return buf;
+    }
+
+    public static (int PawnThingId, string PolicyId) ReadPolicyAssign(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 6)
+            throw new InvalidOperationException("PolicyAssign payload truncated.");
+        var pawn = BinaryPrimitives.ReadInt32LittleEndian(payload);
+        var policy = ReadUtf8Prefixed(payload[4..], out _);
+        return (pawn, policy);
+    }
+
+    public static byte[] MedicalCareSet(int pawnThingId, byte careCategory)
+    {
+        var buf = new byte[5];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnThingId);
+        buf[4] = careCategory;
+        return buf;
+    }
+
+    public static (int PawnThingId, byte CareCategory) ReadMedicalCareSet(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 5)
+            throw new InvalidOperationException("MedicalCareSet payload truncated.");
+        return (BinaryPrimitives.ReadInt32LittleEndian(payload), payload[4]);
+    }
+
+    public static byte[] HostilityResponseSet(int pawnThingId, byte responseMode)
+    {
+        var buf = new byte[5];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, pawnThingId);
+        buf[4] = responseMode;
+        return buf;
+    }
+
+    public static (int PawnThingId, byte ResponseMode) ReadHostilityResponseSet(ReadOnlySpan<byte> payload) =>
+        ReadMedicalCareSet(payload);
+
+    public static byte[] BillReorder(int mapId, int benchThingId, int fromSlot, int toSlot)
+    {
+        var buf = new byte[16];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), benchThingId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(8), fromSlot);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(12), toSlot);
+        return buf;
+    }
+
+    public static (int MapId, int BenchThingId, int FromSlot, int ToSlot) ReadBillReorder(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 16)
+            throw new InvalidOperationException("BillReorder payload truncated.");
+        return (
+            BinaryPrimitives.ReadInt32LittleEndian(payload),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[8..]),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[12..]));
+    }
+
+    public static byte[] ResearchStop(int mapId)
+    {
+        var buf = new byte[4];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        return buf;
+    }
+
+    public static int ReadResearchStop(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 4)
+            throw new InvalidOperationException("ResearchStop payload truncated.");
+        return BinaryPrimitives.ReadInt32LittleEndian(payload);
+    }
+
+    public static byte[] TradeCancel(int mapId, int traderThingId)
+    {
+        var buf = new byte[8];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, mapId);
+        BinaryPrimitives.WriteInt32LittleEndian(buf.AsSpan(4), traderThingId);
+        return buf;
+    }
+
+    public static (int MapId, int TraderThingId) ReadTradeCancel(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 8)
+            throw new InvalidOperationException("TradeCancel payload truncated.");
+        return (
+            BinaryPrimitives.ReadInt32LittleEndian(payload),
+            BinaryPrimitives.ReadInt32LittleEndian(payload[4..]));
+    }
+
+    public static byte[] CaravanDisband(int caravanId)
+    {
+        var buf = new byte[4];
+        BinaryPrimitives.WriteInt32LittleEndian(buf, caravanId);
+        return buf;
+    }
+
+    public static int ReadCaravanDisband(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length < 4)
+            throw new InvalidOperationException("CaravanDisband payload truncated.");
+        return BinaryPrimitives.ReadInt32LittleEndian(payload);
     }
 }

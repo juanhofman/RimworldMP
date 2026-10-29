@@ -6,6 +6,7 @@ namespace RimworldMP.Core.Join;
 
 /// <summary>
 /// Host→client chunked join-point transfer and client-side reassembly.
+/// Incomplete or corrupt transfers fail loudly — never silently clear JIP state.
 /// </summary>
 public sealed class JoinPointTransfer
 {
@@ -16,13 +17,28 @@ public sealed class JoinPointTransfer
     private int _expectedBlobLength;
     private string _expectedModlistHash = string.Empty;
     private byte[]? _buffer;
-    private int _receivedChunks;
+    private readonly HashSet<int> _receivedIndexes = new();
     private int _totalChunks = -1;
     private bool _headerReceived;
 
     public bool IsReceiving
     {
         get { lock (_gate) return _headerReceived && _buffer is not null; }
+    }
+
+    public bool HeaderReceived
+    {
+        get { lock (_gate) return _headerReceived; }
+    }
+
+    public int ReceivedChunkCount
+    {
+        get { lock (_gate) return _receivedIndexes.Count; }
+    }
+
+    public int ExpectedChunkCount
+    {
+        get { lock (_gate) return _totalChunks; }
     }
 
     public JoinPoint? Completed { get; private set; }
@@ -33,7 +49,7 @@ public sealed class JoinPointTransfer
         {
             _headerReceived = false;
             _buffer = null;
-            _receivedChunks = 0;
+            _receivedIndexes.Clear();
             _totalChunks = -1;
             Completed = null;
         }
@@ -53,7 +69,7 @@ public sealed class JoinPointTransfer
             _expectedBlobLength = blobLen;
             _expectedModlistHash = hash;
             _buffer = blobLen == 0 ? Array.Empty<byte>() : new byte[blobLen];
-            _receivedChunks = 0;
+            _receivedIndexes.Clear();
             _totalChunks = -1;
             _headerReceived = true;
             Completed = null;
@@ -67,6 +83,8 @@ public sealed class JoinPointTransfer
         {
             if (!_headerReceived || _buffer is null)
                 throw new InvalidOperationException("JoinPoint chunk before header.");
+            if (total <= 0)
+                throw new InvalidOperationException($"JoinPoint chunk total invalid: {total}");
             if (_totalChunks < 0)
                 _totalChunks = total;
             else if (_totalChunks != total)
@@ -75,11 +93,25 @@ public sealed class JoinPointTransfer
                 throw new InvalidOperationException("JoinPoint chunk index out of range.");
 
             var offset = index * NetProtocol.JoinPointChunkBytes;
-            if (offset + data.Length > _buffer.Length && _buffer.Length > 0)
-                throw new InvalidOperationException("JoinPoint chunk overflows blob.");
-            if (_buffer.Length > 0)
+            if (_buffer.Length == 0)
+            {
+                if (data.Length != 0)
+                    throw new InvalidOperationException("JoinPoint empty blob received non-empty chunk.");
+            }
+            else
+            {
+                if (offset >= _buffer.Length)
+                    throw new InvalidOperationException("JoinPoint chunk overflows blob.");
+                var expectedLen = Math.Min(NetProtocol.JoinPointChunkBytes, _buffer.Length - offset);
+                if (data.Length != expectedLen)
+                    throw new InvalidOperationException(
+                        $"JoinPoint chunk length mismatch at index {index}: got {data.Length}, expected {expectedLen}.");
                 data.CopyTo(_buffer.AsSpan(offset));
-            _receivedChunks++;
+            }
+
+            // Duplicate index is fail-loud (silent overwrite would hide loss).
+            if (!_receivedIndexes.Add(index))
+                throw new InvalidOperationException($"JoinPoint duplicate chunk index {index}.");
         }
     }
 
@@ -89,8 +121,49 @@ public sealed class JoinPointTransfer
         {
             if (!_headerReceived || _buffer is null || _totalChunks < 0)
                 return null;
-            if (_receivedChunks < _totalChunks)
+            if (_receivedIndexes.Count < _totalChunks)
                 return null;
+            // Ensure contiguous coverage 0..total-1
+            for (var i = 0; i < _totalChunks; i++)
+            {
+                if (!_receivedIndexes.Contains(i))
+                    return null;
+            }
+
+            Completed = new JoinPoint(
+                _expectedNextTick,
+                _expectedSeed,
+                _expectedWatermark,
+                _expectedModlistHash,
+                _buffer);
+            return Completed;
+        }
+    }
+
+    /// <summary>
+    /// Finish transfer after JoinPointDone. Throws if header was seen but reassembly is incomplete
+    /// or corrupt — callers must not treat that as an empty lobby hello.
+    /// </summary>
+    public JoinPoint CompleteOrThrow()
+    {
+        lock (_gate)
+        {
+            if (!_headerReceived)
+                throw new InvalidOperationException("JoinPointDone without header.");
+            if (_buffer is null)
+                throw new InvalidOperationException("JoinPointDone with null buffer.");
+            if (_totalChunks < 0)
+                throw new InvalidOperationException("JoinPointDone with no chunks received.");
+            if (_receivedIndexes.Count != _totalChunks)
+                throw new InvalidOperationException(
+                    $"JoinPoint incomplete: received {_receivedIndexes.Count}/{_totalChunks} chunks " +
+                    $"(blobLen={_expectedBlobLength}).");
+
+            for (var i = 0; i < _totalChunks; i++)
+            {
+                if (!_receivedIndexes.Contains(i))
+                    throw new InvalidOperationException($"JoinPoint missing chunk index {i}.");
+            }
 
             Completed = new JoinPoint(
                 _expectedNextTick,

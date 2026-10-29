@@ -84,7 +84,8 @@ public sealed class DesyncDetector
 
     /// <summary>
     /// Non-mutating checkpoint fingerprint:
-    /// SHA256(protocol ‖ tick ‖ rngSeed ‖ drawCount ‖ namedCounters ‖ rollingCmdHash ‖ worldFingerprint).
+    /// SHA256(protocol ‖ tick ‖ rngSeed ‖ drawCount ‖ rngOpinion ‖ namedCounters ‖ rollingCmdHash ‖ worldFingerprint).
+    /// <see cref="SyncedRand.OpinionHash"/> makes draw <em>order</em> affect the fingerprint, not only count.
     /// </summary>
     public byte[] SnapshotHash(long tick)
     {
@@ -100,6 +101,9 @@ public sealed class DesyncDetector
         inc.AppendData(num);
 
         BinaryPrimitives.WriteInt64LittleEndian(num, _rand.DrawCount);
+        inc.AppendData(num);
+
+        BinaryPrimitives.WriteUInt64LittleEndian(num, _rand.OpinionHash);
         inc.AppendData(num);
 
         IReadOnlyDictionary<string, long> counters;

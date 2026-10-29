@@ -1,3 +1,4 @@
+using RimworldMP.API;
 using RimworldMP.Core.Commands;
 using RimworldMP.Core.World;
 // DlcWorld / ColonyWorld / ZoneWorld
@@ -65,15 +66,34 @@ public static class CommandApplicator
                 ApplyRestrictArea(pawnId, areaId);
                 break;
             }
+            case CommandOpcode.DesignatorCell:
+            case CommandOpcode.ForbidSet:
+            case CommandOpcode.WorkPrioritySet:
+            case CommandOpcode.TimetableSet:
+            case CommandOpcode.FoodRestrictionAssign:
+            case CommandOpcode.OutfitAssign:
+            case CommandOpcode.DrugPolicyAssign:
+            case CommandOpcode.MedicalCareSet:
+            case CommandOpcode.HostilityResponseSet:
+                PolicyWorld.Current.ApplyCommand(cmd);
+                // Verse policy apply requires RIMWORLD_DIR — shadow store is authoritative offline.
+                break;
             case CommandOpcode.BillSet:
             case CommandOpcode.BillDelete:
+            case CommandOpcode.BillReorder:
             case CommandOpcode.ResearchStart:
+            case CommandOpcode.ResearchStop:
             case CommandOpcode.TradeAccept:
+            case CommandOpcode.TradeCancel:
             case CommandOpcode.CaravanForm:
             case CommandOpcode.CaravanAddPawn:
             case CommandOpcode.CaravanRemovePawn:
+            case CommandOpcode.CaravanDisband:
                 ColonyWorld.Current.ApplyCommand(cmd);
                 ApplyColonyGame(cmd);
+                break;
+            case CommandOpcode.SyncMethodInvoke:
+                MP.ApplySyncMethodPayload(cmd.Payload);
                 break;
             case CommandOpcode.RoyaltyTitleChange:
             case CommandOpcode.RoyaltyPermitUse:
@@ -244,7 +264,7 @@ public static class CommandApplicator
         {
             case CommandOpcode.ResearchStart:
             {
-                var name = CommandPayloads.ReadResearchStart(cmd.Payload);
+                var (_, name) = CommandPayloads.ReadResearchStart(cmd.Payload);
                 var project = DefDatabase<ResearchProjectDef>.GetNamedSilentFail(name);
                 if (project is not null)
                     Find.ResearchManager.SetCurrentProject(project);
@@ -252,25 +272,28 @@ public static class CommandApplicator
             }
             case CommandOpcode.BillSet:
             {
-                var (benchId, slot, mode, count, recipeName) = CommandPayloads.ReadBillSet(cmd.Payload);
-                var bench = FindThing(benchId) as Building_WorkTable;
-                var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeName);
+                var bill = CommandPayloads.ReadBillSet(cmd.Payload);
+                var map = FindMap(bill.MapId);
+                var bench = (map is not null
+                    ? FindThingOnMap(map, bill.BenchThingId)
+                    : FindThing(bill.BenchThingId)) as Building_WorkTable;
+                var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(bill.RecipeDef);
                 if (bench?.BillStack is null || recipe is null) return;
                 // Structural apply: replace/add bill at slot when possible.
-                while (bench.BillStack.Count <= slot)
+                while (bench.BillStack.Count <= bill.BillSlot)
                     bench.BillStack.AddBill(BillUtility.MakeNewBill(recipe));
-                if (slot >= 0 && slot < bench.BillStack.Count)
+                if (bill.BillSlot >= 0 && bill.BillSlot < bench.BillStack.Count)
                 {
-                    var bill = bench.BillStack[slot];
-                    if (bill is Bill_Production prod)
+                    var existing = bench.BillStack[bill.BillSlot];
+                    if (existing is Bill_Production prod)
                     {
-                        prod.repeatMode = mode switch
+                        prod.repeatMode = bill.RepeatMode switch
                         {
                             1 => BillRepeatModeDefOf.TargetCount,
                             2 => BillRepeatModeDefOf.Forever,
                             _ => BillRepeatModeDefOf.RepeatCount,
                         };
-                        prod.repeatCount = count;
+                        prod.repeatCount = bill.Count;
                     }
                 }
 
@@ -278,24 +301,35 @@ public static class CommandApplicator
             }
             case CommandOpcode.BillDelete:
             {
-                var (benchId, slot) = CommandPayloads.ReadBillDelete(cmd.Payload);
-                var bench = FindThing(benchId) as Building_WorkTable;
+                var (mapId, benchId, slot) = CommandPayloads.ReadBillDelete(cmd.Payload);
+                var map = FindMap(mapId);
+                var bench = (map is not null ? FindThingOnMap(map, benchId) : FindThing(benchId)) as Building_WorkTable;
                 if (bench?.BillStack is null) return;
                 if (slot >= 0 && slot < bench.BillStack.Count)
                     bench.BillStack.Delete(bench.BillStack[slot]);
                 break;
             }
             case CommandOpcode.TradeAccept:
-                Log.Message($"[RimworldMP] TradeAccept applied fingerprint (deal commit stub)");
+            {
+                // Deal commit needs live TradeDeal / Verse trader APIs — stub until RIMWORLD_DIR validates.
+                var (mapId, traderId, fingerprint) = CommandPayloads.ReadTradeAccept(cmd.Payload);
+                _ = FindMap(mapId);
+                _ = FindThing(traderId);
+                Log.Message(
+                    $"[RimworldMP] TradeAccept map={mapId} trader={traderId} fingerprint={fingerprint} (deal commit stub)");
                 break;
+            }
             case CommandOpcode.CaravanForm:
             {
-                var (tile, pawns) = CommandPayloads.ReadCaravanForm(cmd.Payload);
-                Log.Message($"[RimworldMP] CaravanForm tile={tile} pawns={pawns.Length}");
+                // Caravan formation needs Dialog_FormCaravan / CaravanMaker — stub until RIMWORLD_DIR.
+                var (mapId, tile, pawns) = CommandPayloads.ReadCaravanForm(cmd.Payload);
+                _ = FindMap(mapId);
+                Log.Message($"[RimworldMP] CaravanForm map={mapId} tile={tile} pawns={pawns.Length}");
                 break;
             }
         }
 #else
+        // Shadow path already applied via ColonyWorld; payload decode is authoritative offline.
         _ = cmd;
 #endif
     }
