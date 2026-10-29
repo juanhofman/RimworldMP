@@ -5,6 +5,7 @@ using RimworldMP.Core.Session;
 using RimworldMP.Join;
 using RimworldMP.Lobby;
 using RimworldMP.Net.Protocol;
+using RimworldMP.UI;
 
 #if !RIMWORLDMP_NO_GAME_REFS
 using Verse;
@@ -74,7 +75,7 @@ public sealed class RimworldMPMod : Mod
         });
 
         Log.Message(
-            $"[RimworldMP] P0 sim-correctness loaded (protocol v{NetProtocol.Version}, maxClients default {MpConfig.DefaultMaxClients}). " +
+            $"[RimworldMP] Release lobby UI loaded (protocol v{NetProtocol.Version}, maxClients default {MpConfig.DefaultMaxClients}). " +
             "Lobby: corner button / F10 / launcher-handoff.json (DevMode actions remain).");
     }
 }
@@ -83,7 +84,7 @@ public sealed class RimworldMPMod : Mod
 public static class RimworldMPDebugActions
 {
     [DebugAction("RimworldMP", "Open lobby UI", allowedGameStates = AllowedGameStates.Entry | AllowedGameStates.Playing)]
-    private static void OpenLobbyUi() => Dialog_RimworldMPLobby.Open();
+    private static void OpenLobbyUi() => LobbyUi.Open();
 
     [DebugAction("RimworldMP", "Host lobby (LAN)", allowedGameStates = AllowedGameStates.Entry | AllowedGameStates.Playing)]
     private static void HostLobby()
