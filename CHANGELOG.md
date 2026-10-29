@@ -5,7 +5,7 @@
 Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, LiteNetLib, session QoL chat/kick). See [docs/feature-completeness.md](docs/feature-completeness.md).
 
 ### Added
-- **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch` begin/end stubs, `HostInject` host-only+inject helpers, attribute/type/assembly registration, XML docs on `RimworldMP.API` ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo` build with `NO_GAME_REFS`. DeterminismHarness `ApiRegistrationTests` covers registration, watch, and host-inject.
+- **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch` begin/end stubs, `HostInject` host-only+inject helpers, attribute/type/assembly registration, XML docs on `RimworldMP.API` ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo` build with `NO_GAME_REFS`. DeterminismHarness `ApiRegistrationTests` covers registration, watch, and host-inject. `TreatWarningsAsErrors` enabled repo-wide; no obsolete Compat attribute duplicates.
 - **Feature completeness matrix:** Feature → Done / Partial / Blocked on `RIMWORLD_DIR` / Won’t do per prefs ([docs/feature-completeness.md](docs/feature-completeness.md))
 - **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md)). Freeze overlay shows dump path. DeterminismHarness `DesyncDumpTests` covers forced fingerprint mismatch sections.
 
