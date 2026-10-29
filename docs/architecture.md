@@ -19,3 +19,5 @@ Locks: RimWorld **1.7** · `net10.0` · Harmony **3** (`Lib.Harmony.Ref` `3.0.0-
 | v0.6.0 packaging | UI + launcher release — [release-notes-v0.6.0.md](./release-notes-v0.6.0.md) |
 
 Protocol: magic `RMP3`, version **3** (modlist hard-gate). LiteNetLib / Steam / dedicated host deferred by design. MaxClients default **4**. Launcher handoff: [launcher-handoff.md](./launcher-handoff.md). **Known limitation:** untested in live RW 1.7 without game refs.
+
+**Feature completeness (maintained):** [feature-completeness.md](./feature-completeness.md) — lockstep, commands, JIP, launcher, mod sync, transports, API, DLC, desync, QoL.
