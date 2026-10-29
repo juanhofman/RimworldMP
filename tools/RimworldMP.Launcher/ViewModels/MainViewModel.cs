@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RimworldMP.Launcher.Models;
@@ -7,7 +8,7 @@ using RimworldMP.Launcher.Services.ModSync;
 
 namespace RimworldMP.Launcher.ViewModels;
 
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDisposable
 {
     private readonly SessionOrchestrator _orch = new();
     private readonly IModCatalog _catalog;
@@ -46,7 +47,7 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private string _sessionName = "RimworldMP LAN";
 
-    [ObservableProperty] private string _hostPort = LauncherPaths.DefaultGamePort.ToString();
+    [ObservableProperty] private string _hostPort = LauncherPaths.DefaultGamePort.ToString(CultureInfo.InvariantCulture);
 
     [ObservableProperty] private string _bindHost = SessionOrchestrator.GetPrimaryLanIPv4() ?? "127.0.0.1";
 
@@ -62,7 +63,7 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private string _joinIp = "";
 
-    [ObservableProperty] private string _joinPort = LauncherPaths.DefaultGamePort.ToString();
+    [ObservableProperty] private string _joinPort = LauncherPaths.DefaultGamePort.ToString(CultureInfo.InvariantCulture);
 
     [ObservableProperty] private bool _isDiscovering;
 
@@ -217,7 +218,7 @@ public partial class MainViewModel : ObservableObject
             SyncHost = h;
 
         if (SelectedBeacon?.ModSyncPort is int msp && msp is >= 1 and <= 65535)
-            SyncPort = msp.ToString();
+            SyncPort = msp.ToString(CultureInfo.InvariantCulture);
     }
 
     [RelayCommand]
@@ -472,7 +473,7 @@ public partial class MainViewModel : ObservableObject
                     ShareMods = true,
                     ModSyncPort = _hostModShare.Port,
                 };
-                SyncPort = _hostModShare.Port.ToString();
+                SyncPort = _hostModShare.Port.ToString(CultureInfo.InvariantCulture);
                 modShareNote = $"\nMod sync TCP {bindHost}:{_hostModShare.Port} ({_hostModShare.Manifest?.Mods.Count ?? 0} packages)";
             }
 
@@ -558,7 +559,7 @@ public partial class MainViewModel : ObservableObject
             return;
         SelectedBeacon = beacon;
         JoinIp = beacon.Host ?? "";
-        JoinPort = beacon.Port.ToString();
+        JoinPort = beacon.Port.ToString(CultureInfo.InvariantCulture);
         SessionName = beacon.Name;
         if (!string.IsNullOrWhiteSpace(beacon.Host))
             SyncHost = beacon.Host;
@@ -625,4 +626,34 @@ public partial class MainViewModel : ObservableObject
 
     private static string ShortHash(string hash) =>
         hash.Length >= 8 ? hash[..8] : hash;
+
+    public void Dispose()
+    {
+        DisposeAsyncCore().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        var task = DisposeAsyncCore();
+        GC.SuppressFinalize(this);
+        return new ValueTask(task);
+    }
+
+    private async Task DisposeAsyncCore()
+    {
+        try { _hostCts?.Cancel(); } catch { /* ignore */ }
+        try { _syncCts?.Cancel(); } catch { /* ignore */ }
+        _hostCts?.Dispose();
+        _syncCts?.Dispose();
+        _hostCts = null;
+        _syncCts = null;
+        if (_hostDiscovery is not null)
+        {
+            await _hostDiscovery.DisposeAsync().ConfigureAwait(false);
+            _hostDiscovery = null;
+        }
+
+        await _hostModShare.DisposeAsync().ConfigureAwait(false);
+    }
 }

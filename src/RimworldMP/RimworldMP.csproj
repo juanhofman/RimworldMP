@@ -41,9 +41,16 @@
     <DefineConstants>$(DefineConstants);RIMWORLDMP_NO_GAME_REFS</DefineConstants>
   </PropertyGroup>
 
-  <Target Name="NoteMissingRimWorldRefs" BeforeTargets="Build" Condition="'$(HasRimWorldRefs)' != 'true'">
-    <!-- Message (not Warning) so TreatWarningsAsErrors / CI stays at 0 warnings under NO_GAME_REFS. -->
-    <Message Importance="High" Text="RIMWORLD_DIR / refs/RimWorld not found — building RimworldMP with RIMWORLDMP_NO_GAME_REFS stubs. Set RIMWORLD_DIR to enable real Verse/Harmony game integration." />
+  <!-- Intentional stub mode (RIMWORLDMP_NO_GAME_REFS): informational only — must not trip TreatWarningsAsErrors. -->
+  <Target Name="MessageMissingRimWorldRefs" BeforeTargets="Build"
+          Condition="'$(HasRimWorldRefs)' != 'true' and '$(ForceNoGameRefs)' == 'true'">
+    <Message Importance="high"
+             Text="RIMWORLDMP_NO_GAME_REFS: building RimworldMP with stubs (no RIMWORLD_DIR / refs/RimWorld)." />
+  </Target>
+  <!-- Accidental missing refs: real warning (fails under TreatWarningsAsErrors). -->
+  <Target Name="WarnMissingRimWorldRefs" BeforeTargets="Build"
+          Condition="'$(HasRimWorldRefs)' != 'true' and '$(ForceNoGameRefs)' != 'true'">
+    <Warning Text="RIMWORLD_DIR / refs/RimWorld not found — building RimworldMP with RIMWORLDMP_NO_GAME_REFS stubs. Set RIMWORLD_DIR, or set RIMWORLDMP_NO_GAME_REFS=true for intentional stub builds." />
   </Target>
 
   <!-- LiteNetLib ships beside RimworldMP.Net; copy into the Workshop Assemblies folder. -->

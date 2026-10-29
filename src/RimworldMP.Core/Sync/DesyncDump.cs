@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using RimworldMP.Core.Commands;
@@ -70,8 +71,9 @@ public static class DesyncDump
         DesyncDumpContext? context = null)
     {
         Directory.CreateDirectory(logDirectory);
-        var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmss");
-        var baseName = $"desync-tick{tick}-{stamp}";
+        var inv = CultureInfo.InvariantCulture;
+        var stamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmss", inv);
+        var baseName = string.Create(inv, $"desync-tick{tick}-{stamp}");
         var logPath = Path.Combine(logDirectory, baseName + ".log");
         var jsonPath = Path.Combine(logDirectory, baseName + ".cmds.json");
         string? batchesJsonPath = null;
@@ -90,24 +92,24 @@ public static class DesyncDump
         sb.AppendLine("=== RimworldMP desync dump ===");
         sb.AppendLine("section=header");
         sb.AppendLine("RimworldMP desync detected");
-        sb.AppendLine($"utc={DateTime.UtcNow:O}");
+        sb.AppendLine(inv, $"utc={DateTime.UtcNow:O}");
         sb.AppendLine("localOnly=true");
         sb.AppendLine("upload=never");
         sb.AppendLine("note=dumps stay on this machine; RimworldMP never uploads them");
 
         sb.AppendLine();
         sb.AppendLine("section=session");
-        sb.AppendLine($"protocol={protocolVersion}");
-        sb.AppendLine($"tick={tick}");
+        sb.AppendLine(inv, $"protocol={protocolVersion}");
+        sb.AppendLine(inv, $"tick={tick}");
         if (context?.LocalPeerId is int localPeer)
-            sb.AppendLine($"localPeerId={localPeer}");
+            sb.AppendLine(inv, $"localPeerId={localPeer}");
         if (context?.PeerIds is { Count: > 0 } peers)
-            sb.AppendLine($"peerIds={string.Join(',', peers.OrderBy(p => p))}");
+            sb.AppendLine(inv, $"peerIds={string.Join(',', peers.OrderBy(p => p))}");
         var modlist = context?.ModlistHash;
         if (!string.IsNullOrEmpty(modlist))
         {
-            sb.AppendLine($"modlistHashShort={ShortModlistHash(modlist)}");
-            sb.AppendLine($"modlistHash={modlist}");
+            sb.AppendLine(inv, $"modlistHashShort={ShortModlistHash(modlist)}");
+            sb.AppendLine(inv, $"modlistHash={modlist}");
         }
         else
         {
@@ -116,19 +118,19 @@ public static class DesyncDump
 
         sb.AppendLine();
         sb.AppendLine("section=fingerprint");
-        sb.AppendLine($"localHash={localHashHex}");
-        sb.AppendLine($"remoteHash={remoteHashHex}");
+        sb.AppendLine(inv, $"localHash={localHashHex}");
+        sb.AppendLine(inv, $"remoteHash={remoteHashHex}");
         sb.AppendLine("note=worldFingerprint slot reserved; Verse map/world samples need RIMWORLD_DIR");
 
         sb.AppendLine();
         sb.AppendLine("section=rng");
-        sb.AppendLine($"rngSeed={rngSeed}");
-        sb.AppendLine($"rngDraws={rngDraws}");
+        sb.AppendLine(inv, $"rngSeed={rngSeed}");
+        sb.AppendLine(inv, $"rngDraws={rngDraws}");
         if (rngCounters is { Count: > 0 })
         {
             sb.AppendLine("rngCounters:");
             foreach (var (key, value) in rngCounters.OrderBy(kv => kv.Key, StringComparer.Ordinal))
-                sb.AppendLine($"  {key}={value}");
+                sb.AppendLine(inv, $"  {key}={value}");
         }
         else
         {
@@ -137,31 +139,33 @@ public static class DesyncDump
 
         sb.AppendLine();
         sb.AppendLine("section=recentCommands");
-        sb.AppendLine($"recentCommands={cmds.Count}");
-        sb.AppendLine($"recentCommandsLimit={cmdLimit}");
+        sb.AppendLine(inv, $"recentCommands={cmds.Count}");
+        sb.AppendLine(inv, $"recentCommandsLimit={cmdLimit}");
         foreach (var cmd in cmds)
         {
             sb.AppendLine(
+                inv,
                 $"  tick={cmd.Tick} op={cmd.Opcode}({(ushort)cmd.Opcode}) player={cmd.PlayerId} payloadHex={Convert.ToHexString(cmd.Payload)}");
         }
 
         sb.AppendLine();
         sb.AppendLine("section=recentBatches");
-        sb.AppendLine($"recentBatches={batches.Count}");
-        sb.AppendLine($"recentBatchesLimit={batchLimit}");
+        sb.AppendLine(inv, $"recentBatches={batches.Count}");
+        sb.AppendLine(inv, $"recentBatchesLimit={batchLimit}");
         foreach (var batch in batches)
         {
             sb.AppendLine(
+                inv,
                 $"  tick={batch.Tick} bytes={batch.ByteLength} cmds={batch.CommandCount} hexPreview={batch.PayloadHexPreview}");
         }
 
         sb.AppendLine();
         sb.AppendLine("section=files");
-        sb.AppendLine($"cmdsJson={jsonPath}");
+        sb.AppendLine(inv, $"cmdsJson={jsonPath}");
         if (batches.Count > 0)
         {
             batchesJsonPath = Path.Combine(logDirectory, baseName + ".batches.json");
-            sb.AppendLine($"batchesJson={batchesJsonPath}");
+            sb.AppendLine(inv, $"batchesJson={batchesJsonPath}");
         }
 
         File.WriteAllText(logPath, sb.ToString());

@@ -21,7 +21,7 @@ public static class PathSandbox
 
         if (candidate.Contains("..", StringComparison.Ordinal) ||
             candidate.Contains(':', StringComparison.Ordinal) ||
-            candidate.StartsWith("~", StringComparison.Ordinal))
+            candidate.StartsWith('~'))
             throw new InvalidOperationException($"Path traversal rejected: {relativeOrChild}");
 
         var combined = Path.GetFullPath(Path.Combine(rootDir, candidate));

@@ -1,0 +1,29 @@
+# RimworldMP code-quality baseline — see docs/code-quality.md
+root = true
+
+[*.{cs,csx,vb,vbx}]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{csproj,props,targets,xml,axaml,yml,yaml,json,md}]
+indent_size = 2
+
+[*.cs]
+dotnet_analyzer_diagnostic.category-Style.severity = silent
+
+# Underscored xUnit / harness method names are intentional.
+dotnet_diagnostic.CA1707.severity = none
+
+# Instance service methods kept for DI / orchestrator ergonomics even when currently stateless.
+dotnet_diagnostic.CA1822.severity = none
+
+[tests/**/*.cs]
+# Harness-style tests: one-shot array literals and culture-insensitive asserts are fine.
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1307.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1816.severity = none

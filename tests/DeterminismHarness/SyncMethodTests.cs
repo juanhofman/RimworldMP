@@ -27,6 +27,7 @@ public class SyncMethodTests : IDisposable
     {
         MP.ResetForTests();
         SessionFacade.Clear();
+        GC.SuppressFinalize(this);
     }
 
     // Not a test — SyncMethod target invoked via reflection.

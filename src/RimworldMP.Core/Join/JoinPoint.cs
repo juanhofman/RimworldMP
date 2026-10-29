@@ -75,8 +75,7 @@ public sealed class JoinPoint
     /// <summary>Split save blob into wire chunks: [i32 index][i32 total][bytes…].</summary>
     public IEnumerable<byte[]> EnumerateChunks(int chunkBytes = NetProtocol.JoinPointChunkBytes)
     {
-        if (chunkBytes <= 0)
-            throw new ArgumentOutOfRangeException(nameof(chunkBytes));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(chunkBytes);
         if (SaveBlob.Length == 0)
         {
             yield return PackChunk(0, 1, ReadOnlySpan<byte>.Empty);
