@@ -17,6 +17,7 @@ Locks: RimWorld **1.7** · `net10.0` · Harmony **3** (`Lib.Harmony.Ref` `3.0.0-
 | P0 sim-correctness | Done ([PR #8](https://github.com/juanhofman/RimworldMP/pull/8)) — see [p0-sim-correctness.md](./p0-sim-correctness.md) |
 | LAN launcher MVP | Done ([PR #7](https://github.com/juanhofman/RimworldMP/pull/7)) — see [launcher-mvp.md](./launcher-mvp.md) |
 | v0.6.0 packaging | UI + launcher release — [release-notes-v0.6.0.md](./release-notes-v0.6.0.md) |
+| Track A P1 + full colony catalog | SyncMethod schedule, policy/schedule opcodes, RNG opinion hash — [feature-completeness.md](./feature-completeness.md) |
 
 Protocol: magic `RMP3`, version **3** (modlist hard-gate). LiteNetLib / Steam / dedicated host deferred by design. MaxClients default **4**. Launcher handoff: [launcher-handoff.md](./launcher-handoff.md). **Known limitation:** untested in live RW 1.7 without game refs.
 

@@ -359,11 +359,9 @@ public sealed class MpSession : IAsyncDisposable
                 break;
             case NetMessageType.JoinPointDone:
             {
-                var jp = _jipReceive.TryComplete();
-                if (jp is not null)
-                    ApplyJoinPoint(jp);
-                else
-                    _jipPending = false; // empty lobby — no blob
+                // Fail loud on incomplete/corrupt reassembly; do not treat as empty lobby.
+                var jp = _jipReceive.CompleteOrThrow();
+                ApplyJoinPoint(jp);
                 break;
             }
             case NetMessageType.ReadyStatus:

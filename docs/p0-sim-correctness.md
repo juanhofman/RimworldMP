@@ -20,7 +20,8 @@ Implements the P0 gap list from the Project store theory checkup (desync truth, 
 2. Populate `DesyncDetector.SetWorldFingerprint` from map/world/pawn samples (RNG opinions already partially counted via Harmony Rand patches).
 3. Confirm lobby `UIRoot.UIRootOnGUI` + `Window` / `Listing_Standard` signatures under Harmony 3 type checks.
 4. Two-client 30+ min smoke: draft / jobs / zones with thickened payloads.
-5. Full `Verse.Rand` coverage beyond Value/Range (P1).
+5. Full `Verse.Rand` coverage beyond Value/Range/Chance/Bool (see [track-a-p1-syncmethod.md](./track-a-p1-syncmethod.md)).
+6. Live Verse trade/caravan commits and `VerseSaveLoad` validation.
 
 ## Config knobs
 

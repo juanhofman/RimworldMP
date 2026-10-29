@@ -9,6 +9,12 @@ namespace RimworldMP.API;
 /// </summary>
 public static class MP
 {
+    /// <summary>
+    /// Opcode for scheduled SyncMethod invokes (must match <c>CommandOpcode.SyncMethodInvoke</c>).
+    /// Kept here so API callers need not reference Core.
+    /// </summary>
+    public const ushort SyncMethodInvokeOpcode = 90;
+
     private static Func<bool>? _isInSession;
     private static Func<bool>? _isHost;
     private static Func<int>? _localPlayerId;
@@ -40,10 +46,10 @@ public static class MP
         _submit?.Invoke(opcode, payload);
 
     /// <summary>
-    /// Register a method that should be invoked deterministically on all peers.
-    /// Authors should still route mutations through commands / SyncMethod apply bodies.
+    /// Register a method that should be invoked deterministically on all peers via the
+    /// command schedule (<see cref="CallSyncMethod"/>).
     /// </summary>
-    /// <param name="method">Static or instance method to register.</param>
+    /// <param name="method">Static method preferred for offline scheduling; instance methods need a target at invoke.</param>
     public static void RegisterSyncMethod(MethodInfo method)
     {
         ArgumentNullException.ThrowIfNull(method);
@@ -113,7 +119,7 @@ public static class MP
     public static IReadOnlyCollection<string> RegisteredSyncMethodKeys => SyncMethods.Keys.ToArray();
 
     /// <summary>
-    /// Invoke a registered SyncMethod by key. Used by harness tests and (later) Core apply.
+    /// Invoke a registered SyncMethod by key. Used by harness tests and scheduled apply.
     /// </summary>
     /// <returns>True when a registration was found and invoked.</returns>
     public static bool TryInvokeSyncMethod(string key, object? target, params object?[] args)
@@ -134,6 +140,58 @@ public static class MP
                    ?? method.Name;
         return method.DeclaringType?.FullName + "::" + name;
     }
+
+    /// <summary>
+    /// Schedule a registered SyncMethod on the lockstep command queue when a session is active.
+    /// Offline (no session): invokes immediately for authoring convenience.
+    /// In-session: does <em>not</em> run locally until the command batch applies.
+    /// </summary>
+    public static void CallSyncMethod(MethodInfo method, params object?[] args)
+    {
+        ArgumentNullException.ThrowIfNull(method);
+        if (!method.IsStatic)
+            throw new ArgumentException(
+                "CallSyncMethod requires a static method (instance targets are not on the wire).",
+                nameof(method));
+
+        var key = KeyOf(method);
+        if (!SyncMethods.ContainsKey(key))
+            RegisterSyncMethod(method);
+
+        if (!IsInSession || _submit is null)
+        {
+            InvokeRegistered(key, args);
+            return;
+        }
+
+        var payload = SyncMethodCodec.Encode(key, args);
+        _submit(SyncMethodInvokeOpcode, payload);
+    }
+
+    /// <summary>
+    /// Apply a SyncMethod invoke payload (used by the command applicator).
+    /// Throws if the method was never registered on this peer.
+    /// </summary>
+    public static object? ApplySyncMethodPayload(ReadOnlySpan<byte> payload)
+    {
+        var (key, args) = SyncMethodCodec.Decode(payload);
+        return InvokeRegistered(key, args);
+    }
+
+    /// <summary>Look up and invoke a registered SyncMethod by key (static target).</summary>
+    public static object? InvokeRegistered(string methodKey, object?[] args)
+    {
+        ArgumentNullException.ThrowIfNull(methodKey);
+        if (!SyncMethods.TryGetValue(methodKey, out var reg))
+            throw new InvalidOperationException(
+                $"SyncMethod '{methodKey}' is not registered on this peer. " +
+                "All peers must RegisterSyncMethod the same methods before play.");
+
+        return reg.Method.Invoke(null, args);
+    }
+
+    /// <summary>Test helper: clear the SyncMethod registry (prefer <see cref="ResetForTests"/>).</summary>
+    public static void ClearSyncMethodsForTests() => SyncMethods.Clear();
 
     /// <summary>Subscribe to desync freeze notifications.</summary>
     public static event Action? OnDesync

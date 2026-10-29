@@ -2,15 +2,20 @@
 
 ## Unreleased
 
-Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, LiteNetLib, session QoL chat/kick). See [docs/feature-completeness.md](docs/feature-completeness.md).
+Stay on **0.6.0** until a deliberate 0.7 cut (LiteNetLib / session QoL / packaging). See [docs/feature-completeness.md](docs/feature-completeness.md).
 
 ### Added
-- **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch` begin/end stubs, `HostInject` host-only+inject helpers, attribute/type/assembly registration, XML docs on `RimworldMP.API` ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo` build with `NO_GAME_REFS`. DeterminismHarness `ApiRegistrationTests` covers registration, watch, and host-inject. `TreatWarningsAsErrors` enabled repo-wide; no obsolete Compat attribute duplicates.
-- **Feature completeness matrix:** Feature → Done / Partial / Blocked on `RIMWORLD_DIR` / Won’t do per prefs ([docs/feature-completeness.md](docs/feature-completeness.md))
-- **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md)). Freeze overlay shows dump path. DeterminismHarness `DesyncDumpTests` covers forced fingerprint mismatch sections.
+- **SyncMethod execution** via `CommandOpcode.SyncMethodInvoke` (90): `MP.CallSyncMethod` / `SyncMethodCodec` / applicator invoke ([docs/api.md](docs/api.md), [docs/mod-author-api.md](docs/mod-author-api.md))
+- **Full colony command catalog** offline: designators/forbid, work/timetable/food/outfit/drug/medical/hostility policies, bill reorder, research stop, trade cancel, caravan disband; shadow stores + `ColonyCommands` API constants
+- **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute/type/assembly registration ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo`
+- **RNG opinion hash** in desync fingerprint (draw-order sensitive); Chance/Bool wrappers + Harmony stubs
+- **JIP** `SaveBlobPipeline` + fail-loud chunk reassembly (`CompleteOrThrow`)
+- **Feature completeness matrix** + command catalog / Verse-blocked notes ([docs/feature-completeness.md](docs/feature-completeness.md), [docs/track-a-p1-syncmethod.md](docs/track-a-p1-syncmethod.md))
+- **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md))
+- **Zero-warning builds:** `TreatWarningsAsErrors` / `AnalysisLevel=latest` in `Directory.Build.props`; CI builds with warnings-as-errors
+- DeterminismHarness: SyncMethod / catalog / JIP / draw-order / API registration / desync dump tests
 
-### In flight (not on `main` yet / incomplete)
-- SyncMethod colony applicators and RNG thicken (API registration + invoke helpers exist; Core→Verse apply pipeline incomplete)
+### In flight
 - LiteNetLib LAN transport behind `INetTransport`
 - Session QoL: chat, host kick, ready polish
 
@@ -47,3 +52,5 @@ First tagged release of the from-scratch RimworldMP lockstep stack for RimWorld 
 - Protocol magic `RMP2`, version **2**
 
 ## 0.1.0 — Phase 0/1 foundation
+
+Scaffold + smallest playable MP primitives (merged via PR #1).

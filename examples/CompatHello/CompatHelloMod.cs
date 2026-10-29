@@ -23,7 +23,15 @@ public sealed class CompatHelloMod
         return mod;
     }
 
-    /// <summary>Would be invoked on all peers at the committed tick in a full wiring.</summary>
+    /// <summary>
+    /// Schedule a toast via the lockstep SyncMethod command (all peers invoke at commit tick).
+    /// </summary>
+    public static void RequestSyncedToast(string message) =>
+        MP.CallSyncMethod(
+            typeof(CompatHelloMod).GetMethod(nameof(ApplySyncedToast), BindingFlags.Public | BindingFlags.Static)!,
+            message);
+
+    /// <summary>Invoked on all peers at the committed tick via SyncMethodInvoke.</summary>
     [SyncMethod]
     public static void ApplySyncedToast(string message)
     {
@@ -44,7 +52,7 @@ public sealed class CompatHelloMod
             ToastPrefix = newPrefix;
 
         // Always apply via SyncMethod — never mutate shared sim from raw UI alone.
-        ApplySyncedToast($"{ToastPrefix}: synced");
+        RequestSyncedToast($"{ToastPrefix}: synced");
         return MP.IsSyncMethodRegistered(typeof(CompatHelloMod).GetMethod(nameof(ApplySyncedToast))!);
     }
 }

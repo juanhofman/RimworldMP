@@ -6,11 +6,10 @@ using Verse;
 namespace RimworldMP.Patches;
 
 /// <summary>
-/// Seeded Rand forwarding on critical paths. Structure + stubs: when a session is active,
-/// Verse.Rand.Value / Range reads can be redirected to <see cref="Core.Sync.SyncedRand"/>.
-/// Full coverage of every Rand call site is iterative; these patches establish the injection boundary.
-///
-/// Requires game refs (<c>RIMWORLD_DIR</c> / <c>refs/RimWorld</c>) to compile.
+/// Seeded Rand forwarding on critical paths. When a session is active, Verse.Rand draws are
+/// redirected to <see cref="Core.Sync.SyncedRand"/>. Coverage expands iteratively; these
+/// patches establish Value/Range/Chance/Bool injection. Remaining APIs (Gaussian, MTB, …)
+/// still need RIMWORLD_DIR validation before patching.
 /// </summary>
 [HarmonyPatch]
 internal static class Rand_Patches
@@ -24,6 +23,7 @@ internal static class Rand_Patches
             return true;
 
         __result = session.Rand.NextFloat();
+        session.Desync.IncrementCounter("Rand.Value");
         return false;
     }
 
@@ -36,6 +36,7 @@ internal static class Rand_Patches
             return true;
 
         __result = session.Rand.Next(min, max);
+        session.Desync.IncrementCounter("Rand.Range");
         return false;
     }
 
@@ -47,7 +48,34 @@ internal static class Rand_Patches
         if (session is not { IsActive: true })
             return true;
 
-        __result = min + session.Rand.NextFloat() * (max - min);
+        __result = session.Rand.Range(min, max);
+        session.Desync.IncrementCounter("Rand.Range");
+        return false;
+    }
+
+    [HarmonyPatch(typeof(Rand), nameof(Rand.Chance), typeof(float))]
+    [HarmonyPrefix]
+    private static bool Chance_Prefix(float chance, ref bool __result)
+    {
+        var session = SessionFacade.Current;
+        if (session is not { IsActive: true })
+            return true;
+
+        __result = session.Rand.Chance(chance);
+        session.Desync.IncrementCounter("Rand.Chance");
+        return false;
+    }
+
+    [HarmonyPatch(typeof(Rand), nameof(Rand.Bool), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool Bool_Prefix(ref bool __result)
+    {
+        var session = SessionFacade.Current;
+        if (session is not { IsActive: true })
+            return true;
+
+        __result = session.Rand.Bool();
+        session.Desync.IncrementCounter("Rand.Bool");
         return false;
     }
 }

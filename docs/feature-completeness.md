@@ -4,9 +4,9 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 
 | Field | Value |
 | --- | --- |
-| **Audited tip** | `dev-compat-api-examples` (Compat/API public surface; rebase tip after merge) |
+| **Audited tip** | (update on merge of SyncMethod / colony catalog PR) |
 | **Tagged release** | **0.6.0** (`VERSION` / `About.xml` `modVersion`) |
-| **Toward 0.7.0?** | **Not yet** — see [Version policy](#version-policy) |
+| **Toward 0.7.0?** | **Candidate slice landed offline** — SyncMethod schedule + full colony catalog + public Compat/API (stay on 0.6.0 until LiteNetLib / QoL or a deliberate cut) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
 
 Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **Won’t do per prefs**.
@@ -18,15 +18,16 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 | Feature | Status | What’s on `main` | Gaps / next |
 | --- | --- | --- | --- |
 | **Lockstep** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (live proof) | `TickGate`, host command batches, client stall, pause/speed opcodes, DeterminismHarness soak | Live `TickManager` Harmony path unproven without game DLLs |
-| **Commands** | **Partial** | Opcodes for draft/job/zones/restrict + Phase 2 colony (bills/research/trade/caravan) + map-safe payloads (`mapId`); shadow stores + harness | Verse apply still stubby for trade/caravan; SyncMethod→apply wiring in flight (RMP-22); live apply needs `RIMWORLD_DIR` |
-| **JIP** | **Partial** / **Blocked on RIMWORLD_DIR** | Join-point transfer (`RMP3` v3), `ISaveLoad` / `MemorySaveLoad`, join hard-gate on protocol + modlist hash | `VerseSaveLoad` SaveGame/LoadGame needs install; mid-session JIP unproven in live RW |
+| **Commands** | **Partial** (offline catalog **Done**) | Full Phase 1–3 opcode catalog + map/thing ids; policies/schedules/designators/forbid; shadow stores (`ColonyWorld` / `PolicyWorld` / `ZoneWorld` / `DlcWorld`); harness serialize/apply | Verse apply stubby for trade/caravan/policies; live apply needs `RIMWORLD_DIR` |
+| **SyncMethod** | **Done** (offline) | `MP.CallSyncMethod` → opcode `90` → applicator invoke; `SyncMethodCodec`; `[SyncMethod]` attribute scan; `ColonyCommands` | Live author mods still need game session |
+| **JIP** | **Partial** / **Blocked on RIMWORLD_DIR** | Chunked transfer + `CompleteOrThrow` fail-loud; `SaveBlobPipeline` / `ISaveLoad` / `MemorySaveLoad`; join hard-gate | `VerseSaveLoad` SaveGame/LoadGame needs install |
 | **Launcher** | **Done** | Avalonia 11 UI + CLI: locate RW, mod prepare/hash, UDP discovery, host/join, `launcher-handoff.json`, process launch ([launcher-mvp.md](./launcher-mvp.md)) | Avalonia visual QA optional; launching game binary needs a real install |
-| **Mod sync** | **Done** | `RimworldMP.ModSync` host share TCP **30557**, client compare/pull + content-hash verify, Workshop **cache** secondary, Mods UI/CLI hooks ([mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) | Live Workshop **download** / SteamCMD: stub only — prefer LAN transfer (by design) |
-| **Transports** | **Partial** (+ **Won’t do** rows) | `INetTransport`: **Loopback** + **LAN TCP** (`LanTcpTransport`, port **30555**) | **LiteNetLib** not implemented (RMP-23 in flight). **Steam net** / **dedicated/headless host**: **Won’t do per prefs** |
-| **API** | **Partial** | `RimworldMP.API`: `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute/type/assembly registration + `TryInvokeSyncMethod`, XML docs; examples `CompatHello` / `CompatHostIo` (`NO_GAME_REFS`); harness `ApiRegistrationTests`; [mod-author-api.md](./mod-author-api.md) | Core→Verse **applicator** pipeline still incomplete (RMP-22); live session command emission for field watches stub-bound |
-| **DLC hooks** | **Partial** / **Blocked on RIMWORLD_DIR** | Phase 3 opcodes + `DlcHooks.*` + `DlcStateStore` shadow apply | Live Royalty/Ideology/Biotech/Anomaly Harmony targets need DLC assemblies under `RIMWORLD_DIR` |
-| **Desync** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (world hash samples) | Fingerprint (protocol/tick/RNG/counters/cmd hash + reserved world slot), freeze, **local-only** dumps + overlay path ([desync-dumps.md](./desync-dumps.md)), harness coverage | Live world-fingerprint fill + multi-peer desync proof need game install |
-| **QoL** | **Partial** | Lobby UI (F10 / button), ready gate + modlist peer display, `PauseOnPeerLeave`, recovery rejoin API, handoff status, desync freeze overlay | In-session **chat**, host **kick**, ready UX polish (RMP-27) |
+| **Mod sync** | **Done** | `RimworldMP.ModSync` host share TCP **30557**, client compare/pull + content-hash verify, Workshop **cache** secondary ([mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) | Live Workshop **download** / SteamCMD: stub only |
+| **Transports** | **Partial** (+ **Won’t do** rows) | `INetTransport`: **Loopback** + **LAN TCP** (`LanTcpTransport`, port **30555**) | **LiteNetLib** in flight. **Steam** / **dedicated host**: **Won’t do per prefs** |
+| **API** | **Done** (offline) / **Partial** (live watches) | `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute registration, `CallSyncMethod` schedule, XML docs; examples + `ApiRegistrationTests`; [mod-author-api.md](./mod-author-api.md) | Live field-watch → command emission still stub-bound |
+| **DLC hooks** | **Partial** / **Blocked on RIMWORLD_DIR** | Phase 3 opcodes + `DlcHooks.*` + `DlcStateStore` shadow apply | Live DLC Harmony targets need DLC assemblies |
+| **Desync** | **Done** (offline) / **Blocked on RIMWORLD_DIR** (world hash samples) | Fingerprint folds protocol/tick/RNG seed/**drawCount**/**OpinionHash**/counters/cmd hash + world slot; local-only dumps ([desync-dumps.md](./desync-dumps.md)) | Live world-fingerprint fill + multi-peer proof need install |
+| **QoL** | **Partial** | Lobby UI, ready gate, `PauseOnPeerLeave`, recovery rejoin, handoff, desync overlay | Chat, host kick, ready polish (RMP-27) |
 
 ### Prefs / explicit non-goals
 
@@ -42,26 +43,43 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 
 ---
 
+## Command catalog (offline / NO_GAME_REFS)
+
+| Area | Opcodes | Serialize + schedule | Shadow apply | Verse apply |
+| --- | --- | --- | --- | --- |
+| Time | `Pause`, `Speed` | Yes | N/A | **Blocked** — TickManager |
+| Draft | `Draft`, `Undraft` | Yes | N/A | **Blocked** — drafter |
+| Jobs | `JobGive` | Yes | Payload decode | **Blocked** — JobMaker |
+| Zones | `ZoneAdd/Remove/Clear/Create` | Yes | `ZoneWorld` | **Blocked** — ZoneManager |
+| Designators | `DesignatorCell`, `ForbidSet` | Yes | `PolicyWorld` | **Blocked** |
+| Areas | `RestrictAreaSet` | Yes | N/A | **Blocked** |
+| Schedules / policies | `WorkPrioritySet`, `TimetableSet`, `FoodRestrictionAssign`, `OutfitAssign`, `DrugPolicyAssign`, `MedicalCareSet`, `HostilityResponseSet` | Yes | `PolicyWorld` | **Blocked** |
+| Bills | `BillSet`, `BillDelete`, `BillReorder` | Yes | `ColonyWorld` | **Partial stub** |
+| Research | `ResearchStart`, `ResearchStop` | Yes | `ColonyWorld` | **Partial stub** |
+| Trade | `TradeAccept`, `TradeCancel` | Yes | `ColonyWorld` | **Stub** |
+| Caravan | `CaravanForm/Add/Remove/Disband` | Yes | `ColonyWorld` | **Stub** |
+| SyncMethod | `SyncMethodInvoke` (90) | Yes | Registry invoke | Author method |
+| DLC | 100–131 | Yes | `DlcWorld` | **Blocked** |
+
+Public API: `MP.CallSyncMethod` / `SyncMethodCodec` / `ColonyCommands.*` — see [api.md](./api.md), [track-a-p1-syncmethod.md](./track-a-p1-syncmethod.md).
+
+---
+
 ## Version policy
 
 - **Current release line:** `0.6.0` — UI + launcher + P0 sim + ModSync (see [CHANGELOG](../CHANGELOG.md), [release-notes-v0.6.0.md](./release-notes-v0.6.0.md)).
-- **Do not bump to 0.7.0** until a coherent slice of **code** features lands on `main` (candidates: SyncMethod applicators, LiteNetLib transport, session QoL chat/kick, Compat API expansions). Richer desync dumps alone (#14) are **Unreleased** polish, not a 0.7 cut.
+- **Do not bump to 0.7.0** until a coherent slice is cut deliberately. Stay on 0.6.0 for this merge unless packaging asks otherwise.
 - When bumping: keep `VERSION`, `mod/About/About.xml` `modVersion`, and CHANGELOG in lockstep.
 
 ---
 
-## In-flight (not justifying 0.7.0 yet)
+## Still Verse-blocked (install required)
 
-Tracked in Project notes as RMP-22…27 (excluding this matrix doc):
-
-| Track | Intent |
-| --- | --- |
-| SyncMethod + colony applicators / RNG | Finish registration→deterministic invoke and thicken Verse apply paths |
-| LiteNetLib LAN transport | Alternate `INetTransport` behind the same facade |
-| Compat API + examples | **Landed** on `dev-compat-api-examples` (public API + examples + docs + harness); Core applicators remain separate |
-| Session QoL | Chat, kick, ready polish |
-
-Live RimWorld **1.7 smoke** remains queued until a Mac/PC with `RIMWORLD_DIR` is available.
+1. Harmony prefixes that touch Verse types (draft/job/zone/bill/research/Rand/lobby UI).
+2. Trade deal commit, caravan formation, policy pawn settings.
+3. World fingerprint samples into desync hash.
+4. Live 2P smoke 30+ min.
+5. Confirm `Rand.Chance` / `Bool` signatures on installed 1.7.
 
 ---
 
