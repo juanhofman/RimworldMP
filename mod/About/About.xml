@@ -3,8 +3,8 @@
   <name>RimworldMP</name>
   <author>RimworldMP contributors</author>
   <packageId>RimworldMP.Core</packageId>
-  <modVersion>0.5.0</modVersion>
-  <description>From-scratch RimWorld 1.7 multiplayer (shared colony, LAN TCP, in-game host). v0.5.0: lockstep lobby + JIP, colony/DLC command surfaces, Compat API, ready/modlist checks, desync dumps. Requires Harmony 3. Build with RIMWORLD_DIR for full Verse patches.</description>
+  <modVersion>0.6.0</modVersion>
+  <description>From-scratch RimWorld 1.7 multiplayer: shared colony, LAN TCP (protocol v3), in-game host. v0.6.0 — UI + launcher release: LAN launcher (locate/mods/host/join/handoff), P0 sim-correctness (modlist join gate, map-safe cmds, JIP load hooks, MaxClients 4), in-mod lobby (F10 / button). Requires Harmony 3. Known limitation: untested in live RW 1.7 without RIMWORLD_DIR game refs.</description>
   <supportedVersions>
     <li>1.7</li>
   </supportedVersions>
