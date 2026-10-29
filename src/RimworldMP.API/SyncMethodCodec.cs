@@ -10,15 +10,24 @@ namespace RimworldMP.API;
 /// </summary>
 public static class SyncMethodCodec
 {
+    /// <summary>Wire type tag for a SyncMethod argument.</summary>
     public enum ArgTag : byte
     {
+        /// <summary>Null reference.</summary>
         Null = 0,
+        /// <summary>Boolean.</summary>
         Bool = 1,
+        /// <summary>32-bit signed integer.</summary>
         Int32 = 2,
+        /// <summary>64-bit signed integer.</summary>
         Int64 = 3,
+        /// <summary>IEEE-754 single.</summary>
         Single = 4,
+        /// <summary>IEEE-754 double.</summary>
         Double = 5,
+        /// <summary>UTF-8 string (u16 length prefix).</summary>
         String = 6,
+        /// <summary>Raw bytes (u16 length prefix).</summary>
         Bytes = 7,
     }
 
@@ -29,6 +38,7 @@ public static class SyncMethodCodec
         return MP.KeyOf(method);
     }
 
+    /// <summary>Encode a method key and argument list for <c>SyncMethodInvoke</c>.</summary>
     public static byte[] Encode(string methodKey, IReadOnlyList<object?> args)
     {
         ArgumentNullException.ThrowIfNull(methodKey);
@@ -52,6 +62,7 @@ public static class SyncMethodCodec
         return ms.ToArray();
     }
 
+    /// <summary>Decode a SyncMethod invoke payload into key + args.</summary>
     public static (string MethodKey, object?[] Args) Decode(ReadOnlySpan<byte> payload)
     {
         if (payload.Length < 4)

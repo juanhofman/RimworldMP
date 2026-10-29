@@ -42,12 +42,7 @@
   </PropertyGroup>
 
   <Target Name="NoteMissingRimWorldRefs" BeforeTargets="Build" Condition="'$(HasRimWorldRefs)' != 'true'">
-<<<<<<< HEAD
-    <!-- Message (not Warning) so TreatWarningsAsErrors / CI stay green without RIMWORLD_DIR. -->
-    <Message Importance="high" Text="RIMWORLD_DIR / refs/RimWorld not found — building RimworldMP with RIMWORLDMP_NO_GAME_REFS stubs. Set RIMWORLD_DIR to enable real Verse/Harmony game integration." />
-=======
     <!-- Message (not Warning) so TreatWarningsAsErrors / CI stays at 0 warnings under NO_GAME_REFS. -->
     <Message Importance="High" Text="RIMWORLD_DIR / refs/RimWorld not found — building RimworldMP with RIMWORLDMP_NO_GAME_REFS stubs. Set RIMWORLD_DIR to enable real Verse/Harmony game integration." />
->>>>>>> edc5609 (Enforce zero-warning builds (TreatWarningsAsErrors, net10 analyzers).)
   </Target>
 </Project>
