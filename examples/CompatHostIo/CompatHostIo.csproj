@@ -3,6 +3,11 @@
     <RootNamespace>RimworldMP.Examples.CompatHostIo</RootNamespace>
     <AssemblyName>RimworldMP.Examples.CompatHostIo</AssemblyName>
     <IsPackable>false</IsPackable>
+    <Description>
+      Host-only I/O + inject example for RimworldMP.API.
+      Builds with NO_GAME_REFS / without RIMWORLD_DIR — no Verse or Harmony references.
+    </Description>
+    <DefineConstants>$(DefineConstants);NO_GAME_REFS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\RimworldMP.API\RimworldMP.API.csproj" />

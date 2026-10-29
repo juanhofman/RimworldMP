@@ -2,6 +2,8 @@
 
 Public surface for third-party mods. Reference `RimworldMP.API` only — do not soft-depend on Core/Net unless you need internals.
 
+**Full guide:** [mod-author-api.md](./mod-author-api.md) · **Examples:** [`examples/`](../examples/)
+
 ## Session flags
 
 | Member | Meaning |
@@ -12,28 +14,41 @@ Public surface for third-party mods. Reference `RimworldMP.API` only — do not 
 | `MP.LocalPlayerId` | Player id, or `-1` offline |
 | `MP.Tick` | Current lockstep tick |
 
-## Commands
+## SyncMethod
 
 ```csharp
-MP.ExecuteCommand(opcode, payloadBytes);
-```
+[SyncMethod]
+public static void ApplyHostResult(int value) { /* deterministic */ }
 
-Opcodes live in Core (`CommandOpcode`). Prefer documented helpers / SyncMethod registration over raw opcodes when possible.
-
-## SyncMethod registration
-
-```csharp
+MP.RegisterSyncMethodsFromType(typeof(MyMod));
+// or
 MP.RegisterSyncMethod(typeof(MyMod).GetMethod(nameof(MyMod.ApplyHostResult))!);
 ```
 
-Registrations are discoverable via `MP.RegisteredSyncMethodKeys`. Host-only I/O should compute on the host then inject a synced result at tick T.
+Keys: `MP.RegisteredSyncMethodKeys`, `MP.IsSyncMethodRegistered(...)`, `MP.TryInvokeSyncMethod(...)`.
 
-## Desync
+## Field watch
 
 ```csharp
-MP.OnDesync += () => { /* freeze UI, show dump path from logs */ };
+[SyncField]
+public int AreaId { get; set; }
+
+FieldWatch.RegisterFromType(typeof(MySettings));
+using (FieldWatch.Watch(this, prop)) { /* dialog */ }
 ```
 
-Local dump layout (never uploaded): [desync-dumps.md](./desync-dumps.md).
+## Host-only + inject
 
-Dumps include RNG counters and last-N commands (`.log` + `.cmds.json`) under the local RimworldMP desync folder.
+```csharp
+HostInject.HostComputeAndInject(HostCompute, ApplyHostResult);
+HostInject.TryRunHostOnly(() => { /* HTTP / disk */ });
+```
+
+## Commands / desync
+
+```csharp
+MP.ExecuteCommand(opcode, payloadBytes);
+MP.OnDesync += () => { /* freeze UI */ };
+```
+
+Opcodes live in Core (`CommandOpcode`). Prefer SyncMethod / Compat `DlcHooks` over raw opcodes when possible.

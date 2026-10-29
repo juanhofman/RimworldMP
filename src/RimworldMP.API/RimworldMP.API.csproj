@@ -3,5 +3,6 @@
     <RootNamespace>RimworldMP.API</RootNamespace>
     <AssemblyName>RimworldMP.API</AssemblyName>
     <Description>Public API surface for RimworldMP (no Harmony dependency).</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 </Project>

@@ -49,6 +49,7 @@ docs/          architecture, API, install, release notes, phase notes
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md)
-- [`docs/api.md`](docs/api.md)
+- [`docs/api.md`](docs/api.md) · [`docs/mod-author-api.md`](docs/mod-author-api.md)
 - [`docs/install-play-guide.md`](docs/install-play-guide.md)
+- [`examples/`](examples/) — CompatHello / CompatHostIo (`NO_GAME_REFS`)
 - [`CHANGELOG.md`](CHANGELOG.md)

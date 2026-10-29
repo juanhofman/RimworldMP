@@ -2,16 +2,16 @@
 
 ## Unreleased
 
-Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, LiteNetLib, session QoL chat/kick, Compat API expansions). See [docs/feature-completeness.md](docs/feature-completeness.md).
+Stay on **0.6.0** until a coherent 0.7 feature slice lands (SyncMethod applicators, LiteNetLib, session QoL chat/kick). See [docs/feature-completeness.md](docs/feature-completeness.md).
 
 ### Added
+- **Public Compat/API for mod authors:** `[SyncMethod]` / `[SyncField]`, `FieldWatch` begin/end stubs, `HostInject` host-only+inject helpers, attribute/type/assembly registration, XML docs on `RimworldMP.API` ([docs/mod-author-api.md](docs/mod-author-api.md)). Examples `CompatHello` / `CompatHostIo` build with `NO_GAME_REFS`. DeterminismHarness `ApiRegistrationTests` covers registration, watch, and host-inject.
 - **Feature completeness matrix:** Feature → Done / Partial / Blocked on `RIMWORLD_DIR` / Won’t do per prefs ([docs/feature-completeness.md](docs/feature-completeness.md))
 - **Richer local desync dumps:** tick/protocol/peer ids, short modlist hash, RNG seed/counters, last-N commands, optional batch ring; never uploaded ([docs/desync-dumps.md](docs/desync-dumps.md)). Freeze overlay shows dump path. DeterminismHarness `DesyncDumpTests` covers forced fingerprint mismatch sections.
 
 ### In flight (not on `main` yet / incomplete)
-- SyncMethod colony applicators and RNG thicken (registration exists; invoke/apply pipeline incomplete)
+- SyncMethod colony applicators and RNG thicken (API registration + invoke helpers exist; Core→Verse apply pipeline incomplete)
 - LiteNetLib LAN transport behind `INetTransport`
-- Compat API expansions + richer example mods
 - Session QoL: chat, host kick, ready polish
 
 ## 0.6.0 — UI + launcher release (2026-10-29)
@@ -47,5 +47,3 @@ First tagged release of the from-scratch RimworldMP lockstep stack for RimWorld 
 - Protocol magic `RMP2`, version **2**
 
 ## 0.1.0 — Phase 0/1 foundation
-
-Scaffold + smallest playable MP primitives (merged via PR #1).
