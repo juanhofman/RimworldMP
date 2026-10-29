@@ -116,6 +116,7 @@ public sealed class LanDiscovery : IAsyncDisposable
                             ModHashShort = beacon.ModHashShort,
                             ModlistHash = beacon.ModlistHash,
                             Host = result.RemoteEndPoint.Address.ToString(),
+                            ModSyncPort = beacon.ModSyncPort,
                         };
                     }
 

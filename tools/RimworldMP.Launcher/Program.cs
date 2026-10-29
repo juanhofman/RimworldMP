@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using RimworldMP.Launcher.Cli;
 using RimworldMP.Launcher.Services;
+using RimworldMP.Launcher.Services.ModSync;
 
 namespace RimworldMP.Launcher;
 
@@ -16,6 +17,8 @@ internal static class Program
     public static int Main(string[] args)
     {
         ModlistHasher.AssertGoldenMatchesCoreExpectation();
+        // Real LAN catalog + sync backends for Avalonia Mods screen (see docs/launcher-mod-manager-hooks.md).
+        ModSyncServices.UseLanBackends();
 
         if (ShouldUseCli(args, out var cliArgs))
             return CliApp.RunAsync(cliArgs).GetAwaiter().GetResult();

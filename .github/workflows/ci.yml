@@ -43,6 +43,9 @@ jobs:
       - name: DeterminismHarness + Core important paths
         run: dotnet test tests/DeterminismHarness -c Release --no-build --verbosity normal
 
+      - name: ModSync library tests (manifest / hash / loopback LAN)
+        run: dotnet test tests/RimworldMP.ModSync.Tests -c Release --no-build --verbosity normal
+
       - name: Build launcher (headless)
         run: dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.csproj -c Release
 

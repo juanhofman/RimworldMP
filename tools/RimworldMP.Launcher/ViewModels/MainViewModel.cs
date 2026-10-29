@@ -12,6 +12,7 @@ public partial class MainViewModel : ObservableObject
     private readonly SessionOrchestrator _orch = new();
     private readonly IModCatalog _catalog;
     private readonly IModSyncClient _modSync;
+    private readonly HostModShareService _hostModShare = new();
     private LanDiscovery? _hostDiscovery;
     private CancellationTokenSource? _hostCts;
     private CancellationTokenSource? _syncCts;
@@ -214,6 +215,9 @@ public partial class MainViewModel : ObservableObject
             SyncHost = JoinIp.Trim();
         else if (SelectedBeacon?.Host is { Length: > 0 } h)
             SyncHost = h;
+
+        if (SelectedBeacon?.ModSyncPort is int msp && msp is >= 1 and <= 65535)
+            SyncPort = msp.ToString();
     }
 
     [RelayCommand]
@@ -415,6 +419,10 @@ public partial class MainViewModel : ObservableObject
                 PrepareMods = PrepareModsOnLaunch,
                 LaunchGame = LaunchGame,
                 MaxClients = MaxClients,
+                ShareMods = true,
+                ModSyncPort = int.TryParse(SyncPort, out var msp) && msp is >= 1 and <= 65535
+                    ? msp
+                    : LauncherPaths.DefaultModSyncPort,
             };
 
             var (ordered, hash, warnings) = PrepLocal(options.PrepareMods, "host");
@@ -437,8 +445,38 @@ public partial class MainViewModel : ObservableObject
                 ActiveMods.Add(m);
             ModlistHash = hash;
 
-            var beacon = _orch.CreateHostBeacon(options, hash, bindHost, rwBuild);
             _hostCts = new CancellationTokenSource();
+            var modShareNote = "";
+            if (options.ShareMods)
+            {
+                if (install is null)
+                    throw new InvalidOperationException("RimWorld not found — required to share mods over LAN.");
+                await _hostModShare.StartAsync(
+                        ordered,
+                        install.InstallDir,
+                        rwBuild,
+                        options.ModSyncPort,
+                        cancellationToken: _hostCts.Token)
+                    .ConfigureAwait(true);
+                options = new HostSessionOptions
+                {
+                    SessionName = options.SessionName,
+                    Port = options.Port,
+                    DiscoveryPort = options.DiscoveryPort,
+                    InstallPath = options.InstallPath,
+                    ConfigPath = options.ConfigPath,
+                    BindHost = options.BindHost,
+                    PrepareMods = options.PrepareMods,
+                    LaunchGame = options.LaunchGame,
+                    MaxClients = options.MaxClients,
+                    ShareMods = true,
+                    ModSyncPort = _hostModShare.Port,
+                };
+                SyncPort = _hostModShare.Port.ToString();
+                modShareNote = $"\nMod sync TCP {bindHost}:{_hostModShare.Port} ({_hostModShare.Manifest?.Mods.Count ?? 0} packages)";
+            }
+
+            var beacon = _orch.CreateHostBeacon(options, hash, bindHost, rwBuild, _hostModShare.IsRunning ? _hostModShare.Port : null);
             _hostDiscovery = await _orch.BeginHostBroadcastAsync(beacon, options.DiscoveryPort, _hostCts.Token)
                 .ConfigureAwait(true);
 
@@ -456,6 +494,7 @@ public partial class MainViewModel : ObservableObject
             var warn = warnings.Count == 0 ? "" : "\n" + string.Join("\n", warnings);
             LaunchLog =
                 $"Hosting “{options.SessionName}”\nAdvertise {bindHost}:{port}\nDiscovery UDP {options.DiscoveryPort}\nHandoff: {LastHandoffPath}\nHash: {hash}" +
+                modShareNote +
                 (launch is null ? "\n(Game not launched)" : $"\nLaunched pid={launch.ProcessId}") + warn;
             StatusLine = "Beacon live — stop from Host when done.";
         }
@@ -477,6 +516,8 @@ public partial class MainViewModel : ObservableObject
             await _hostDiscovery.DisposeAsync().ConfigureAwait(true);
             _hostDiscovery = null;
         }
+
+        await _hostModShare.StopAsync().ConfigureAwait(true);
 
         _hostCts = null;
         IsHosting = false;

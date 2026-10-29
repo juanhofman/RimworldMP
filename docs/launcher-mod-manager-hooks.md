@@ -8,7 +8,7 @@ The Avalonia **Mods** screen is the first-class mod manager surface. LAN file tr
 | --- | --- |
 | Avalonia Mods / Host / Join / Launch UI | Launcher UI (`tools/RimworldMP.Launcher/Gui/**`, `ViewModels/**`) |
 | `IModCatalog` / `IModSyncClient` contracts + stubs | Launcher UI (this PR) |
-| Real Workshop/local scanning, LAN transfer server/client | Mod-sync agent (`Services/ModSync/**` impl or `tools/RimworldMP.ModSync/`) |
+| Real Workshop/local scanning, LAN transfer server/client | **Shipped:** `InstalledModCatalog` + `LanModSyncClient` + `tools/RimworldMP.ModSync/` (see [mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) |
 | Handoff JSON protocol 1 | Shared — additive fields only |
 
 ## Interfaces
@@ -17,16 +17,23 @@ The Avalonia **Mods** screen is the first-class mod manager surface. LAN file tr
 tools/RimworldMP.Launcher/Services/ModSync/
   IModCatalog.cs          # local inventory + active hash
   IModSyncClient.cs       # CompareAsync / SyncAsync + progress DTOs
-  StubModCatalog.cs       # ModsConfig active list only
-  StubModSyncClient.cs    # IsAvailable=false; Sync reports error
+  InstalledModCatalog.cs  # Mods + Workshop scan (default)
+  LanModSyncClient.cs     # Compare/Sync over TCP 30557 (default)
+  HostModShareService.cs  # Host TCP share lifecycle
+  StubModCatalog.cs       # ModsConfig active list only (tests)
+  StubModSyncClient.cs    # IsAvailable=false (tests / UI layout)
   ModSyncServices.cs      # Catalog / Sync composition root
 ```
 
-### Register a real backend
+### Register backends
 
 ```csharp
-ModSyncServices.Catalog = new YourModCatalog(...);
-ModSyncServices.Sync = new YourLanModSyncClient(...);
+// Default (Program.Main):
+ModSyncServices.UseLanBackends();
+
+// Or manual:
+ModSyncServices.Catalog = new InstalledModCatalog(...);
+ModSyncServices.Sync = new LanModSyncClient(...);
 ```
 
 Do this before the window is constructed (e.g. early in `Program.Main` / `App` init), or inject via `new MainViewModel(catalog, sync)`.
@@ -44,25 +51,17 @@ Do this before the window is constructed (e.g. early in `Program.Main` / `App` i
 | Missing / mismatched lists | `SyncMissing`, `SyncMismatched` | `ModSyncPlan` deltas |
 | Use Join IP | `UseJoinTargetForSyncCommand` | copies Join beacon / IP |
 
-When `IModSyncClient.IsAvailable` is `false`, buttons still run (stub messaging) so layout can be demoed; replace the stub to enable real sync.
+When `IModSyncClient.IsAvailable` is `false` (stubs), buttons still run with stub messaging. Production registration sets `IsAvailable=true` via `LanModSyncClient`.
 
 ## Ports (convention)
 
 | Port | Role |
 | --- | --- |
 | **30555** | Game MP TCP |
-| **30556** | Launcher UDP discovery beacon |
-| **30557** | Suggested LAN **mod sync / control** (not implemented here) |
+| **30556** | Launcher UDP discovery beacon (`modSyncPort` optional field) |
+| **30557** | LAN **mod sync** TCP (`HostModServer` / `LanModSyncClient`) |
 
 Change the sync port in the UI or pass `ModSyncHostTarget.Port`. Keep game and discovery ports unchanged unless bumping handoff/discovery protocols.
-
-## Suggested mod-sync fill-in order
-
-1. Expand `IModCatalog` implementation: Workshop + `Mods/` folder scan, `About.xml` packageIds, folder paths.
-2. Host-side advertise of ordered packageId list + content hashes (not full archives in the UDP beacon).
-3. `CompareAsync` → populate `Missing` / `Mismatched` / `ExtraLocal`.
-4. `SyncAsync` with chunked LAN transfer + `ModSyncProgress` (fraction + current packageId).
-5. Optional: apply remote load order via existing `ModsConfigService.WriteActiveMods` / `PrepareForMp`.
 
 ## Do not
 
