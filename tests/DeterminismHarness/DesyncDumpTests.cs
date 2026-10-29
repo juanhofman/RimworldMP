@@ -27,7 +27,7 @@ public class DesyncDumpTests
         {
             new(CommandOpcode.Pause, 58, 0, CommandPayloads.Pause(true)),
             new(CommandOpcode.Draft, 59, 1, CommandPayloads.Draft(42, true)),
-            new(CommandOpcode.BillSet, 60, 0, CommandPayloads.BillSet(1, 0, "CookMeal", 0, 1)),
+            new(CommandOpcode.BillSet, 60, 0, CommandPayloads.BillSet(mapId: 1, 1, 0, "CookMeal", 0, 1)),
         };
 
         var emptyBatch = CommandBatch.Empty(58).ToBytes();
