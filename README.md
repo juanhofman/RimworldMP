@@ -2,7 +2,9 @@
 
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
-Not a fork of Zetrith/RWMT. **v0.5.0** + **P0 sim-correctness**: LAN TCP lockstep (protocol **v3**), join hard-gate on modlist hash, thickened job/zone payloads with map ids, JIP save-load hooks, MaxClients default **4**, in-mod lobby (F10 / button / launcher handoff). Full Verse proof still needs `RIMWORLD_DIR`.
+Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release): LAN launcher MVP, protocol **v3** lockstep with modlist join hard-gate, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff). PackageId **`RimworldMP.Core`**. License **MIT**.
+
+**Known limitation:** untested in live RimWorld 1.7 — full Verse patches need `RIMWORLD_DIR` / game DLLs.
 
 ## Locked scope
 
@@ -21,6 +23,7 @@ Not a fork of Zetrith/RWMT. **v0.5.0** + **P0 sim-correctness**: LAN TCP lockste
 ```bash
 dotnet build RimworldMP.sln -c Release
 dotnet test tests/DeterminismHarness -c Release
+dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.sln -c Release
 
 # Full Verse patches:
 export RIMWORLD_DIR="/path/to/RimWorld"
@@ -28,20 +31,22 @@ dotnet build RimworldMP.sln -c Release
 # Copy mod/ → RimWorld/Mods/RimworldMP ; enable Harmony then RimworldMP
 ```
 
-Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · P0: [`docs/p0-sim-correctness.md`](docs/p0-sim-correctness.md) · Handoff: [`docs/launcher-handoff.md`](docs/launcher-handoff.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md)
+Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · Release notes: [`docs/release-notes-v0.6.0.md`](docs/release-notes-v0.6.0.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md) · Launcher: [`docs/launcher-mvp.md`](docs/launcher-mvp.md) · P0: [`docs/p0-sim-correctness.md`](docs/p0-sim-correctness.md)
 
 ## Layout
 
 ```
 src/           RimworldMP, API, Core, Net, Compat
-mod/           Workshop-style mod folder (1.7/Assemblies)
+mod/           Workshop-style mod folder (About + 1.7/Assemblies)
+tools/         RimworldMP.Launcher (LAN locate / mods / host / join)
 examples/      CompatHello, CompatHostIo
 tests/         DeterminismHarness
-docs/          architecture, API, phase notes, install guide
+docs/          architecture, API, install, release notes, phase notes
 ```
 
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md)
 - [`docs/api.md`](docs/api.md)
+- [`docs/install-play-guide.md`](docs/install-play-guide.md)
 - [`CHANGELOG.md`](CHANGELOG.md)
