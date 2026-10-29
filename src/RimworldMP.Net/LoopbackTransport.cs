@@ -73,6 +73,23 @@ public sealed class LoopbackTransport : INetTransport
         SendReliable(_remoteId, payload);
     }
 
+    /// <summary>
+    /// Simulate a host kick / peer drop without tearing down the local transport.
+    /// Fires <see cref="OnPeerLeave"/> for the remote id; remote side also sees leave.
+    /// </summary>
+    public void DisconnectPeer(NetPeerId peer)
+    {
+        _ = peer;
+        if (!_running)
+            return;
+        var remote = _remote;
+        if (remote is null)
+            return;
+        OnPeerLeave?.Invoke(_remoteId);
+        if (remote._running)
+            remote.OnPeerLeave?.Invoke(remote._remoteId);
+    }
+
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
         if (!_running)

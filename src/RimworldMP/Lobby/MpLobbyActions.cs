@@ -112,6 +112,8 @@ public static class MpLobbyActions
             MpConfig.MaxClients = mc;
         if (doc.Port > 0)
             MpConfig.DefaultPort = doc.Port;
+        if (!string.IsNullOrWhiteSpace(doc.PlayerDisplayName))
+            MpConfig.PlayerDisplayName = doc.PlayerDisplayName!.Trim();
 
         LauncherHandoff.Acknowledge(path);
 

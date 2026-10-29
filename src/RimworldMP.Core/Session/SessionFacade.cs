@@ -80,6 +80,8 @@ public static class SessionFacade
             session.Ready.Required = true;
         Attach(session);
         await session.StartAsync(new NetEndpoint("0.0.0.0", port), cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(MpConfig.PlayerDisplayName))
+            session.SetDisplayName(MpConfig.PlayerDisplayName);
         return session;
     }
 
@@ -107,6 +109,9 @@ public static class SessionFacade
 
         var session = new MpSession(transport, isHost: false, sessionSeed);
         session.SetModlistHash(hash);
+        // Stash name before start so client StartAsync announces it with the correct player id.
+        if (!string.IsNullOrWhiteSpace(MpConfig.PlayerDisplayName))
+            session.SetDisplayName(MpConfig.PlayerDisplayName);
         Attach(session);
         await session.StartAsync(new NetEndpoint(host, port), cancellationToken).ConfigureAwait(false);
         return session;

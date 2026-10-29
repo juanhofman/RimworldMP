@@ -31,6 +31,10 @@ public sealed class LauncherHandoffDocument
     [JsonPropertyName("sessionName")]
     public string? SessionName { get; set; }
 
+    /// <summary>Optional player display name for lobby + chat (additive protocol 1 field).</summary>
+    [JsonPropertyName("playerDisplayName")]
+    public string? PlayerDisplayName { get; set; }
+
     [JsonPropertyName("autoStartLobby")]
     public bool AutoStartLobby { get; set; } = true;
 
