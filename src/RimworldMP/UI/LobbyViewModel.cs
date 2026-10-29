@@ -14,6 +14,7 @@ public sealed class LobbyViewModel
     public required bool ReadyRequired { get; init; }
     public required bool LocalReady { get; init; }
     public required int LocalPlayerId { get; init; }
+    public required string LocalDisplayName { get; init; }
     public required long Tick { get; init; }
     public required int Port { get; init; }
     public required string LanStatus { get; init; }
@@ -24,6 +25,7 @@ public sealed class LobbyViewModel
     public required int MaxClients { get; init; }
     public required int ConnectedPeerCount { get; init; }
     public required IReadOnlyList<LobbyPeerRow> Peers { get; init; }
+    public required IReadOnlyList<LobbyChatLine> ChatLines { get; init; }
     public required HandoffUiSnapshot Handoff { get; init; }
     public required DesyncOverlayModel? Desync { get; init; }
     public required string StatusLine { get; init; }
@@ -31,6 +33,9 @@ public sealed class LobbyViewModel
     public required bool CanJoin { get; init; }
     public required bool CanDisconnect { get; init; }
     public required bool CanToggleReady { get; init; }
+    public required bool CanKick { get; init; }
+    public required bool CanChat { get; init; }
+    public required bool WasKicked { get; init; }
 }
 
 public readonly record struct LobbyPeerRow(
@@ -43,4 +48,11 @@ public readonly record struct LobbyPeerRow(
     string ModlistShort,
     bool ModlistMatch,
     string ReadyLabel,
-    string ModlistLabel);
+    string ModlistLabel,
+    bool CanKick);
+
+public readonly record struct LobbyChatLine(
+    bool IsSystem,
+    string Author,
+    string Text,
+    string Prefix);

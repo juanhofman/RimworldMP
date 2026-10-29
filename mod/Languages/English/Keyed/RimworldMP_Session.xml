@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!-- Mirrored by RimworldMP.Core.Session.SessionMessages (offline EN defaults). -->
+  <RMP.ProtocolMismatch>Protocol mismatch: client={0} host={1} (min={2}).</RMP.ProtocolMismatch>
+  <RMP.ModlistMismatch>Modlist hash mismatch: client='{0}' host='{1}'.</RMP.ModlistMismatch>
+  <RMP.DlcMismatch>DLC mismatch: client='{0}' host='{1}'.</RMP.DlcMismatch>
+  <RMP.LobbyFull>Lobby full (max {0}).</RMP.LobbyFull>
+  <RMP.JoinRejected>Host rejected join: {0} — {1}</RMP.JoinRejected>
+  <RMP.PeerJoined>{0} joined the lobby.</RMP.PeerJoined>
+  <RMP.PeerLeft>{0} left the session.</RMP.PeerLeft>
+  <RMP.PeerKicked>{0} was kicked from the session.</RMP.PeerKicked>
+  <RMP.YouWereKicked>You were kicked from the session: {0}</RMP.YouWereKicked>
+  <RMP.KickDefaultReason>Removed by host.</RMP.KickDefaultReason>
+  <RMP.ReadyWaiting>Waiting for all peers ready with matching modlist…</RMP.ReadyWaiting>
+  <RMP.ReadyBlockedUnpause>Cannot unpause until the ready-check passes.</RMP.ReadyBlockedUnpause>
+  <RMP.ChatEmpty>(empty)</RMP.ChatEmpty>
+  <RMP.RecoveryRequested>Recovery rejoin requested — waiting for host join point…</RMP.RecoveryRequested>
+  <RMP.RecoverySent>Host sent recovery join point to peer {0}.</RMP.RecoverySent>
+  <RMP.DisplayNameDefault>Player {0}</RMP.DisplayNameDefault>
+  <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
+  <RMP.DisplayNameYou>You</RMP.DisplayNameYou>
+  <RMP.DisplayNameYouHost>You (host)</RMP.DisplayNameYouHost>
+</LanguageData>

@@ -1,0 +1,21 @@
+# Optional Dutch overlay for SessionMessages.LoadOptional (no RimWorld required).
+# Format: Key=value  (# comments / blank lines ignored)
+RMP.ProtocolMismatch=Protocolversie komt niet overeen: client={0} host={1} (min={2}).
+RMP.ModlistMismatch=Modlijst-hash komt niet overeen: client='{0}' host='{1}'.
+RMP.DlcMismatch=DLC komt niet overeen: client='{0}' host='{1}'.
+RMP.LobbyFull=Lobby vol (max {0}).
+RMP.JoinRejected=Host weigerde deelname: {0} — {1}
+RMP.PeerJoined={0} is toegetreden tot de lobby.
+RMP.PeerLeft={0} heeft de sessie verlaten.
+RMP.PeerKicked={0} is uit de sessie gezet.
+RMP.YouWereKicked=Je bent uit de sessie gezet: {0}
+RMP.KickDefaultReason=Verwijderd door de host.
+RMP.ReadyWaiting=Wachten tot alle peers klaar zijn met dezelfde modlijst…
+RMP.ReadyBlockedUnpause=Kan niet hervatten tot de ready-check slaagt.
+RMP.ChatEmpty=(leeg)
+RMP.RecoveryRequested=Herstel-rejoin aangevraagd — wachten op join point van de host…
+RMP.RecoverySent=Host stuurde herstel-join point naar peer {0}.
+RMP.DisplayNameDefault=Speler {0}
+RMP.DisplayNameHost=Host
+RMP.DisplayNameYou=Jij
+RMP.DisplayNameYouHost=Jij (host)
