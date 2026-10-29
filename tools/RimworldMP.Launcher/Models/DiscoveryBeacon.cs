@@ -30,4 +30,8 @@ public sealed class DiscoveryBeacon
 
     [JsonPropertyName("host")]
     public string? Host { get; init; }
+
+    /// <summary>Optional LAN mod-sync TCP port (default 30557). Additive for protocol 1.</summary>
+    [JsonPropertyName("modSyncPort")]
+    public int? ModSyncPort { get; init; }
 }

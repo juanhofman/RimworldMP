@@ -8,6 +8,8 @@ public static class LauncherPaths
     public const string HandoffAckSuffix = ".ack";
     public const int DefaultGamePort = 30555;
     public const int DefaultDiscoveryPort = 30556;
+    /// <summary>LAN TCP mod sync (HostModServer). Same family as discovery/game.</summary>
+    public const int DefaultModSyncPort = 30557;
 
     public const string HarmonyPackageId = "brrainz.harmony";
     public const string RimworldMpPackageId = "RimworldMP.Core";

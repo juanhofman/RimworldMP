@@ -1,5 +1,8 @@
+using System.Net;
 using RimworldMP.Launcher.Models;
 using RimworldMP.Launcher.Services;
+using RimworldMP.Launcher.Services.ModSync;
+using RimworldMP.ModSync;
 
 namespace RimworldMP.Launcher.Cli;
 
@@ -26,7 +29,7 @@ public static class CliApp
             {
                 "help" or "-h" or "--help" => PrintHelp(),
                 "locate" => CmdLocate(rest),
-                "mods" => CmdMods(rest),
+                "mods" => await CmdMods(rest).ConfigureAwait(false),
                 "hash" => CmdHash(rest),
                 "discover" => await CmdDiscoverAsync(rest).ConfigureAwait(false),
                 "host" => await CmdHostAsync(rest).ConfigureAwait(false),
@@ -50,10 +53,12 @@ public static class CliApp
         Console.WriteLine("  1) Locate RimWorld");
         Console.WriteLine("  2) Prepare mods (Harmony first + RimworldMP)");
         Console.WriteLine("  3) Show modlist hash");
-        Console.WriteLine("  4) Host (beacon + handoff + launch)");
+        Console.WriteLine("  4) Host (beacon + share mods + launch)");
         Console.WriteLine("  5) Join (discover / manual IP)");
         Console.WriteLine("  6) Restore ModsConfig backup");
-        Console.WriteLine("  7) Help");
+        Console.WriteLine("  7) List installed mods");
+        Console.WriteLine("  8) Sync mods from host (LAN)");
+        Console.WriteLine("  9) Help");
         Console.WriteLine("  0) Exit");
         Console.Write("> ");
         var line = Console.ReadLine()?.Trim();
@@ -62,10 +67,12 @@ public static class CliApp
             "1" => await DispatchAsync(new[] { "locate" }).ConfigureAwait(false),
             "2" => await DispatchAsync(new[] { "mods", "prepare" }).ConfigureAwait(false),
             "3" => await DispatchAsync(new[] { "hash" }).ConfigureAwait(false),
-            "4" => await DispatchAsync(new[] { "host" }).ConfigureAwait(false),
+            "4" => await DispatchAsync(new[] { "host", "--share-mods" }).ConfigureAwait(false),
             "5" => await DispatchAsync(new[] { "join" }).ConfigureAwait(false),
             "6" => await DispatchAsync(new[] { "mods", "restore" }).ConfigureAwait(false),
-            "7" => PrintHelp(),
+            "7" => await DispatchAsync(new[] { "mods", "list" }).ConfigureAwait(false),
+            "8" => await DispatchAsync(new[] { "mods", "sync" }).ConfigureAwait(false),
+            "9" => PrintHelp(),
             "0" or null or "" => 0,
             _ => Fail("Unknown choice."),
         };
@@ -86,6 +93,8 @@ public static class CliApp
               mods prepare [--profile name]  Backup ModsConfig, enforce Harmony→…→RimworldMP order
               mods restore                   Restore last pre-MP ModsConfig backup
               mods show                      Print active ordered packageIds + hash
+              mods list [--path <rw-dir>]    Scan installed Mods + Workshop cache
+              mods sync --host <ip> [opts]   Pull exact mods/versions from host over LAN
               hash                           Same as mods show (hash focus)
               discover [--seconds N]         Listen for LAN host beacons (UDP 30556)
               host [options]                 Beacon + write handoff + launch RimWorld
@@ -100,14 +109,17 @@ public static class CliApp
               --no-launch        --no-mods
               --bind-host <ip>   (default: primary LAN IPv4)
               --max-clients <n>  (default 4; written to handoff)
+              --share-mods       Serve active mod files over TCP (default 30557)
+              --mod-sync-port N  Override mod-sync listen port
 
-            Join options:
-              --ip <host>        --port <30555>  --seconds <3>
+            Join / mods sync options:
+              --ip / --host <ip> --port <30555>  --seconds <3>
+              --mod-sync-port N  (default 30557, or from beacon)
               --path <rw-dir>    --config <ModsConfig.xml>
               --no-launch        --no-mods
               --name <session>
 
-            Docs: docs/launcher-mvp.md · docs/launcher-handoff.md
+            Docs: docs/launcher-mvp.md · docs/launcher-handoff.md · docs/mod-manager-lan-sync.md
             Handoff: see `handoff-path` (Windows LocalAppData / Linux ~/.local/share/RimworldMP/)
             """);
         return 0;
@@ -146,10 +158,10 @@ public static class CliApp
         return 0;
     }
 
-    static int CmdMods(string[] args)
+    static async Task<int> CmdMods(string[] args)
     {
         if (args.Length == 0)
-            return Fail("mods requires: prepare | restore | show");
+            return Fail("mods requires: prepare | restore | show | list | sync");
 
         var sub = args[0].ToLowerInvariant();
         var rest = args.Skip(1).ToArray();
@@ -161,8 +173,98 @@ public static class CliApp
             "prepare" => CmdModsPrepare(orch, rest, configPath),
             "restore" => CmdModsRestore(orch, configPath),
             "show" => CmdModsShow(orch, configPath),
+            "list" => CmdModsList(rest),
+            "sync" => await CmdModsSyncAsync(rest).ConfigureAwait(false),
             _ => Fail($"Unknown mods subcommand '{sub}'."),
         };
+    }
+
+    static int CmdModsList(string[] args)
+    {
+        var path = GetOpt(args, "--path");
+        var install = RimWorldLocator.TryLocate(path);
+        var installDir = install?.InstallDir ?? path;
+        if (string.IsNullOrWhiteSpace(installDir))
+            return Fail("RimWorld not found. Pass --path <install-dir>.");
+
+        var installed = ModInventory.ScanInstalled(installDir);
+        Console.WriteLine($"install: {installDir}");
+        Console.WriteLine($"mods root: {Path.Combine(installDir, "Mods")}");
+        Console.WriteLine($"found: {installed.Count}");
+        Console.WriteLine("order emphasis: Harmony first, then RimworldMP.Core.");
+        var i = 1;
+        foreach (var m in installed)
+        {
+            var ws = m.WorkshopId ?? "-";
+            var hash = m.ContentHash.Length >= 8 ? m.ContentHash[..8] : m.ContentHash;
+            Console.WriteLine($"  {i++,3}. {m.PackageId}  v={m.Version}  workshop={ws}  hash={hash}  {m.Name}");
+            Console.WriteLine($"       path={m.LocalPath}");
+        }
+
+        return 0;
+    }
+
+    static async Task<int> CmdModsSyncAsync(string[] args)
+    {
+        var host = GetOpt(args, "--host") ?? GetOpt(args, "--ip");
+        var modSyncPort = GetOptInt(args, "--mod-sync-port", LauncherPaths.DefaultModSyncPort);
+        var discoPort = GetOptInt(args, "--discovery-port", LauncherPaths.DefaultDiscoveryPort);
+        var seconds = GetOptInt(args, "--seconds", 3);
+        var path = GetOpt(args, "--path");
+        var applyConfig = !HasFlag(args, "--no-mods");
+
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            Console.WriteLine($"No --host; discovering for {seconds}s…");
+            var beacons = await SessionOrchestrator.DiscoverAsync(TimeSpan.FromSeconds(seconds), discoPort)
+                .ConfigureAwait(false);
+            if (beacons.Count == 0)
+                return Fail("No LAN hosts found. Re-run with --host <ip>.");
+
+            for (var i = 0; i < beacons.Count; i++)
+            {
+                var b = beacons[i];
+                var msp = b.ModSyncPort ?? LauncherPaths.DefaultModSyncPort;
+                Console.WriteLine($"  [{i + 1}] {b.Name} {b.Host}:{b.Port} modSync={msp} hash={b.ModHashShort}…");
+            }
+
+            Console.Write("Select host number (or Enter for 1): ");
+            var choice = Console.ReadLine()?.Trim();
+            var idx = 0;
+            if (!string.IsNullOrEmpty(choice) && (!int.TryParse(choice, out var n) || n < 1 || n > beacons.Count))
+                return Fail("Invalid selection.");
+            if (!string.IsNullOrEmpty(choice))
+                idx = int.Parse(choice) - 1;
+
+            var selected = beacons[idx];
+            host = selected.Host;
+            if (selected.ModSyncPort is int advertised)
+                modSyncPort = advertised;
+            Console.WriteLine($"Selected {selected.Name} at {host} mod-sync :{modSyncPort}");
+        }
+
+        var syncClient = new LanModSyncClient();
+        var plan = await syncClient.CompareAsync(new ModSyncHostTarget
+        {
+            Host = host!,
+            Port = modSyncPort,
+        }).ConfigureAwait(false);
+
+        Console.WriteLine($"local={plan.LocalHash}");
+        Console.WriteLine($"host ={plan.RemoteHash}");
+        Console.WriteLine($"missing={plan.Missing.Count} mismatched={plan.Mismatched.Count} extraLocal={plan.ExtraLocal.Count}");
+
+        var progress = new Progress<ModSyncProgress>(p =>
+            Console.WriteLine($"  [{p.Fraction:P0}] {p.Message ?? p.Phase}"));
+        var result = await syncClient.SyncAsync(plan, progress).ConfigureAwait(false);
+        if (!result.Success)
+            return Fail(result.Error ?? "Sync failed.");
+
+        Console.WriteLine($"ok hash={result.ResultingHash}");
+        if (!applyConfig)
+            Console.WriteLine("(--no-mods) ModsConfig not written by CLI beyond sync client apply.");
+        _ = path;
+        return 0;
     }
 
     static int CmdModsPrepare(SessionOrchestrator orch, string[] args, string? configPath)
@@ -236,6 +338,8 @@ public static class CliApp
     static async Task<int> CmdHostAsync(string[] args)
     {
         var orch = new SessionOrchestrator();
+        var shareMods = HasFlag(args, "--share-mods");
+        var modSyncPort = GetOptInt(args, "--mod-sync-port", LauncherPaths.DefaultModSyncPort);
         var options = new HostSessionOptions
         {
             SessionName = GetOpt(args, "--name") ?? "RimworldMP LAN",
@@ -247,6 +351,8 @@ public static class CliApp
             ConfigPath = GetOpt(args, "--config"),
             BindHost = GetOpt(args, "--bind-host") ?? SessionOrchestrator.GetPrimaryLanIPv4() ?? "127.0.0.1",
             MaxClients = GetOptInt(args, "--max-clients", 4),
+            ShareMods = shareMods,
+            ModSyncPort = modSyncPort,
         };
 
         var (ordered, hash, warnings) = options.PrepareMods
@@ -273,7 +379,27 @@ public static class CliApp
         Console.WriteLine($"modlistHash: {hash}");
         Console.WriteLine($"advertise: {bindHost}:{options.Port} (game) · discovery UDP {options.DiscoveryPort}");
 
-        var beacon = orch.CreateHostBeacon(options, hash, bindHost, rwBuild);
+        await using var share = new HostModShareService();
+        share.Log += msg => Console.WriteLine($"  [modsync] {msg}");
+        if (shareMods)
+        {
+            if (install is null)
+                return Fail("RimWorld not found (needed to share Mods). Pass --path <install-dir>.");
+            try
+            {
+                await share.StartAsync(ordered, install.InstallDir, rwBuild, modSyncPort, IPAddress.Any)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                return Fail($"Cannot share mods: {ex.Message}");
+            }
+
+            modSyncPort = share.Port;
+            Console.WriteLine($"mod-share: TCP {bindHost}:{modSyncPort} ({share.Manifest?.Mods.Count ?? 0} packages, excl. Ludeon official)");
+        }
+
+        var beacon = orch.CreateHostBeacon(options, hash, bindHost, rwBuild, shareMods ? modSyncPort : null);
         await using var disco = await orch.BeginHostBroadcastAsync(beacon, options.DiscoveryPort).ConfigureAwait(false);
         Console.WriteLine("Broadcasting LAN beacon (Ctrl+C to stop after launch)…");
 
@@ -289,7 +415,6 @@ public static class CliApp
             Console.WriteLine("(--no-launch) Start RimWorld manually; mod should read handoff on load.");
         }
 
-        _ = ordered;
         Console.WriteLine("Beacon running. Press Enter to stop.");
         Console.ReadLine();
         return 0;

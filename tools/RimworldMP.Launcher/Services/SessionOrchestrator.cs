@@ -25,6 +25,9 @@ public sealed class HostSessionOptions
     public bool PrepareMods { get; init; } = true;
     public bool LaunchGame { get; init; } = true;
     public int MaxClients { get; init; } = 4;
+    /// <summary>Serve active mods over LAN TCP (default port 30557) for client sync.</summary>
+    public bool ShareMods { get; init; }
+    public int ModSyncPort { get; init; } = LauncherPaths.DefaultModSyncPort;
 }
 
 public sealed class JoinSessionOptions
@@ -110,15 +113,7 @@ public sealed class SessionOrchestrator
             maxClients: options.MaxClients);
         var handoffPath = HandoffWriter.Write(handoff);
 
-        var beacon = new DiscoveryBeacon
-        {
-            Name = options.SessionName,
-            Port = options.Port,
-            RwBuild = rwBuild,
-            ModlistHash = hash,
-            ModHashShort = hash.Length >= 8 ? hash[..8] : hash,
-            Host = bindHost,
-        };
+        var beacon = CreateHostBeacon(options, hash, bindHost, rwBuild);
 
         LaunchResult? launch = null;
         if (options.LaunchGame)
@@ -154,7 +149,12 @@ public sealed class SessionOrchestrator
         return disco;
     }
 
-    public DiscoveryBeacon CreateHostBeacon(HostSessionOptions options, string hash, string bindHost, string rwBuild) =>
+    public DiscoveryBeacon CreateHostBeacon(
+        HostSessionOptions options,
+        string hash,
+        string bindHost,
+        string rwBuild,
+        int? modSyncPort = null) =>
         new()
         {
             Name = options.SessionName,
@@ -163,6 +163,7 @@ public sealed class SessionOrchestrator
             ModlistHash = hash,
             ModHashShort = hash.Length >= 8 ? hash[..8] : hash,
             Host = bindHost,
+            ModSyncPort = modSyncPort ?? (options.ShareMods ? options.ModSyncPort : null),
         };
 
     public SessionStartResult StartJoin(JoinSessionOptions options)

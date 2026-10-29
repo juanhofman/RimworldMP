@@ -6,6 +6,7 @@ Workshop-style packaging for the LAN launcher + P0 sim stack. Semver **0.6.0**; 
 
 ### Added
 - **LAN launcher MVP** (`tools/RimworldMP.Launcher`): locate RimWorld, prepare Harmony → RimworldMP mod order + hash, UDP host discovery, write `launcher-handoff.json`, launch game ([docs/launcher-mvp.md](docs/launcher-mvp.md), [docs/launcher-handoff.md](docs/launcher-handoff.md))
+- **Mod manager + LAN mod sync** (`tools/RimworldMP.ModSync` + Avalonia Mods hooks): host share TCP **30557**, client compare/sync with content-hash verify, Workshop cache secondary, SteamCMD stub only ([docs/mod-manager-lan-sync.md](docs/mod-manager-lan-sync.md))
 - **P0 sim-correctness:** desync fingerprint folds protocol + tick + RNG seed/draws + named counters + reserved world hash slot; JIP `ISaveLoad` / `VerseSaveLoad` (fails loud if blob present without loader); TCP join hard-gate on protocol + modlist hash (`RMP3` / v3); JobGive/zone payloads carry `mapId` (no `Find.CurrentMap`); MaxClients default **4** via `MpConfig`; non-DevMode lobby (F10 / corner button) + launcher handoff ([docs/p0-sim-correctness.md](docs/p0-sim-correctness.md))
 - Release packaging: `mod/About` Preview/About placeholders, install + smoke docs refresh, [release notes](docs/release-notes-v0.6.0.md)
 
