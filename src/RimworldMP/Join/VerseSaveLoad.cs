@@ -58,9 +58,13 @@ public sealed class VerseSaveLoad : ISaveLoad
         Directory.CreateDirectory(GenFilePaths.SaveDataFolderPath);
         var name = "RimworldMP_JIP_incoming";
         var path = GenFilePaths.FilePathForSavedGame(name);
+        if (!path.EndsWith(".rws", StringComparison.OrdinalIgnoreCase))
+            path += ".rws";
         File.WriteAllBytes(path, blob);
         try
         {
+            // LongEvent load — Rand patches skip while IsJoinInProgress so empty Range spans
+            // during map restore cannot ArgumentOutOfRange and abort the joiner.
             GameDataSaveLoader.LoadGame(name);
         }
         catch (Exception ex)

@@ -65,6 +65,13 @@ public sealed class SyncedRand
         lock (_gate)
         {
             _drawCount++;
+            // Match Verse.Rand: empty / non-positive span returns 0 instead of throwing.
+            if (maxExclusive <= 0)
+            {
+                MixOpinion(0);
+                return 0;
+            }
+
             var v = _rng.Next(maxExclusive);
             MixOpinion(unchecked((ulong)(uint)v));
             return v;
@@ -76,6 +83,14 @@ public sealed class SyncedRand
         lock (_gate)
         {
             _drawCount++;
+            // Verse.Rand.Range(min, max) with max <= min returns min — never ArgumentOutOfRange.
+            // Empty spans are common during map load / AI; throwing blacks out joiners.
+            if (minInclusive >= maxExclusive)
+            {
+                MixOpinion(unchecked((ulong)(uint)minInclusive));
+                return minInclusive;
+            }
+
             var v = _rng.Next(minInclusive, maxExclusive);
             MixOpinion(unchecked((ulong)(uint)v));
             return v;
