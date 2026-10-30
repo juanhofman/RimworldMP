@@ -1,7 +1,9 @@
 # Launcher fonts (OFL)
 
-- **Syne** Bold — OFL (brand)
-- **Space Grotesk** Regular/Medium/Bold — OFL (display); see `OFL-SpaceGrotesk.txt`
-- **IBM Plex Sans** Regular/Medium/SemiBold — OFL (body)
+Colonial / vanilla-menu stack (see `docs/ui-design-brief.md`):
 
-Embedded as Avalonia resources for the desktop UI.
+- **Cinzel** SemiBold/Bold — colony title (OFL)
+- **Barlow Condensed** SemiBold/Bold — menu display / nav (OFL)
+- **Source Sans 3** Regular/Medium/SemiBold — body (OFL)
+
+Embedded as Avalonia resources. No Inter / Roboto / Space Grotesk / Syne.

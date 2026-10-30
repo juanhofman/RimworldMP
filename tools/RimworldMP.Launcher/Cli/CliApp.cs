@@ -119,6 +119,8 @@ public static class CliApp
               --no-launch        --no-mods
               --bind-host <ip>   (default: primary LAN IPv4)
               --max-clients <n>  (default 4; written to handoff)
+              --transport tcp|litenetlib  (handoff; both peers must match)
+              --player <name>    Display name for lobby/chat
               --share-mods       Serve active mod files over TCP (default 30557)
               --mod-sync-port N  Override mod-sync listen port
 
@@ -128,6 +130,8 @@ public static class CliApp
               --path <rw-dir>    --config <ModsConfig.xml>
               --no-launch        --no-mods
               --name <session>
+              --transport tcp|litenetlib
+              --player <name>
 
             Mod sync notes:
               Pulls exact host mods over LAN (TCP 30557). Local Steam Workshop cache is a
@@ -378,6 +382,8 @@ public static class CliApp
             MaxClients = GetOptInt(args, "--max-clients", 4),
             ShareMods = shareMods,
             ModSyncPort = modSyncPort,
+            Transport = GetOpt(args, "--transport"),
+            PlayerDisplayName = GetOpt(args, "--player"),
         };
 
         var (ordered, hash, warnings) = options.PrepareMods
@@ -398,7 +404,9 @@ public static class CliApp
             modlistHash: hash,
             sessionName: options.SessionName,
             rwBuild: rwBuild,
-            maxClients: options.MaxClients);
+            maxClients: options.MaxClients,
+            transport: options.Transport,
+            playerDisplayName: options.PlayerDisplayName);
         var handoffPath = HandoffWriter.Write(handoff);
         Console.WriteLine($"handoff: {handoffPath}");
         Console.WriteLine($"modlistHash: {hash}");
@@ -497,6 +505,8 @@ public static class CliApp
                 PrepareMods = !HasFlag(args, "--no-mods"),
                 LaunchGame = !HasFlag(args, "--no-launch"),
                 HostModlistHash = hostHash,
+                Transport = GetOpt(args, "--transport"),
+                PlayerDisplayName = GetOpt(args, "--player"),
             });
 
             foreach (var w in result.Warnings)

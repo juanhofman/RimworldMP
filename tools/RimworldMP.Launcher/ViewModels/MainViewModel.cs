@@ -58,11 +58,16 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
     [ObservableProperty] private string _sessionName = "RimworldMP LAN";
 
+    [ObservableProperty] private string _playerDisplayName = "";
+
     [ObservableProperty] private string _hostPort = LauncherPaths.DefaultGamePort.ToString(CultureInfo.InvariantCulture);
 
     [ObservableProperty] private string _bindHost = SessionOrchestrator.GetPrimaryLanIPv4() ?? "127.0.0.1";
 
     [ObservableProperty] private int _maxClients = 4;
+
+    /// <summary>Handoff transport token shown in Host/Join (<c>tcp</c> or <c>litenetlib</c>).</summary>
+    [ObservableProperty] private string _transport = "tcp";
 
     [ObservableProperty] private bool _prepareModsOnLaunch = true;
 
@@ -112,6 +117,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
     public ObservableCollection<DiscoveryBeacon> DiscoveredHosts { get; } = new();
     public ObservableCollection<ModSyncDeltaRow> SyncMissing { get; } = new();
     public ObservableCollection<ModSyncDeltaRow> SyncMismatched { get; } = new();
+
+    /// <summary>Calm transport picker labels — tokens match handoff / NetTransportFactory.</summary>
+    public IReadOnlyList<string> TransportChoices { get; } = ["tcp", "litenetlib"];
 
     public bool IsHome => CurrentPage == LauncherNavPage.Home;
     public bool IsHost => CurrentPage == LauncherNavPage.Host;
@@ -438,6 +446,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 ModSyncPort = int.TryParse(SyncPort, out var msp) && msp is >= 1 and <= 65535
                     ? msp
                     : LauncherPaths.DefaultModSyncPort,
+                Transport = Transport,
+                PlayerDisplayName = PlayerDisplayName,
             };
 
             var (ordered, hash, warnings) = PrepLocal(options.PrepareMods, "host");
@@ -452,7 +462,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 modlistHash: hash,
                 sessionName: options.SessionName,
                 rwBuild: rwBuild,
-                maxClients: options.MaxClients);
+                maxClients: options.MaxClients,
+                transport: options.Transport,
+                playerDisplayName: options.PlayerDisplayName);
             LastHandoffPath = HandoffWriter.Write(handoff);
 
             ActiveMods.Clear();
@@ -598,6 +610,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 PrepareMods = PrepareModsOnLaunch,
                 LaunchGame = LaunchGame,
                 HostModlistHash = SelectedBeacon?.ModlistHash,
+                Transport = Transport,
+                PlayerDisplayName = PlayerDisplayName,
             });
 
             LastHandoffPath = result.HandoffPath;
