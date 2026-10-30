@@ -20,4 +20,10 @@
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>You</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>You (host)</RMP.DisplayNameYouHost>
+  <RMP.DesyncHeadline>Desync — simulation frozen</RMP.DesyncHeadline>
+  <RMP.DesyncBodyShort>Peers diverged. Open the lobby (F10) to disconnect.</RMP.DesyncBodyShort>
+  <RMP.DesyncBodyDetail>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.</RMP.DesyncBodyDetail>
+  <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
+  <RMP.DesyncNoDump>(no dump)</RMP.DesyncNoDump>
+  <RMP.DesyncDumpLabel>Local dump · {0}</RMP.DesyncDumpLabel>
 </LanguageData>

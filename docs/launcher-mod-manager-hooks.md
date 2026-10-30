@@ -51,7 +51,13 @@ Do this before the window is constructed (e.g. early in `Program.Main` / `App` i
 | Missing / mismatched lists | `SyncMissing`, `SyncMismatched` | `ModSyncPlan` deltas |
 | Use Join IP | `UseJoinTargetForSyncCommand` | copies Join beacon / IP |
 
-When `IModSyncClient.IsAvailable` is `false` (stubs), buttons still run with stub messaging. Production registration sets `IsAvailable=true` via `LanModSyncClient`.
+When `IModSyncClient.IsAvailable` is `false` (stubs), buttons still run with `StubModSyncClient.UnavailableMessage`. Production registration sets `IsAvailable=true` via `LanModSyncClient`.
+
+### Workshop / SteamCMD messaging
+
+- Acquisition order: **LAN host** → **local Workshop cache** → (documented non-goal) SteamCMD.
+- `SteamCmdProviderStub` exposes `IsImplemented=false` + `LimitationMessage`; `ClientModSync` skips it and never pretends to download.
+- Host share errors for a package are wrapped with that limitation text so the Mods screen / CLI fail loud instead of silent.
 
 ## Ports (convention)
 

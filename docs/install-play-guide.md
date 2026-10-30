@@ -66,7 +66,7 @@ Handoff contract: [launcher-handoff.md](./launcher-handoff.md). Restore ModsConf
 
 ## Host / join in-game
 
-Peers must share the same RimWorld **1.7** build, DLC, and **ordered modlist** (hash hard-gated at TCP join; protocol **v3** / magic `RMP3`). Default max clients: **4** (`MpConfig.MaxClients`).
+Peers must share the same RimWorld **1.7** build, DLC, and **ordered modlist** (hash hard-gated at TCP join; protocol **v4** / magic `RMP3`, MinSupported **3**). Default max clients: **4** (`MpConfig.MaxClients`). Transport: LAN TCP (default) or LiteNetLib via handoff `transport` — see [transport-litenetlib.md](./transport-litenetlib.md).
 
 ### Preferred (no DevMode)
 

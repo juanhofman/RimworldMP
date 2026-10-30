@@ -25,6 +25,9 @@ public class SessionQolTests
         Assert.Contains("DLC mismatch", SessionMessages.DlcMismatch("dlc-a", "dlc-b"), StringComparison.Ordinal);
         Assert.Contains("Lobby full", SessionMessages.LobbyFull(4), StringComparison.Ordinal);
         Assert.Equal(JoinRejectReason.DlcMismatch, (JoinRejectReason)4);
+        Assert.Contains("frozen", SessionMessages.Get("RMP.DesyncHeadline"), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("F10", SessionMessages.Get("RMP.DesyncBodyShort"), StringComparison.Ordinal);
+        Assert.Contains("local only", SessionMessages.Format("RMP.DesyncBodyDetail", 1, "a", "b", "", "/tmp/x"), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

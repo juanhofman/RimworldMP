@@ -35,6 +35,13 @@ public static class SessionMessages
         ["RMP.DisplayNameHost"] = "Host",
         ["RMP.DisplayNameYou"] = "You",
         ["RMP.DisplayNameYouHost"] = "You (host)",
+        // Desync freeze overlay (outside lobby Immediate GUI).
+        ["RMP.DesyncHeadline"] = "Desync — simulation frozen",
+        ["RMP.DesyncBodyShort"] = "Peers diverged. Open the lobby (F10) to disconnect.",
+        ["RMP.DesyncBodyDetail"] = "Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.",
+        ["RMP.DesyncModsLine"] = "Mods   {0}\n",
+        ["RMP.DesyncNoDump"] = "(no dump)",
+        ["RMP.DesyncDumpLabel"] = "Local dump · {0}",
     };
 
     private static Dictionary<string, string> _overlay = new(StringComparer.Ordinal);

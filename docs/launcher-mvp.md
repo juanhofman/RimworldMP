@@ -43,7 +43,7 @@ Headless / no `DISPLAY`: the process falls back to CLI help instead of starting 
 
 Visual direction: ink `#0E1114`, steel `#7EB0C8`, ember `#E07A3D`; Syne + Space Grotesk + IBM Plex Sans. Screenshots: optional — no screenshot tooling in CI; describe flows instead.
 
-LAN **mod file sync** is stubbed behind `IModSyncClient` / `IModCatalog` — see [launcher-mod-manager-hooks.md](./launcher-mod-manager-hooks.md).
+LAN **mod file sync** is live via `LanModSyncClient` / `InstalledModCatalog` (TCP **30557**). Workshop live download / SteamCMD is **not** supported — LAN host transfer + local Workshop cache only. Hooks: [launcher-mod-manager-hooks.md](./launcher-mod-manager-hooks.md) · [mod-manager-lan-sync.md](./mod-manager-lan-sync.md).
 
 ## User steps (CLI or UI)
 

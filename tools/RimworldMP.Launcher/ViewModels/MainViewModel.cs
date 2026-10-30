@@ -30,8 +30,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         _modSync = modSync;
         SyncFromHostAvailable = _modSync.IsAvailable;
         SyncStatusMessage = _modSync.IsAvailable
-            ? "Ready to compare with a LAN host."
-            : "LAN mod sync backend not registered yet — UI hooks are ready.";
+            ? "Ready to compare with a LAN host (LAN pull / Workshop cache — no SteamCMD)."
+            : StubModSyncClient.UnavailableMessage;
         RefreshInstall();
         RefreshModsSnapshot();
         StatusLine = "Local-only LAN launcher — no telemetry.";
@@ -79,7 +79,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
     [ObservableProperty] private string _lastHandoffPath = LauncherPaths.HandoffPath;
 
-    // --- LAN mod sync (IModSyncClient hooks; stub until mod-sync agent lands) ---
+    // --- LAN mod sync (IModSyncClient; default LanModSyncClient) ---
     [ObservableProperty] private string _syncHost = "";
 
     [ObservableProperty] private string _syncPort = "30557";
@@ -226,7 +226,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
     {
         if (!_modSync.IsAvailable)
         {
-            SyncStatusMessage = "Sync backend unavailable. Implement IModSyncClient and set ModSyncServices.Sync.";
+            SyncStatusMessage = StubModSyncClient.UnavailableMessage;
             StatusLine = SyncStatusMessage;
             return;
         }
@@ -261,13 +261,17 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             _lastSyncPlan = plan;
             PopulateSyncDeltas(plan);
             ModlistHash = string.IsNullOrEmpty(plan.LocalHash) ? ModlistHash : plan.LocalHash;
+            var warn = plan.Warnings.Count > 0 ? $" · note: {plan.Warnings[0]}" : "";
             SyncStatusMessage = plan.HashesMatch
-                ? $"Match · {ShortHash(plan.LocalHash)}"
-                : $"Diff · local {ShortHash(plan.LocalHash)} vs host {ShortHash(plan.RemoteHash)} · missing {plan.Missing.Count}, mismatched {plan.Mismatched.Count}";
+                ? $"Match · {ShortHash(plan.LocalHash)}{warn}"
+                : $"Diff · local {ShortHash(plan.LocalHash)} vs host {ShortHash(plan.RemoteHash)} · missing {plan.Missing.Count}, mismatched {plan.Mismatched.Count}{warn}";
             StatusLine = SyncStatusMessage;
+            if (plan.Warnings.Count > 1)
+                LaunchLog = string.Join("\n", plan.Warnings);
         }
         catch (Exception ex)
         {
+            _lastSyncPlan = null;
             SyncStatusMessage = $"Compare failed: {ex.Message}";
             StatusLine = SyncStatusMessage;
         }
@@ -283,9 +287,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
     {
         if (!_modSync.IsAvailable)
         {
-            SyncStatusMessage = "LAN mod sync not wired yet — placeholder only. See docs/launcher-mod-manager-hooks.md.";
+            SyncStatusMessage = StubModSyncClient.UnavailableMessage;
             StatusLine = SyncStatusMessage;
-            // Still exercise progress UI so layout can be validated
             SyncProgressFraction = 0;
             SyncProgressLabel = "Unavailable";
             return;

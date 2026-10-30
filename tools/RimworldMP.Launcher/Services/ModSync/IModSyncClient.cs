@@ -2,8 +2,7 @@ namespace RimworldMP.Launcher.Services.ModSync;
 
 /// <summary>
 /// LAN modlist sync client (pull missing/mismatched packages from a host).
-/// Transfer/server implementation is owned by the mod-sync agent.
-/// UI calls these methods from the Mods screen; stubs throw or report NotImplemented.
+/// Production default is <c>LanModSyncClient</c>; <c>StubModSyncClient</c> is for tests / UI layout.
 /// See docs/launcher-mod-manager-hooks.md.
 /// </summary>
 public interface IModSyncClient
@@ -44,6 +43,8 @@ public sealed class ModSyncPlan
     public IReadOnlyList<ModSyncDelta> Mismatched { get; init; } = Array.Empty<ModSyncDelta>();
     public IReadOnlyList<ModSyncDelta> ExtraLocal { get; init; } = Array.Empty<ModSyncDelta>();
     public IReadOnlyList<string> RemoteOrder { get; init; } = Array.Empty<string>();
+    /// <summary>Non-fatal but important notices (beacon hash drift, acquisition limits, etc.).</summary>
+    public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
 }
 
 public sealed class ModSyncDelta

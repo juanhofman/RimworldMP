@@ -46,7 +46,7 @@ dotnet run --project tools/RimworldMP.Launcher -- handoff-path
 | `role` | string | yes | `"host"` or `"client"` |
 | `host` | string | role-dependent | Host: bind hint (`0.0.0.0`). Client: host IPv4/hostname to join |
 | `port` | int | no | Game MP TCP port (default **30555**). Discovery uses **30556** and is launcher-only |
-| `modlistHash` | string | recommended | `ModlistHash.Compute(ordered packageIds)` — hard-gated at TCP join (protocol v3) |
+| `modlistHash` | string | recommended | `ModlistHash.Compute(ordered packageIds)` — hard-gated at TCP join (protocol **v4** / MinSupported **3**, magic `RMP3`) |
 | `sessionName` | string | no | Display / beacon name |
 | `playerDisplayName` | string | no | Local player name for lobby + chat (session QoL) |
 | `autoStartLobby` | bool | no | Default `true`. When false, config is applied but host/join is not started |

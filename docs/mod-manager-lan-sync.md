@@ -24,10 +24,10 @@ Pull the **exact** active mods (packageId + version + content hash) from a host 
 | Priority | Source | Notes |
 | --- | --- | --- |
 | 1 | **LAN from host** | Required path. Host zips each active non-Ludeon mod folder. |
-| 2 | Local Steam Workshop cache | `steamapps/workshop/content/294100/<id>` when host provides `workshopId` and content hash matches |
-| 3 | SteamCMD provider | **Stub only** — not implemented |
+| 2 | Local Steam Workshop cache | `steamapps/workshop/content/294100/<id>` when content hash matches (`WorkshopCacheProvider`) |
+| 3 | SteamCMD / live Workshop download | **Not implemented** — `SteamCmdProviderStub` (`IsImplemented=false`) never fabricates a path; errors cite [StubLimitation](../tools/RimworldMP.ModSync/Providers/IModAcquisitionProvider.cs) |
 
-**Not supported:** live Workshop download without Steam / SteamCMD; scraping Steam community pages; WAN expose of the share server.
+**Not supported:** live Workshop download / SteamCMD; scraping Steam community pages; WAN expose of the share server. Compare/Sync fail loud when the RimWorld install path is missing, after-sync hash still mismatches, or the host cannot share a package.
 
 ## Security
 

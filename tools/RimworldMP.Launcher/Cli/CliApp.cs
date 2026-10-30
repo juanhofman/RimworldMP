@@ -129,6 +129,10 @@ public static class CliApp
               --no-launch        --no-mods
               --name <session>
 
+            Mod sync notes:
+              Pulls exact host mods over LAN (TCP 30557). Local Steam Workshop cache is a
+              secondary hash-match source. SteamCMD / live Workshop download is NOT supported.
+
             Docs: docs/launcher-mvp.md · docs/launcher-handoff.md · docs/mod-manager-lan-sync.md
             Handoff: see `handoff-path` (Windows LocalAppData / Linux ~/.local/share/RimworldMP/)
             """);
@@ -221,7 +225,6 @@ public static class CliApp
         var discoPort = GetOptInt(args, "--discovery-port", LauncherPaths.DefaultDiscoveryPort);
         var seconds = GetOptInt(args, "--seconds", 3);
         var path = GetOpt(args, "--path");
-        var applyConfig = !HasFlag(args, "--no-mods");
 
         if (string.IsNullOrWhiteSpace(host))
         {
@@ -253,16 +256,31 @@ public static class CliApp
             Console.WriteLine($"Selected {selected.Name} at {host} mod-sync :{modSyncPort}");
         }
 
-        var syncClient = new LanModSyncClient();
+        var install = RimWorldLocator.TryLocate(path);
+        var installDir = install?.InstallDir ?? path;
+        if (string.IsNullOrWhiteSpace(installDir))
+            return Fail("RimWorld not found. Pass --path <install-dir> before mods sync.");
+
+        // Honour --path: do not silently fall back to a different Steam install.
+        var syncClient = new LanModSyncClient(resolveInstallDir: () => installDir);
         var plan = await syncClient.CompareAsync(new ModSyncHostTarget
         {
             Host = host!,
             Port = modSyncPort,
         }).ConfigureAwait(false);
 
+        Console.WriteLine($"install={installDir}");
         Console.WriteLine($"local={plan.LocalHash}");
         Console.WriteLine($"host ={plan.RemoteHash}");
         Console.WriteLine($"missing={plan.Missing.Count} mismatched={plan.Mismatched.Count} extraLocal={plan.ExtraLocal.Count}");
+        foreach (var w in plan.Warnings)
+            Console.Error.WriteLine($"warning: {w}");
+
+        if (HasFlag(args, "--no-mods"))
+        {
+            Console.WriteLine("compare-only (--no-mods): skipping LAN file pull / ModsConfig write.");
+            return plan.HashesMatch ? 0 : 2;
+        }
 
         var progress = new Progress<ModSyncProgress>(p =>
             Console.WriteLine($"  [{p.Fraction:P0}] {p.Message ?? p.Phase}"));
@@ -271,9 +289,6 @@ public static class CliApp
             return Fail(result.Error ?? "Sync failed.");
 
         Console.WriteLine($"ok hash={result.ResultingHash}");
-        if (!applyConfig)
-            Console.WriteLine("(--no-mods) ModsConfig not written by CLI beyond sync client apply.");
-        _ = path;
         return 0;
     }
 

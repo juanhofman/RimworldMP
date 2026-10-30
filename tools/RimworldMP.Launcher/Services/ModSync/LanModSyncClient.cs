@@ -30,10 +30,13 @@ public sealed class LanModSyncClient : IModSyncClient
             throw new ArgumentException("Host is required.", nameof(target));
 
         var installDir = _resolveInstallDir();
-        var localEntries = string.IsNullOrWhiteSpace(installDir)
-            ? Array.Empty<ModManifestEntry>()
-            : ModInventory.ScanInstalled(installDir);
+        if (string.IsNullOrWhiteSpace(installDir))
+        {
+            throw new InvalidOperationException(
+                "RimWorld install not found — set the install path before comparing mods (UI Launch path or CLI --path).");
+        }
 
+        var localEntries = ModInventory.ScanInstalled(installDir);
         var localMap = localEntries.ToDictionary(m => m.PackageId, StringComparer.OrdinalIgnoreCase);
         var localActive = GetActivePackageIds();
         var localHash = ModlistHasher.Compute(localActive);
@@ -51,10 +54,21 @@ public sealed class LanModSyncClient : IModSyncClient
 
         var remoteOrder = hostManifest.OrderedPackageIds;
         var remoteHash = hostManifest.ModlistHash;
+        var warnings = new List<string>();
+
         if (!string.IsNullOrWhiteSpace(target.ExpectedModlistHash) &&
             !ModlistHasher.Matches(remoteHash, target.ExpectedModlistHash))
         {
-            // Beacon hash disagreed with live share server — still prefer live manifest.
+            warnings.Add(
+                $"Discovery beacon modlist hash ({Short(target.ExpectedModlistHash)}) disagrees with live share server " +
+                $"({Short(remoteHash)}). Using the live share manifest; re-check the host if this is unexpected.");
+        }
+
+        if (hostManifest.Mods.Count > 0)
+        {
+            warnings.Add(
+                "Missing / mismatched packages are acquired over LAN from the host (or local Workshop cache when hashes match). " +
+                SteamCmdProviderStub.StubLimitation);
         }
 
         var missing = new List<ModSyncDelta>();
@@ -69,7 +83,7 @@ public sealed class LanModSyncClient : IModSyncClient
                 {
                     PackageId = needed.PackageId,
                     DisplayName = needed.Name,
-                    Reason = "not installed locally",
+                    Reason = "not installed locally — will pull over LAN (not SteamCMD)",
                     ByteSize = needed.ByteSize,
                 });
                 continue;
@@ -100,7 +114,7 @@ public sealed class LanModSyncClient : IModSyncClient
                 missing.Add(new ModSyncDelta
                 {
                     PackageId = id,
-                    Reason = "listed on host but not present locally",
+                    Reason = "listed on host but not present locally (and not in host share set — install manually)",
                 });
             }
         }
@@ -133,6 +147,7 @@ public sealed class LanModSyncClient : IModSyncClient
             Mismatched = mismatched,
             ExtraLocal = extra,
             RemoteOrder = remoteOrder.ToList(),
+            Warnings = warnings,
         };
     }
 
@@ -172,6 +187,8 @@ public sealed class LanModSyncClient : IModSyncClient
         Directory.CreateDirectory(modsRoot);
 
         var local = ModInventory.ScanInstalled(installDir);
+        // Workshop cache only — SteamCMD stub is registered so limitation messaging stays visible in logs,
+        // but ClientModSync skips unimplemented providers (never fakes a download).
         var providers = new IModAcquisitionProvider[]
         {
             new WorkshopCacheProvider(installDir),
@@ -179,8 +196,16 @@ public sealed class LanModSyncClient : IModSyncClient
         };
 
         var sync = new ClientModSync(modsRoot, providers);
+        var lastFraction = 0.0;
+        sync.Log += msg => progress?.Report(new ModSyncProgress
+        {
+            Phase = "log",
+            Fraction = lastFraction,
+            Message = msg,
+        });
         var bridge = new Progress<(string Phase, string? PackageId, double Fraction)>(p =>
         {
+            lastFraction = p.Fraction;
             progress?.Report(new ModSyncProgress
             {
                 Phase = p.Phase,
@@ -229,14 +254,36 @@ public sealed class LanModSyncClient : IModSyncClient
             var outcome = await sync.SyncAgainstManifestAsync(stream, hostManifest, local, bridge, cancellationToken)
                 .ConfigureAwait(false);
 
+            if (!outcome.HashesMatch)
+            {
+                return new ModSyncResult
+                {
+                    Success = false,
+                    Error =
+                        $"Modlist hash still mismatches after sync (local={Short(outcome.LocalModlistHash)}, " +
+                        $"host={Short(hostManifest.ModlistHash)}). Re-run Compare, or install missing packages manually. " +
+                        SteamCmdProviderStub.StubLimitation,
+                    ResultingHash = outcome.LocalModlistHash,
+                    AppliedPackageIds = hostManifest.OrderedPackageIds.ToList(),
+                };
+            }
+
             // Apply host load order so join ModlistHash matches.
             var cfg = _mods.ResolveModsConfigPath();
-            if (cfg is not null)
+            if (cfg is null)
             {
-                if (File.Exists(cfg))
-                    _mods.Backup(cfg, "pre-sync");
-                _mods.WriteActiveMods(cfg, hostManifest.OrderedPackageIds, version: "1.7");
+                return new ModSyncResult
+                {
+                    Success = false,
+                    Error = "ModsConfig.xml not found after sync — cannot apply host load order.",
+                    ResultingHash = outcome.LocalModlistHash,
+                    AppliedPackageIds = hostManifest.OrderedPackageIds.ToList(),
+                };
             }
+
+            if (File.Exists(cfg))
+                _mods.Backup(cfg, "pre-sync");
+            _mods.WriteActiveMods(cfg, hostManifest.OrderedPackageIds, version: "1.7");
 
             var resulting = ModlistHasher.Compute(hostManifest.OrderedPackageIds);
             progress?.Report(new ModSyncProgress { Phase = "done", Fraction = 1, Message = "Sync complete" });
@@ -267,10 +314,13 @@ public sealed class LanModSyncClient : IModSyncClient
         return _mods.Read(path).ActiveMods;
     }
 
-    private static string ResolveModsRoot(string? installDir)
+    private static string ResolveModsRoot(string installDir) =>
+        Path.Combine(installDir, "Mods");
+
+    private static string Short(string? hash)
     {
-        if (string.IsNullOrWhiteSpace(installDir))
-            throw new InvalidOperationException("Install dir required for Mods root.");
-        return Path.Combine(installDir, "Mods");
+        if (string.IsNullOrEmpty(hash))
+            return "(empty)";
+        return hash.Length <= 12 ? hash : hash[..12] + "…";
     }
 }
