@@ -8,8 +8,8 @@ using Verse;
 namespace RimworldMP.UI;
 
 /// <summary>
-/// Release lobby window — brand hero, peers (kick/ready), chat, host/join/disconnect, handoff status.
-/// Layout uses Immediate GUI within Verse <see cref="Window"/> limits; re-check under RIMWORLD_DIR.
+/// Release lobby window — brand hero, peers (kick/ready), chat, begin/abort, host/join, handoff.
+/// Layout uses <see cref="MpImmediateGui"/> within Verse <see cref="Window"/> limits; re-check under RIMWORLD_DIR.
 /// </summary>
 public sealed class Dialog_RimworldMPLobby : Window
 {
@@ -32,7 +32,8 @@ public sealed class Dialog_RimworldMPLobby : Window
         forcePause = false;
     }
 
-    public override Vector2 InitialSize => new(540f, 640f);
+    public override Vector2 InitialSize =>
+        new(LobbyLayoutMetrics.WindowWidth, LobbyLayoutMetrics.WindowHeight);
 
     public override void PreOpen()
     {
@@ -58,109 +59,135 @@ public sealed class Dialog_RimworldMPLobby : Window
         _pulseT += Time.unscaledDeltaTime;
         var vm = LobbyPresenter.Capture(localModlistOverride: _modlistHash);
 
-        Widgets.DrawBoxSolid(inRect, ToColor(MpUiPalette.Ink));
+        MpImmediateGui.DrawInkBackdrop(inRect);
+        MpImmediateGui.DrawEmberAccentBar(inRect);
 
-        var y = inRect.y + 6f;
-        var x = inRect.x + 12f;
-        var w = inRect.width - 24f;
+        var x = inRect.x + LobbyLayoutMetrics.ContentPadX + LobbyLayoutMetrics.AccentBarWidth;
+        var y = inRect.y + LobbyLayoutMetrics.ContentPadTop;
+        var w = inRect.width - LobbyLayoutMetrics.ContentPadX * 2f - LobbyLayoutMetrics.AccentBarWidth;
 
-        Text.Font = GameFont.Medium;
-        GUI.color = ToColor(MpUiPalette.Ember);
-        Widgets.Label(new Rect(x, y, w, 32f), vm.Brand);
-        GUI.color = Color.white;
-        y += 30f;
-        Text.Font = GameFont.Tiny;
-        GUI.color = ToColor(MpUiPalette.Steel);
-        Widgets.Label(new Rect(x, y, w, 18f), vm.Subtitle);
-        GUI.color = Color.white;
-        y += 22f;
+        y = MpImmediateGui.DrawBrandHero(x, y, w, vm.Brand, vm.Subtitle);
 
-        DrawHairline(x, y, w, ToColor(MpUiPalette.Steel) * 0.35f);
-        y += 10f;
+        var roleTint = vm.WasKicked || vm.IsFrozen ? MpUiPalette.Danger : MpUiPalette.Soft;
+        y = MpImmediateGui.DrawSoftLine(
+            x, y, w,
+            MpImmediateGui.Tf("RMP.LobbySession", vm.SessionRoleLabel),
+            GameFont.Small,
+            roleTint);
+        y = MpImmediateGui.DrawMetaLine(x, y, w, vm.ProtocolLabel);
+        y = MpImmediateGui.DrawMetaLine(x, y, w, vm.LanStatus);
+        y = MpImmediateGui.DrawMetaLine(x, y, w, MpImmediateGui.Tf("RMP.MetaEndpoint", vm.EndpointLabel));
+        y = MpImmediateGui.DrawMetaLine(x, y, w, MpImmediateGui.Tf("RMP.MetaModlist", vm.LocalModlistShort));
 
-        Text.Font = GameFont.Small;
-        GUI.color = vm.WasKicked || vm.IsFrozen ? ToColor(MpUiPalette.Danger) : ToColor(MpUiPalette.Soft);
-        Widgets.Label(new Rect(x, y, w, 22f), $"Session · {vm.SessionRoleLabel}");
-        GUI.color = Color.white;
-        y += 20f;
+        if (vm.InSession)
+            y = MpImmediateGui.DrawMetaLine(
+                x, y, w, vm.ReadySummary,
+                vm.AllModsMatch && vm.LobbyReady ? MpUiPalette.Ok : MpUiPalette.Warn);
 
-        GUI.color = ToColor(MpUiPalette.Steel);
-        Widgets.Label(new Rect(x, y, w, 18f), $"{vm.ProtocolLabel}  ·  {vm.LanStatus}");
-        y += 18f;
-        Widgets.Label(new Rect(x, y, w, 18f), $"Endpoint  {vm.EndpointLabel}");
-        y += 18f;
-        Widgets.Label(new Rect(x, y, w, 18f), $"Modlist   {vm.LocalModlistShort}");
-        GUI.color = Color.white;
-        y += 22f;
+        y += 4f;
 
         if (vm.InSession && vm.IsHost && !vm.IsFrozen)
-        {
-            var pulse = 0.55f + 0.45f * Mathf.Sin(_pulseT * 2.4f);
-            var live = ToColor(MpUiPalette.Ok);
-            live.a = pulse;
-            Widgets.DrawBoxSolid(new Rect(x, y, 8f, 8f), live);
-            GUI.color = ToColor(MpUiPalette.Ok);
-            Widgets.Label(new Rect(x + 14f, y - 4f, w - 14f, 18f), "LIVE");
-            GUI.color = Color.white;
-            y += 20f;
-        }
+            y = MpImmediateGui.DrawLivePulse(x, y, w, _pulseT);
 
         y = DrawHandoffBlock(x, y, w, vm.Handoff);
-        y += 8f;
+        y += 6f;
 
         if (!vm.InSession)
         {
-            Text.Font = GameFont.Tiny;
-            GUI.color = ToColor(MpUiPalette.Dim);
-            Widgets.Label(new Rect(x, y, w, 16f), "DISPLAY NAME");
-            GUI.color = Color.white;
-            y += 16f;
-            _displayName = Widgets.TextField(new Rect(x, y, w, 28f), _displayName);
-            y += 34f;
-
-            GUI.color = ToColor(MpUiPalette.Dim);
-            Widgets.Label(new Rect(x, y, w, 16f), "HOST IP (join)");
-            GUI.color = Color.white;
-            y += 16f;
-            _host = Widgets.TextField(new Rect(x, y, w, 28f), _host);
-            y += 34f;
-
-            GUI.color = ToColor(MpUiPalette.Dim);
-            Widgets.Label(new Rect(x, y, w * 0.45f, 16f), "PORT");
-            Widgets.Label(new Rect(x + w * 0.5f, y, w * 0.5f, 16f), "MODLIST HASH");
-            GUI.color = Color.white;
-            y += 16f;
-            _port = Widgets.TextField(new Rect(x, y, w * 0.42f, 28f), _port);
-            _modlistHash = Widgets.TextField(new Rect(x + w * 0.48f, y, w * 0.52f, 28f), _modlistHash);
-            y += 36f;
+            y = DrawIdleFields(x, y, w);
         }
         else if (!string.IsNullOrEmpty(vm.LocalDisplayName))
         {
-            Text.Font = GameFont.Tiny;
-            GUI.color = ToColor(MpUiPalette.Steel);
-            Widgets.Label(new Rect(x, y, w, 16f), $"Playing as {vm.LocalDisplayName}");
-            GUI.color = Color.white;
-            y += 20f;
+            y = MpImmediateGui.DrawMetaLine(
+                x, y, w,
+                MpImmediateGui.Tf("RMP.PlayingAs", vm.LocalDisplayName),
+                MpUiPalette.Steel);
+            y += 4f;
         }
 
-        Text.Font = GameFont.Small;
-        GUI.color = ToColor(MpUiPalette.Steel);
-        Widgets.Label(new Rect(x, y, w, 20f), vm.InSession ? $"Peers ({vm.Peers.Count})" : "Peers — join a session");
-        GUI.color = Color.white;
-        y += 22f;
+        y = DrawPeers(x, y, w, inRect.yMax, vm);
+        y = DrawChat(x, y, w, vm);
+        y = DrawActions(x, y, w, vm);
 
-        var peerAreaH = Mathf.Min(120f, Mathf.Max(48f, inRect.yMax - y - 220f));
+        Text.Font = GameFont.Tiny;
+        GUI.color = vm.WasKicked || vm.IsFrozen
+            ? MpImmediateGui.ToColor(MpUiPalette.Danger)
+            : MpImmediateGui.ToColor(MpUiPalette.Soft);
+        var footer = string.IsNullOrEmpty(_actionFlash) ? vm.StatusLine : _actionFlash;
+        Widgets.Label(
+            new Rect(x, Mathf.Min(y, inRect.yMax - LobbyLayoutMetrics.FooterHeight), w, LobbyLayoutMetrics.FooterHeight),
+            footer);
+        GUI.color = Color.white;
+        Text.Font = GameFont.Small;
+    }
+
+    private float DrawIdleFields(float x, float y, float w)
+    {
+        y = MpImmediateGui.DrawSectionLabel(x, y, w, MpImmediateGui.T("RMP.DisplayNameLabel"), MpUiPalette.Dim);
+        _displayName = Widgets.TextField(new Rect(x, y, w, LobbyLayoutMetrics.FieldHeight), _displayName);
+        y += LobbyLayoutMetrics.FieldGap;
+
+        y = MpImmediateGui.DrawSectionLabel(x, y, w, MpImmediateGui.T("RMP.HostIpLabel"), MpUiPalette.Dim);
+        _host = Widgets.TextField(new Rect(x, y, w, LobbyLayoutMetrics.FieldHeight), _host);
+        y += LobbyLayoutMetrics.FieldGap;
+
+        y = MpImmediateGui.DrawSectionLabel(x, y, w * 0.45f, MpImmediateGui.T("RMP.PortLabel"), MpUiPalette.Dim);
+        MpImmediateGui.DrawSectionLabel(x + w * 0.5f, y - LobbyLayoutMetrics.FieldLabelHeight, w * 0.5f,
+            MpImmediateGui.T("RMP.ModlistHashLabel"), MpUiPalette.Dim);
+        _port = Widgets.TextField(new Rect(x, y, w * 0.42f, LobbyLayoutMetrics.FieldHeight), _port);
+        _modlistHash = Widgets.TextField(
+            new Rect(x + w * 0.48f, y, w * 0.52f, LobbyLayoutMetrics.FieldHeight), _modlistHash);
+        return y + LobbyLayoutMetrics.FieldGap;
+    }
+
+    private float DrawHandoffBlock(float x, float y, float w, HandoffUiSnapshot handoff)
+    {
+        var tint = handoff.IsError
+            ? MpUiPalette.Danger
+            : handoff.IsOk
+                ? MpUiPalette.Ok
+                : handoff.Kind == HandoffUiKind.Missing
+                    ? MpUiPalette.Dim
+                    : MpUiPalette.Steel;
+        y = MpImmediateGui.DrawSectionLabel(x, y, w, MpImmediateGui.T("RMP.HandoffHeader"), tint);
+        Text.Font = GameFont.Tiny;
+        GUI.color = MpImmediateGui.ToColor(MpUiPalette.Soft);
+        Widgets.Label(new Rect(x, y, w, 32f), handoff.Detail);
+        GUI.color = Color.white;
+        return y + 34f;
+    }
+
+    private float DrawPeers(float x, float y, float w, float yMax, LobbyViewModel vm)
+    {
+        var header = vm.InSession
+            ? MpImmediateGui.Tf("RMP.PeersHeader", vm.Peers.Count)
+            : MpImmediateGui.T("RMP.PeersEmptyHint");
+        y = MpImmediateGui.DrawSoftLine(x, y, w, header, GameFont.Small, MpUiPalette.Steel);
+
+        // Column captions — readable, not DebugOutput.
+        y = MpImmediateGui.DrawSectionLabel(x + 4f, y, w * 0.36f, MpImmediateGui.T("RMP.ColName"), MpUiPalette.Dim);
+        MpImmediateGui.DrawSectionLabel(x + w * 0.36f, y - LobbyLayoutMetrics.FieldLabelHeight, w * 0.20f,
+            MpImmediateGui.T("RMP.ColReady"), MpUiPalette.Dim);
+        MpImmediateGui.DrawSectionLabel(x + w * 0.56f, y - LobbyLayoutMetrics.FieldLabelHeight, w * 0.24f,
+            MpImmediateGui.T("RMP.ColMods"), MpUiPalette.Dim);
+
+        var reserve = 200f;
+        var peerAreaH = Mathf.Min(
+            LobbyLayoutMetrics.PeerAreaMax,
+            Mathf.Max(LobbyLayoutMetrics.PeerAreaMin, yMax - y - reserve));
         var peerOuter = new Rect(x, y, w, peerAreaH);
-        Widgets.DrawBoxSolid(peerOuter, ToColor(MpUiPalette.Panel));
+        MpImmediateGui.DrawPanel(peerOuter);
+
         if (vm.Peers.Count == 0)
         {
-            GUI.color = ToColor(MpUiPalette.Dim);
-            Widgets.Label(peerOuter.ContractedBy(10f), "No peers yet.");
+            GUI.color = MpImmediateGui.ToColor(MpUiPalette.Dim);
+            Text.Font = GameFont.Tiny;
+            Widgets.Label(peerOuter.ContractedBy(10f), MpImmediateGui.T("RMP.PeersNone"));
             GUI.color = Color.white;
         }
         else
         {
-            var rowH = 28f;
+            var rowH = LobbyLayoutMetrics.PeerRowHeight;
             var viewH = vm.Peers.Count * rowH + 8f;
             var view = new Rect(0f, 0f, peerOuter.width - 16f, viewH);
             Widgets.BeginScrollView(peerOuter, ref _peerScroll, view);
@@ -174,144 +201,144 @@ public sealed class Dialog_RimworldMPLobby : Window
             Widgets.EndScrollView();
         }
 
-        y += peerAreaH + 10f;
-
-        // Chat panel (in-session)
-        if (vm.CanChat || vm.ChatLines.Count > 0)
-        {
-            Text.Font = GameFont.Tiny;
-            GUI.color = ToColor(MpUiPalette.Steel);
-            Widgets.Label(new Rect(x, y, w, 16f), "CHAT");
-            GUI.color = Color.white;
-            y += 16f;
-            var chatH = 72f;
-            var chatOuter = new Rect(x, y, w, chatH);
-            Widgets.DrawBoxSolid(chatOuter, ToColor(MpUiPalette.Panel));
-            var chatViewH = Mathf.Max(chatH, vm.ChatLines.Count * 16f + 8f);
-            Widgets.BeginScrollView(chatOuter, ref _chatScroll, new Rect(0f, 0f, chatOuter.width - 16f, chatViewH));
-            var cy = 4f;
-            foreach (var line in vm.ChatLines)
-            {
-                GUI.color = line.IsSystem ? ToColor(MpUiPalette.Warn) : ToColor(MpUiPalette.Soft);
-                Widgets.Label(new Rect(6f, cy, chatOuter.width - 24f, 16f), $"{line.Prefix}: {line.Text}");
-                cy += 16f;
-            }
-
-            Widgets.EndScrollView();
-            GUI.color = Color.white;
-            y += chatH + 6f;
-
-            if (vm.CanChat)
-            {
-                _chatDraft = Widgets.TextField(new Rect(x, y, w * 0.72f, 28f), _chatDraft);
-                if (DrawSteelButton(new Rect(x + w * 0.74f, y, w * 0.26f, 28f), "Send") && !string.IsNullOrWhiteSpace(_chatDraft))
-                {
-                    SessionFacade.Current?.SendChat(_chatDraft);
-                    _chatDraft = string.Empty;
-                    _actionFlash = "Chat sent";
-                }
-
-                y += 34f;
-            }
-        }
-
-        var btnH = 32f;
-        var gap = 8f;
-        if (vm.CanHost || vm.CanJoin)
-        {
-            var half = (w - gap) * 0.5f;
-            if (DrawEmberButton(new Rect(x, y, half, btnH), "Host"))
-                DoHost();
-            if (DrawSteelButton(new Rect(x + half + gap, y, half, btnH), "Join"))
-                DoJoin();
-            y += btnH + gap;
-        }
-
-        if (vm.CanToggleReady)
-        {
-            var readyLabel = vm.LocalReady ? "Unready" : "Ready up";
-            if (Widgets.ButtonText(new Rect(x, y, w * 0.48f, btnH), readyLabel))
-            {
-                SessionFacade.Current?.SetReady(!vm.LocalReady);
-                _actionFlash = vm.LocalReady ? "Marked not ready" : "Marked ready";
-            }
-
-            if (vm.CanDisconnect && DrawDangerButton(new Rect(x + w * 0.52f, y, w * 0.48f, btnH), "Disconnect"))
-                DoDisconnect();
-            y += btnH + gap;
-        }
-        else if (vm.CanDisconnect)
-        {
-            if (DrawDangerButton(new Rect(x, y, w, btnH), "Disconnect"))
-                DoDisconnect();
-            y += btnH + gap;
-        }
-
-        if (!vm.InSession)
-        {
-            if (DrawSteelButton(new Rect(x, y, w, btnH), "Check launcher handoff"))
-            {
-                _ = MpLobbyActions.TryConsumeLauncherHandoffAsync();
-                _actionFlash = "Checked launcher-handoff.json";
-            }
-
-            y += btnH + gap;
-        }
-
-        Text.Font = GameFont.Tiny;
-        GUI.color = vm.WasKicked || vm.IsFrozen ? ToColor(MpUiPalette.Danger) : ToColor(MpUiPalette.Soft);
-        var footer = string.IsNullOrEmpty(_actionFlash) ? vm.StatusLine : _actionFlash;
-        Widgets.Label(new Rect(x, Mathf.Min(y, inRect.yMax - 36f), w, 34f), footer);
-        GUI.color = Color.white;
-        Text.Font = GameFont.Small;
-    }
-
-    private float DrawHandoffBlock(float x, float y, float w, HandoffUiSnapshot handoff)
-    {
-        var tint = handoff.IsError
-            ? MpUiPalette.Danger
-            : handoff.IsOk
-                ? MpUiPalette.Ok
-                : handoff.Kind == HandoffUiKind.Missing
-                    ? MpUiPalette.Dim
-                    : MpUiPalette.Steel;
-        GUI.color = ToColor(tint);
-        Text.Font = GameFont.Tiny;
-        Widgets.Label(new Rect(x, y, w, 16f), "LAUNCHER HANDOFF");
-        GUI.color = Color.white;
-        y += 16f;
-        Text.Font = GameFont.Tiny;
-        GUI.color = ToColor(MpUiPalette.Soft);
-        Widgets.Label(new Rect(x, y, w, 32f), handoff.Detail);
-        GUI.color = Color.white;
-        return y + 34f;
+        return y + peerAreaH + LobbyLayoutMetrics.SectionGap;
     }
 
     private void DrawPeerRow(Rect rect, LobbyPeerRow peer, bool hostCanKick)
     {
         Widgets.DrawBoxSolid(rect, new Color(1f, 1f, 1f, 0.03f));
         Text.Font = GameFont.Tiny;
-        GUI.color = ToColor(MpUiPalette.Soft);
+        GUI.color = MpImmediateGui.ToColor(MpUiPalette.Soft);
         var nameW = hostCanKick && peer.CanKick ? rect.width * 0.32f : rect.width * 0.38f;
         Widgets.Label(new Rect(rect.x + 4f, rect.y + 4f, nameW, rect.height), peer.DisplayName);
 
-        GUI.color = peer.Ready ? ToColor(MpUiPalette.Ok) : ToColor(MpUiPalette.Warn);
+        GUI.color = MpImmediateGui.ToColor(peer.Ready ? MpUiPalette.Ok : MpUiPalette.Warn);
         Widgets.Label(new Rect(rect.x + rect.width * 0.36f, rect.y + 4f, rect.width * 0.20f, rect.height), peer.ReadyLabel);
 
-        GUI.color = peer.ModlistMatch ? ToColor(MpUiPalette.Steel) : ToColor(MpUiPalette.Danger);
+        GUI.color = MpImmediateGui.ToColor(peer.ModlistMatch ? MpUiPalette.Steel : MpUiPalette.Danger);
         Widgets.Label(new Rect(rect.x + rect.width * 0.56f, rect.y + 4f, rect.width * 0.24f, rect.height), peer.ModlistLabel);
 
         if (hostCanKick && peer.CanKick)
         {
-            var kickRect = new Rect(rect.xMax - 52f, rect.y + 2f, 48f, rect.height - 4f);
-            if (DrawDangerButton(kickRect, "Kick"))
+            var kickRect = new Rect(
+                rect.xMax - LobbyLayoutMetrics.KickButtonWidth - 4f,
+                rect.y + 2f,
+                LobbyLayoutMetrics.KickButtonWidth,
+                rect.height - 4f);
+            if (MpImmediateGui.DangerButton(kickRect, MpImmediateGui.T("RMP.BtnKick")))
             {
                 SessionFacade.Current?.HostKickPeer(peer.PlayerId);
-                _actionFlash = $"Kicked {peer.DisplayName}";
+                _actionFlash = MpImmediateGui.Tf("RMP.FlashKicked", peer.DisplayName);
             }
         }
 
         GUI.color = Color.white;
+    }
+
+    private float DrawChat(float x, float y, float w, LobbyViewModel vm)
+    {
+        if (!vm.CanChat && vm.ChatLines.Count == 0)
+            return y;
+
+        y = MpImmediateGui.DrawSectionLabel(x, y, w, MpImmediateGui.T("RMP.ChatHeader"));
+        var chatH = LobbyLayoutMetrics.ChatAreaHeight;
+        var chatOuter = new Rect(x, y, w, chatH);
+        MpImmediateGui.DrawPanel(chatOuter);
+        var chatViewH = Mathf.Max(chatH, vm.ChatLines.Count * LobbyLayoutMetrics.ChatLineHeight + 8f);
+        Widgets.BeginScrollView(chatOuter, ref _chatScroll, new Rect(0f, 0f, chatOuter.width - 16f, chatViewH));
+        var cy = 4f;
+        foreach (var line in vm.ChatLines)
+        {
+            GUI.color = MpImmediateGui.ToColor(line.IsSystem ? MpUiPalette.Warn : MpUiPalette.Soft);
+            Widgets.Label(
+                new Rect(6f, cy, chatOuter.width - 24f, LobbyLayoutMetrics.ChatLineHeight),
+                $"{line.Prefix}: {line.Text}");
+            cy += LobbyLayoutMetrics.ChatLineHeight;
+        }
+
+        Widgets.EndScrollView();
+        GUI.color = Color.white;
+        y += chatH + 6f;
+
+        if (vm.CanChat)
+        {
+            _chatDraft = Widgets.TextField(new Rect(x, y, w * 0.72f, LobbyLayoutMetrics.FieldHeight), _chatDraft);
+            if (MpImmediateGui.SteelButton(
+                    new Rect(x + w * 0.74f, y, w * 0.26f, LobbyLayoutMetrics.FieldHeight),
+                    MpImmediateGui.T("RMP.ChatSend"))
+                && !string.IsNullOrWhiteSpace(_chatDraft))
+            {
+                SessionFacade.Current?.SendChat(_chatDraft);
+                _chatDraft = string.Empty;
+                _actionFlash = MpImmediateGui.T("RMP.ChatSent");
+            }
+
+            y += LobbyLayoutMetrics.FieldGap;
+        }
+
+        return y;
+    }
+
+    private float DrawActions(float x, float y, float w, LobbyViewModel vm)
+    {
+        var btnH = LobbyLayoutMetrics.ButtonHeight;
+        var gap = LobbyLayoutMetrics.ButtonGap;
+
+        if (vm.CanHost || vm.CanJoin)
+        {
+            var half = (w - gap) * 0.5f;
+            if (MpImmediateGui.EmberButton(new Rect(x, y, half, btnH), MpImmediateGui.T("RMP.BtnHost")))
+                DoHost();
+            if (MpImmediateGui.SteelButton(new Rect(x + half + gap, y, half, btnH), MpImmediateGui.T("RMP.BtnJoin")))
+                DoJoin();
+            y += btnH + gap;
+        }
+
+        if (vm.CanBeginPlay)
+        {
+            if (MpImmediateGui.OkButton(new Rect(x, y, w, btnH), MpImmediateGui.T("RMP.BtnBeginPlay")))
+                DoBeginPlay();
+            y += btnH + gap;
+        }
+
+        if (vm.CanToggleReady)
+        {
+            var readyLabel = vm.LocalReady
+                ? MpImmediateGui.T("RMP.BtnUnready")
+                : MpImmediateGui.T("RMP.BtnReady");
+            if (Widgets.ButtonText(new Rect(x, y, w * 0.48f, btnH), readyLabel))
+            {
+                SessionFacade.Current?.SetReady(!vm.LocalReady);
+                _actionFlash = vm.LocalReady
+                    ? MpImmediateGui.T("RMP.FlashUnready")
+                    : MpImmediateGui.T("RMP.FlashReady");
+            }
+
+            if (vm.CanAbort && MpImmediateGui.DangerButton(
+                    new Rect(x + w * 0.52f, y, w * 0.48f, btnH),
+                    MpImmediateGui.T("RMP.BtnAbort")))
+                DoAbort();
+            y += btnH + gap;
+        }
+        else if (vm.CanAbort)
+        {
+            if (MpImmediateGui.DangerButton(new Rect(x, y, w, btnH), MpImmediateGui.T("RMP.BtnAbort")))
+                DoAbort();
+            y += btnH + gap;
+        }
+
+        if (!vm.InSession)
+        {
+            if (MpImmediateGui.SteelButton(new Rect(x, y, w, btnH), MpImmediateGui.T("RMP.BtnHandoff")))
+            {
+                _ = MpLobbyActions.TryConsumeLauncherHandoffAsync();
+                _actionFlash = MpImmediateGui.T("RMP.FlashHandoffChecked");
+            }
+
+            y += btnH + gap;
+        }
+
+        return y;
     }
 
     private void DoHost()
@@ -322,8 +349,8 @@ public sealed class Dialog_RimworldMPLobby : Window
         MpConfig.PlayerDisplayName = _displayName ?? string.Empty;
         MpConfig.ReadyRequired = true;
         _ = MpLobbyActions.HostAsync(port: port, modlistHash: _modlistHash);
-        _actionFlash = $"Hosting on {port}…";
-        Messages.Message($"RimworldMP: hosting on port {port}", MessageTypeDefOf.TaskCompletion, false);
+        _actionFlash = MpImmediateGui.Tf("RMP.FlashHosting", port);
+        Messages.Message(MpImmediateGui.Tf("RMP.MsgHosting", port), MessageTypeDefOf.TaskCompletion, false);
     }
 
     private void DoJoin()
@@ -333,50 +360,30 @@ public sealed class Dialog_RimworldMPLobby : Window
         MpConfig.ModlistHash = _modlistHash ?? string.Empty;
         MpConfig.PlayerDisplayName = _displayName ?? string.Empty;
         _ = MpLobbyActions.JoinAsync(_host, port: port, modlistHash: _modlistHash);
-        _actionFlash = $"Joining {_host}:{port}…";
-        Messages.Message($"RimworldMP: joining {_host}:{port}", MessageTypeDefOf.TaskCompletion, false);
+        _actionFlash = MpImmediateGui.Tf("RMP.FlashJoining", _host, port);
+        Messages.Message(MpImmediateGui.Tf("RMP.MsgJoining", _host, port), MessageTypeDefOf.TaskCompletion, false);
     }
 
-    private void DoDisconnect()
+    private void DoAbort()
     {
         _ = MpLobbyActions.StopAsync();
-        _actionFlash = "Disconnected";
-        Messages.Message("RimworldMP: session stopped", MessageTypeDefOf.TaskCompletion, false);
+        _actionFlash = MpImmediateGui.T("RMP.FlashAborted");
+        Messages.Message(MpImmediateGui.T("RMP.MsgStopped"), MessageTypeDefOf.TaskCompletion, false);
     }
 
-    private static bool DrawEmberButton(Rect rect, string label)
+    private void DoBeginPlay()
     {
-        var prev = GUI.color;
-        GUI.color = ToColor(MpUiPalette.Ember);
-        var hit = Widgets.ButtonText(rect, label);
-        GUI.color = prev;
-        return hit;
-    }
+        var session = SessionFacade.Current;
+        if (session is null || !session.CanStartOrUnpause)
+            return;
 
-    private static bool DrawSteelButton(Rect rect, string label)
-    {
-        var prev = GUI.color;
-        GUI.color = ToColor(MpUiPalette.Steel);
-        var hit = Widgets.ButtonText(rect, label);
-        GUI.color = prev;
-        return hit;
+        session.BroadcastSystemNotice(
+            SystemNoticeKind.Info,
+            SessionMessages.Get("RMP.BeginPlayNotice"));
+        _actionFlash = MpImmediateGui.T("RMP.FlashBeginPlay");
+        Messages.Message(MpImmediateGui.T("RMP.FlashBeginPlay"), MessageTypeDefOf.TaskCompletion, false);
+        Close(doCloseSound: true);
     }
-
-    private static bool DrawDangerButton(Rect rect, string label)
-    {
-        var prev = GUI.color;
-        GUI.color = ToColor(MpUiPalette.Danger);
-        var hit = Widgets.ButtonText(rect, label);
-        GUI.color = prev;
-        return hit;
-    }
-
-    private static void DrawHairline(float x, float y, float w, Color c)
-    {
-        Widgets.DrawBoxSolid(new Rect(x, y, w, 1f), c);
-    }
-
-    private static Color ToColor(MpUiPalette.Rgba c) => new(c.R, c.G, c.B, c.A);
 
     public static void Open()
     {

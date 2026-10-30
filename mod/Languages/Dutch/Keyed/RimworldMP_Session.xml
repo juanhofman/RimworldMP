@@ -20,14 +20,12 @@
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>Jij</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>Jij (host)</RMP.DisplayNameYouHost>
-<<<<<<< HEAD
   <RMP.DesyncHeadline>Desync — simulatie bevroren</RMP.DesyncHeadline>
   <RMP.DesyncBodyShort>Peers zijn uiteengelopen. Open de lobby (F10) om te verbreken.</RMP.DesyncBodyShort>
   <RMP.DesyncBodyDetail>Peers zijn uiteengelopen op tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.</RMP.DesyncBodyDetail>
   <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
   <RMP.DesyncNoDump>(geen dump)</RMP.DesyncNoDump>
   <RMP.DesyncDumpLabel>Lokale dump · {0}</RMP.DesyncDumpLabel>
-=======
   <RMP.LobbySubtitle>Gedeelde kolonie · LAN · host in-game</RMP.LobbySubtitle>
   <RMP.LobbySession>Sessie · {0}</RMP.LobbySession>
   <RMP.RoleIdle>Inactief</RMP.RoleIdle>
@@ -99,10 +97,6 @@
   <RMP.HandoffAutoJoin>Handoff auto-join {0}:{1}.</RMP.HandoffAutoJoin>
   <RMP.HandoffUnknownRole>Onbekende handoff-rol '{0}'.</RMP.HandoffUnknownRole>
   <RMP.HandoffUnknown>Launcher-handoff nog niet gecontroleerd.</RMP.HandoffUnknown>
-  <RMP.DesyncHeadline>Desync — simulatie bevroren</RMP.DesyncHeadline>
-  <RMP.DesyncBody>Peers liepen uiteen bij tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.</RMP.DesyncBody>
-  <RMP.DesyncBodyMods>Mods   {0}\n</RMP.DesyncBodyMods>
-  <RMP.DesyncFallbackBody>Peers liepen uiteen. Open de lobby (F10) om te verbreken.</RMP.DesyncFallbackBody>
   <RMP.ReadySummary>Klaar {0}/{1} · mods {2}</RMP.ReadySummary>
   <RMP.ReadySummaryMatch>match</RMP.ReadySummaryMatch>
   <RMP.ReadySummaryMismatch>mismatch</RMP.ReadySummaryMismatch>
@@ -112,5 +106,4 @@
   <RMP.MsgJoining>RimworldMP: joinen {0}:{1}</RMP.MsgJoining>
   <RMP.MsgStopped>RimworldMP: sessie gestopt</RMP.MsgStopped>
   <RMP.HashUnset>(niet gezet)</RMP.HashUnset>
->>>>>>> a230f42 (WIP: lobby i18n keys, presenter polish, layout metrics)
 </LanguageData>

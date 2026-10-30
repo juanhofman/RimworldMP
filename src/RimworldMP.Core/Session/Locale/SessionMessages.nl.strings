@@ -19,14 +19,12 @@ RMP.DisplayNameDefault=Speler {0}
 RMP.DisplayNameHost=Host
 RMP.DisplayNameYou=Jij
 RMP.DisplayNameYouHost=Jij (host)
-<<<<<<< HEAD
 RMP.DesyncHeadline=Desync — simulatie bevroren
 RMP.DesyncBodyShort=Peers zijn uiteengelopen. Open de lobby (F10) om te verbreken.
 RMP.DesyncBodyDetail=Peers zijn uiteengelopen op tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.
 RMP.DesyncModsLine=Mods   {0}\n
 RMP.DesyncNoDump=(geen dump)
 RMP.DesyncDumpLabel=Lokale dump · {0}
-=======
 RMP.LobbySubtitle=Gedeelde kolonie · LAN · host in-game
 RMP.LobbySession=Sessie · {0}
 RMP.RoleIdle=Inactief
@@ -98,10 +96,6 @@ RMP.HandoffAutoHost=Handoff auto-host op poort {0}.
 RMP.HandoffAutoJoin=Handoff auto-join {0}:{1}.
 RMP.HandoffUnknownRole=Onbekende handoff-rol '{0}'.
 RMP.HandoffUnknown=Launcher-handoff nog niet gecontroleerd.
-RMP.DesyncHeadline=Desync — simulatie bevroren
-RMP.DesyncBody=Peers liepen uiteen bij tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.
-RMP.DesyncBodyMods=Mods   {0}\n
-RMP.DesyncFallbackBody=Peers liepen uiteen. Open de lobby (F10) om te verbreken.
 RMP.ReadySummary=Klaar {0}/{1} · mods {2}
 RMP.ReadySummaryMatch=match
 RMP.ReadySummaryMismatch=mismatch
@@ -111,4 +105,3 @@ RMP.MsgHosting=RimworldMP: hosten op poort {0}
 RMP.MsgJoining=RimworldMP: joinen {0}:{1}
 RMP.MsgStopped=RimworldMP: sessie gestopt
 RMP.HashUnset=(niet gezet)
->>>>>>> a230f42 (WIP: lobby i18n keys, presenter polish, layout metrics)

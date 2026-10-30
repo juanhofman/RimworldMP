@@ -20,14 +20,12 @@
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>You</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>You (host)</RMP.DisplayNameYouHost>
-<<<<<<< HEAD
   <RMP.DesyncHeadline>Desync — simulation frozen</RMP.DesyncHeadline>
   <RMP.DesyncBodyShort>Peers diverged. Open the lobby (F10) to disconnect.</RMP.DesyncBodyShort>
   <RMP.DesyncBodyDetail>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.</RMP.DesyncBodyDetail>
   <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
   <RMP.DesyncNoDump>(no dump)</RMP.DesyncNoDump>
   <RMP.DesyncDumpLabel>Local dump · {0}</RMP.DesyncDumpLabel>
-=======
   <RMP.LobbySubtitle>Shared colony · LAN · in-game host</RMP.LobbySubtitle>
   <RMP.LobbySession>Session · {0}</RMP.LobbySession>
   <RMP.RoleIdle>Idle</RMP.RoleIdle>
@@ -99,10 +97,6 @@
   <RMP.HandoffAutoJoin>Handoff auto-joined {0}:{1}.</RMP.HandoffAutoJoin>
   <RMP.HandoffUnknownRole>Unknown handoff role '{0}'.</RMP.HandoffUnknownRole>
   <RMP.HandoffUnknown>Launcher handoff not checked yet.</RMP.HandoffUnknown>
-  <RMP.DesyncHeadline>Desync — simulation frozen</RMP.DesyncHeadline>
-  <RMP.DesyncBody>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.</RMP.DesyncBody>
-  <RMP.DesyncBodyMods>Mods   {0}\n</RMP.DesyncBodyMods>
-  <RMP.DesyncFallbackBody>Peers diverged. Open the lobby (F10) to disconnect.</RMP.DesyncFallbackBody>
   <RMP.ReadySummary>Ready {0}/{1} · mods {2}</RMP.ReadySummary>
   <RMP.ReadySummaryMatch>match</RMP.ReadySummaryMatch>
   <RMP.ReadySummaryMismatch>mismatch</RMP.ReadySummaryMismatch>
@@ -112,5 +106,4 @@
   <RMP.MsgJoining>RimworldMP: joining {0}:{1}</RMP.MsgJoining>
   <RMP.MsgStopped>RimworldMP: session stopped</RMP.MsgStopped>
   <RMP.HashUnset>(unset)</RMP.HashUnset>
->>>>>>> a230f42 (WIP: lobby i18n keys, presenter polish, layout metrics)
 </LanguageData>
