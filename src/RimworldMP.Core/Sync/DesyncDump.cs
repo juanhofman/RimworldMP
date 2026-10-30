@@ -120,12 +120,16 @@ public static class DesyncDump
         sb.AppendLine("section=fingerprint");
         sb.AppendLine(inv, $"localHash={localHashHex}");
         sb.AppendLine(inv, $"remoteHash={remoteHashHex}");
-        sb.AppendLine("note=worldFingerprint slot reserved; Verse map/world samples need RIMWORLD_DIR");
+        sb.AppendLine("note=compare uses published end-of-tick checkpoint hash");
 
         sb.AppendLine();
         sb.AppendLine("section=rng");
         sb.AppendLine(inv, $"rngSeed={rngSeed}");
         sb.AppendLine(inv, $"rngDraws={rngDraws}");
+        if (context?.RngOpinion is ulong opinion)
+            sb.AppendLine(inv, $"rngOpinion=0x{opinion:x16}");
+        if (context?.SessionTickAtDump is long sessionTick)
+            sb.AppendLine(inv, $"sessionTickAtDump={sessionTick}");
         if (rngCounters is { Count: > 0 })
         {
             sb.AppendLine("rngCounters:");

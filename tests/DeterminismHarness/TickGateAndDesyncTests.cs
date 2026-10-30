@@ -83,4 +83,28 @@ public class TickGateAndDesyncTests
         Assert.True(detector.CheckRemote(5, local));
         Assert.False(detector.IsFrozen);
     }
+
+    [Fact]
+    public void CheckRemote_prefers_published_local_hash_over_live_drift()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "rimworldmp-published-hash", Guid.NewGuid().ToString("N"));
+        var rand = new SyncedRand(11);
+        var hasher = new StateHasher();
+        hasher.AddUtf8("checkpoint");
+        var detector = new DesyncDetector(hasher, rand, dir);
+
+        var published = detector.SnapshotHashHex(60);
+        // Live stream drifts after the checkpoint (vanilla tick / UI) — must not false-freeze.
+        rand.Next();
+        detector.IncrementCounter("Rand.Value");
+        Assert.NotEqual(published, detector.SnapshotHashHex(60));
+
+        Assert.True(detector.CheckRemote(60, published, localHashHex: published));
+        Assert.False(detector.IsFrozen);
+
+        Assert.False(detector.CheckRemote(60, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", localHashHex: published));
+        Assert.True(detector.IsFrozen);
+        detector.ClearFreeze();
+        Assert.False(detector.IsFrozen);
+    }
 }

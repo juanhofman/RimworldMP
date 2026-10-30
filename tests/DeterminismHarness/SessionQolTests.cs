@@ -26,8 +26,9 @@ public class SessionQolTests
         Assert.Contains("Lobby full", SessionMessages.LobbyFull(4), StringComparison.Ordinal);
         Assert.Equal(JoinRejectReason.DlcMismatch, (JoinRejectReason)4);
         Assert.Contains("frozen", SessionMessages.Get("RMP.DesyncHeadline"), StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("F10", SessionMessages.Get("RMP.DesyncBodyShort"), StringComparison.Ordinal);
+        Assert.Contains("Continue", SessionMessages.Get("RMP.DesyncBodyShort"), StringComparison.Ordinal);
         Assert.Contains("local only", SessionMessages.Format("RMP.DesyncBodyDetail", 1, "a", "b", "", "/tmp/x"), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("resync", SessionMessages.Get("RMP.BtnContinueHost"), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -238,6 +239,47 @@ public class SessionQolTests
         Assert.NotNull(jp);
         Assert.Equal(blob, jp!.SaveBlob);
         Assert.Contains(client.Chat.Snapshot(), l => l.NoticeKind == SystemNoticeKind.Recovery);
+    }
+
+    [Fact]
+    public async Task SoftRecover_host_clears_freeze_and_resyncs_client()
+    {
+        var hostTransport = new LoopbackTransport();
+        var clientTransport = new LoopbackTransport();
+        LoopbackTransport.Pair(hostTransport, clientTransport);
+
+        var blob = "SOFT"u8.ToArray();
+        var mem = new MemorySaveLoad();
+        await using var host = new MpSession(hostTransport, isHost: true, sessionSeed: 33)
+        {
+            JoinPointSource = new MemoryJoinPointSource(blob, "m"),
+        };
+        await using var client = new MpSession(clientTransport, isHost: false, sessionSeed: 33)
+        {
+            SaveLoad = mem,
+        };
+
+        JoinPoint? jp = null;
+        client.OnJoinPointReceived += p => jp = p;
+
+        await host.StartAsync(new NetEndpoint("loop", 0));
+        await client.StartAsync(new NetEndpoint("loop", 0));
+        await TestHelpers.WaitForJipAsync(client);
+
+        host.Desync.Freeze(60, "aaa", "bbb", Array.Empty<MpCommand>());
+        client.Desync.Freeze(60, "bbb", "aaa", Array.Empty<MpCommand>());
+        Assert.True(host.IsFrozen);
+        Assert.True(client.IsFrozen);
+
+        jp = null;
+        SessionRecovery.SoftRecover(host);
+        Assert.False(host.IsFrozen);
+
+        SessionRecovery.SoftRecover(client);
+        await TestHelpers.WaitForJipAsync(client);
+        Assert.False(client.IsFrozen);
+        Assert.NotNull(jp);
+        Assert.Equal(blob, jp!.SaveBlob);
     }
 
     [Fact]

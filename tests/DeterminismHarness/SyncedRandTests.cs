@@ -30,6 +30,16 @@ public class SyncedRandTests
     }
 
     [Fact]
+    public void Empty_int_range_returns_min_like_Verse_not_throw()
+    {
+        var rng = new SyncedRand(1);
+        Assert.Equal(5, rng.Next(5, 5));
+        Assert.Equal(5, rng.Next(5, 4));
+        Assert.Equal(0, rng.Next(0));
+        Assert.Equal(7, rng.RangeInclusive(7, 6)); // maxInclusive < min → Next(7,7) → 7
+    }
+
+    [Fact]
     public void Chance_Bool_Range_Element_are_deterministic()
     {
         var a = new SyncedRand(7);

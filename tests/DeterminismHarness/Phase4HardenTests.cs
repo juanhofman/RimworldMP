@@ -119,6 +119,7 @@ public class Phase4HardenTests
                 host.SubmitCommand(CommandOpcode.Speed, CommandPayloads.Speed((byte)((i % 3) + 1)));
             host.HostEmitNextBatch();
             Assert.True(host.TryAdvanceSim());
+            host.PublishHashCheckpoint();
             var ok = false;
             for (var w = 0; w < 200 && !ok; w++)
             {
@@ -128,8 +129,10 @@ public class Phase4HardenTests
             }
 
             Assert.True(ok, $"client stalled at host tick {host.Tick}; frozen={client.IsFrozen}");
+            client.PublishHashCheckpoint();
             Assert.Equal(host.Tick, client.Tick);
             Assert.False(client.IsFrozen);
+            Assert.False(host.IsFrozen);
         }
 
         Assert.Equal(1000, host.Tick);

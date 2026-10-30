@@ -132,14 +132,24 @@ public sealed class DesyncDetector
         long tick,
         string remoteHashHex,
         IReadOnlyList<MpCommand>? recentCommands = null,
-        DesyncDumpContext? dumpContext = null)
+        DesyncDumpContext? dumpContext = null,
+        string? localHashHex = null)
     {
-        var local = SnapshotHashHex(tick);
+        // Prefer the caller's published checkpoint hash — live SnapshotHash drifts after the
+        // vanilla tick / further sim and caused false freezes at the first HashInterval.
+        var local = localHashHex ?? SnapshotHashHex(tick);
         if (string.Equals(local, remoteHashHex, StringComparison.OrdinalIgnoreCase))
             return true;
 
         Freeze(tick, local, remoteHashHex, recentCommands, dumpContext);
         return false;
+    }
+
+    /// <summary>Unfreeze without wiping RNG counters / hasher (host soft-recover / false-freeze clear).</summary>
+    public void ClearFreeze()
+    {
+        lock (_gate)
+            _frozen = false;
     }
 
     public void Freeze(

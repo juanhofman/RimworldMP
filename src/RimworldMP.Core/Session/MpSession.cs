@@ -23,12 +23,14 @@ public sealed class MpSession : IAsyncDisposable
     private readonly PlayerRoster _roster = new();
     private readonly SessionChat _chat = new();
     private readonly Dictionary<long, string> _pendingRemoteHashes = new();
+    private readonly Dictionary<long, string> _publishedHashes = new();
     private readonly HashSet<int> _departedPeers = new();
     private int _localPlayerId;
     private long _sessionSeed;
     private bool _wired;
     private bool _jipPending;
     private bool _kicked;
+    private int _simScopeDepth;
     private string _modlistHash = "unknown";
     private string _localDisplayName = string.Empty;
     /// <summary>Defaults to 1 so a solo host can Begin play / unpause; Begin play locks to present peers.</summary>
@@ -63,6 +65,12 @@ public sealed class MpSession : IAsyncDisposable
     /// <summary>JIP save capture/load. Required when a join point carries a non-empty blob.</summary>
     public ISaveLoad? SaveLoad { get; set; }
     public bool IsJoinInProgress => _jipPending;
+    /// <summary>
+    /// True while applying a lockstep batch or running the vanilla tick it admits.
+    /// Rand Harmony prefixes must only forward to <see cref="SyncedRand"/> in this window —
+    /// UI / OnGUI draws must stay on Verse.Rand or peers diverge by frame.
+    /// </summary>
+    public bool IsInSim => _simScopeDepth > 0;
     public bool WasKicked => _kicked;
     public ReadyCheck Ready => _ready;
     public PlayerRoster Roster => _roster;
@@ -98,6 +106,14 @@ public sealed class MpSession : IAsyncDisposable
         ExpectedPeers = Math.Max(1, _ready.Snapshot().Count);
     }
 
+    public void BeginSimScope() => _simScopeDepth++;
+
+    public void EndSimScope()
+    {
+        if (_simScopeDepth > 0)
+            _simScopeDepth--;
+    }
+
     /// <summary>
     /// While RimWorld is paused, <c>DoSingleTick</c> does not run — flush staged host commands
     /// (unpause/speed) and apply one admitted batch. No-op when there is nothing to do.
@@ -107,14 +123,25 @@ public sealed class MpSession : IAsyncDisposable
         if (!IsActive || IsFrozen || _jipPending || _kicked)
             return false;
 
-        var emitted = false;
-        if (IsHost && HasStagedCommands)
+        BeginSimScope();
+        try
         {
-            HostEmitNextBatch();
-            emitted = true;
-        }
+            var emitted = false;
+            if (IsHost && HasStagedCommands)
+            {
+                HostEmitNextBatch();
+                emitted = true;
+            }
 
-        return TryAdvanceSim() || emitted;
+            var advanced = TryAdvanceSim();
+            if (advanced)
+                PublishHashCheckpoint();
+            return advanced || emitted;
+        }
+        finally
+        {
+            EndSimScope();
+        }
     }
 
     public event Action<CommandBatch>? OnBatchApply;
@@ -225,6 +252,9 @@ public sealed class MpSession : IAsyncDisposable
     }
 
     public void RequestRecoveryRejoin() => SessionRecovery.RequestRejoin(this);
+
+    /// <summary>Overlay Continue: host clears freeze (+ optional client resync); client requests join point.</summary>
+    public void SoftRecoverFromDesync() => SessionRecovery.SoftRecover(this);
 
     public async Task StartAsync(NetEndpoint endpoint, CancellationToken cancellationToken = default)
     {
@@ -379,23 +409,45 @@ public sealed class MpSession : IAsyncDisposable
             Desync.IncrementCounter("ticks");
             Tick = batch.Tick;
             OnBatchApply?.Invoke(batch);
-
-            if (Tick > 0 && Tick % HashIntervalTicks == 0)
-                PublishHash(Tick);
-
-            // Compare any remote hash that arrived before we reached this tick.
-            if (_pendingRemoteHashes.Remove(Tick, out var remoteHex))
-                EvaluateRemoteHash(Tick, remoteHex);
+            // Hash checkpoint runs after the vanilla tick (PublishHashCheckpoint) so peers
+            // compare post-sim OpinionHash / world fingerprint — not a mid-tick race.
         }
 
         return true;
     }
 
+    /// <summary>
+    /// End-of-tick fingerprint: publish local hash and compare any pending remote for <see cref="Tick"/>.
+    /// Live path: call from <c>DoSingleTick</c> Postfix after world fingerprint sample.
+    /// Harness: <see cref="AdvanceTickStub"/> calls this after <see cref="TryAdvanceSim"/>.
+    /// </summary>
+    public void PublishHashCheckpoint()
+    {
+        if (!IsActive || IsFrozen || Tick <= 0 || Tick % HashIntervalTicks != 0)
+            return;
+
+        lock (_applyGate)
+        {
+            PublishHash(Tick);
+            if (_pendingRemoteHashes.Remove(Tick, out var remoteHex))
+                EvaluateRemoteHash(Tick, remoteHex);
+        }
+    }
+
     public void AdvanceTickStub()
     {
-        if (IsHost)
-            HostEmitNextBatch();
-        TryAdvanceSim();
+        BeginSimScope();
+        try
+        {
+            if (IsHost)
+                HostEmitNextBatch();
+            if (TryAdvanceSim())
+                PublishHashCheckpoint();
+        }
+        finally
+        {
+            EndSimScope();
+        }
     }
 
     public void RequestJoinPoint()
@@ -685,26 +737,37 @@ public sealed class MpSession : IAsyncDisposable
 
         lock (_applyGate)
         {
-            if (tick > Tick)
+            // Always compare against the published checkpoint for that tick — never a live
+            // SnapshotHash that may have advanced past the vanilla tick / further batches.
+            if (_publishedHashes.ContainsKey(tick))
+            {
+                EvaluateRemoteHash(tick, remoteHex);
+                return;
+            }
+
+            // Remote arrived before we finished this tick's checkpoint — hold until publish.
+            if (tick >= Tick)
             {
                 _pendingRemoteHashes[tick] = remoteHex;
                 return;
             }
 
-            if (tick < Tick)
-                return; // stale
+            // Past tick with no published hash (non-interval) — ignore.
         }
-
-        EvaluateRemoteHash(tick, remoteHex);
     }
 
     private void EvaluateRemoteHash(long tick, string remoteHex)
     {
+        string localHex;
         List<MpCommand> recent;
         lock (_applyGate)
+        {
+            if (!_publishedHashes.TryGetValue(tick, out localHex!))
+                localHex = Desync.SnapshotHashHex(tick);
             recent = _recentApplied.ToList();
+        }
 
-        if (!Desync.CheckRemote(tick, remoteHex, recent, BuildDumpContext()))
+        if (!Desync.CheckRemote(tick, remoteHex, recent, BuildDumpContext(), localHex))
         {
             AnnounceFreeze();
             var info = Desync.LastDesync;
@@ -744,16 +807,39 @@ public sealed class MpSession : IAsyncDisposable
             PeerIds = peerIds.ToList(),
             ModlistHash = _modlistHash,
             RecentBatches = _commandLog.SnapshotRecent(),
+            SessionTickAtDump = Tick,
+            RngOpinion = Rand.OpinionHash,
         };
     }
 
     private void PublishHash(long tick)
     {
         var hash = Desync.SnapshotHash(tick);
+        var hex = Convert.ToHexString(hash).ToLowerInvariant();
+        RememberPublished(tick, hex);
         var buf = new byte[8 + hash.Length];
         BinaryPrimitives.WriteInt64LittleEndian(buf, tick);
         hash.CopyTo(buf.AsSpan(8));
         Transport.BroadcastReliable(Envelope(NetMessageType.StateHash, buf));
+    }
+
+    private void RememberPublished(long tick, string hex)
+    {
+        _publishedHashes[tick] = hex;
+        var minKeep = tick - HashIntervalTicks * 5L;
+        if (minKeep <= 0)
+            return;
+        List<long>? stale = null;
+        foreach (var key in _publishedHashes.Keys)
+        {
+            if (key < minKeep)
+                (stale ??= new List<long>()).Add(key);
+        }
+
+        if (stale is null)
+            return;
+        foreach (var key in stale)
+            _publishedHashes.Remove(key);
     }
 
     private void AnnounceFreeze()

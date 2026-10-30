@@ -18,15 +18,23 @@ namespace RimworldMP.Patches;
 [HarmonyPatch]
 internal static class Rand_Patches
 {
+    /// <summary>
+    /// Forward only during the lockstep sim window. JIP load, lobby UI, and between-tick
+    /// OnGUI must keep Verse.Rand — otherwise host/client frame-local draws desync OpinionHash
+    /// by the first HashInterval (tick 60).
+    /// </summary>
+    private static bool ShouldForward(MpSession? session) =>
+        session is { IsActive: true, IsJoinInProgress: false, IsInSim: true };
+
     [HarmonyPatch(typeof(Rand), nameof(Rand.Value), MethodType.Getter)]
     [HarmonyPrefix]
     private static bool Value_Prefix(ref float __result)
     {
         var session = SessionFacade.Current;
-        if (session is not { IsActive: true })
+        if (!ShouldForward(session))
             return true;
 
-        __result = session.Rand.NextFloat();
+        __result = session!.Rand.NextFloat();
         session.Desync.IncrementCounter("Rand.Value");
         return false;
     }
@@ -36,10 +44,10 @@ internal static class Rand_Patches
     private static bool RangeInt_Prefix(int minInclusive, int maxExclusive, ref int __result)
     {
         var session = SessionFacade.Current;
-        if (session is not { IsActive: true })
+        if (!ShouldForward(session))
             return true;
 
-        __result = session.Rand.Next(minInclusive, maxExclusive);
+        __result = session!.Rand.Next(minInclusive, maxExclusive);
         session.Desync.IncrementCounter("Rand.Range");
         return false;
     }
@@ -49,10 +57,10 @@ internal static class Rand_Patches
     private static bool RangeFloat_Prefix(float minInclusive, float maxInclusive, ref float __result)
     {
         var session = SessionFacade.Current;
-        if (session is not { IsActive: true })
+        if (!ShouldForward(session))
             return true;
 
-        __result = session.Rand.Range(minInclusive, maxInclusive);
+        __result = session!.Rand.Range(minInclusive, maxInclusive);
         session.Desync.IncrementCounter("Rand.Range");
         return false;
     }
@@ -62,10 +70,10 @@ internal static class Rand_Patches
     private static bool Chance_Prefix(float chance, ref bool __result)
     {
         var session = SessionFacade.Current;
-        if (session is not { IsActive: true })
+        if (!ShouldForward(session))
             return true;
 
-        __result = session.Rand.Chance(chance);
+        __result = session!.Rand.Chance(chance);
         session.Desync.IncrementCounter("Rand.Chance");
         return false;
     }
@@ -75,10 +83,10 @@ internal static class Rand_Patches
     private static bool Bool_Prefix(ref bool __result)
     {
         var session = SessionFacade.Current;
-        if (session is not { IsActive: true })
+        if (!ShouldForward(session))
             return true;
 
-        __result = session.Rand.Bool();
+        __result = session!.Rand.Bool();
         session.Desync.IncrementCounter("Rand.Bool");
         return false;
     }
