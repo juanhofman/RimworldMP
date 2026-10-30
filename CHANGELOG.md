@@ -7,6 +7,7 @@
 
 ### Fixed
 - **Unpause after Begin play:** while RimWorld is paused, `DoSingleTick` never runs — staged unpause/speed now flush from the UI OnGUI pump. Begin play locks `ExpectedPeers` to who is present (solo host no longer waits for a phantom 2nd peer).
+- **Black screen on main menu:** paused-command pump no longer calls `Find.TickManager` outside `ProgramState.Playing` (NRE spam in OnGUI).
 - **Launcher host hang:** LAN mod scan no longer blocks the Avalonia UI thread (Windows Application Hang when starting RimWorld). Host/join prep + game start run off the UI.
 - **RimWorld 1.7 launch path:** launcher starts `RimWorld.exe` directly (not `steam://`) and best-effort copies a `RimWorldWin64.exe` shim so Steam Play still finds an executable on Waylith installs.
 - **In-game lobby HUD:** brand chip sits above the Architect/main-tab bar (no overlap/clip); lobby actions bottom-anchored so Begin/Unready/Abort stay visible; peers + chat side-by-side with tighter status strip.
