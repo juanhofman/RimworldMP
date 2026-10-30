@@ -4,9 +4,17 @@
 
 **Known limitation:** **requires a RimWorld 1.7 install for live play; Verse apply paths remain scaffolded.** Full Harmony/Verse patches need a game install (`RIMWORLD_DIR`).
 
-## Install the mod
+## Players — one Setup.exe
 
-1. Install **Harmony 3** for RimWorld 1.7 (Workshop id `2009463077` or [GitHub release](https://github.com/pardeike/HarmonyRimWorld/releases) ≥ **v3.0.1**, which ships Harmony lib `3.0.0-rc.3`). This repo compiles against NuGet `Lib.Harmony.Ref` `3.0.0-rc.3` and does not ship `0Harmony.dll`.
+1. Download **`RimworldMP-Setup-0.7.x.exe`**
+2. Run it → **Next** (leave “Install RimworldMP + Harmony into RimWorld Mods folder” checked)
+3. Optional: Launch RimworldMP at the end → Host / Join
+
+That is the whole install. No zip, no “extract these folders”. Rebuild the Setup on Windows with `packaging/build-setup.ps1` ([packaging/README.md](../packaging/README.md)).
+
+## Install the mod (manual / developers)
+
+1. Install **Harmony 3** for RimWorld 1.7 (Workshop id `2009463077` or [GitHub release](https://github.com/pardeike/HarmonyRimWorld/releases) ≥ **v3.0.1**, which ships Harmony lib `3.0.0-rc.3`). This repo compiles against NuGet `Lib.Harmony.Ref` `3.0.0-rc.3` and does **not** put `0Harmony.dll` inside RimworldMP’s own Assemblies (the Setup bundles the separate Harmony mod instead).
 2. Build this repo (see below) **or** copy a release `mod/` folder.
 3. Copy / symlink the repo `mod/` directory to:
    - Steam: `…/RimWorld/Mods/RimworldMP`

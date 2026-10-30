@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **Single Windows Setup.exe:** `packaging/build-setup.ps1` + Inno Setup script produce `RimworldMP-Setup-<version>.exe` — installs self-contained launcher, copies Harmony + RimworldMP into RimWorld Mods, Desktop/Start Menu shortcuts, optional launch. No zip unpack for players.
+
 ### Fixed
 - **Launcher host hang:** LAN mod scan no longer blocks the Avalonia UI thread (Windows Application Hang when starting RimWorld). Host/join prep + game start run off the UI.
 - **RimWorld 1.7 launch path:** launcher starts `RimWorld.exe` directly (not `steam://`) and best-effort copies a `RimWorldWin64.exe` shim so Steam Play still finds an executable on Waylith installs.
