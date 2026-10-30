@@ -30,6 +30,8 @@ public class LobbyUiTests
         Assert.Equal("#E07A3D", MpUiPalette.EmberHex);
         Assert.False(LobbyUi.IsVerseUiAvailable); // harness builds with NO_GAME_REFS
         LobbyUi.Open(); // stub no-op
+        Assert.True(LobbyLayoutMetrics.WindowWidth >= 540f);
+        Assert.True(LobbyLayoutMetrics.PeerRowHeight > 0f);
     }
 
     [Fact]
@@ -39,10 +41,13 @@ public class LobbyUiTests
         var vm = LobbyPresenter.Capture(session: null, configuredPort: 30555, localModlistOverride: "abc");
 
         Assert.Equal(MpUiPalette.BrandName, vm.Brand);
+        Assert.Equal(SessionMessages.Get("RMP.LobbySubtitle"), vm.Subtitle);
         Assert.False(vm.InSession);
         Assert.True(vm.CanHost);
         Assert.True(vm.CanJoin);
         Assert.False(vm.CanDisconnect);
+        Assert.False(vm.CanBeginPlay);
+        Assert.False(vm.CanAbort);
         Assert.Equal(30555, vm.Port);
         Assert.Contains("v4", vm.ProtocolLabel, StringComparison.Ordinal);
         Assert.Equal(HandoffUiKind.Missing, vm.Handoff.Kind);
@@ -69,11 +74,14 @@ public class LobbyUiTests
         Assert.True(vm.InSession);
         Assert.True(vm.IsHost);
         Assert.True(vm.CanDisconnect);
+        Assert.True(vm.CanAbort);
         Assert.False(vm.CanHost);
         Assert.Contains("Hosting", vm.LanStatus, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(vm.Peers, p => p.IsLocal && p.IsHostSeat);
         Assert.All(vm.Peers, p => Assert.True(p.ModlistMatch));
         Assert.Equal(hash, vm.LocalModlistHash);
+        Assert.Contains("Ready", vm.ReadySummary, StringComparison.Ordinal);
+        Assert.True(vm.AllModsMatch);
     }
 
     [Fact]
@@ -168,7 +176,55 @@ public class LobbyUiTests
         Assert.True(vm.IsFrozen);
         Assert.NotNull(vm.Desync);
         Assert.Contains("DESYNC", vm.StatusLine, StringComparison.Ordinal);
+        Assert.Contains("frozen", vm.Desync!.Headline, StringComparison.OrdinalIgnoreCase);
+        Assert.False(vm.CanBeginPlay);
         Assert.Equal(NetProtocol.Version, (byte)4);
+    }
+
+    [Fact]
+    public async Task Presenter_begin_play_when_lobby_ready()
+    {
+        var transport = new LoopbackTransport();
+        await using var session = new MpSession(transport, isHost: true, sessionSeed: 9);
+        session.SetModlistHash("ready-hash");
+        session.Ready.Required = true;
+        session.ExpectedPeers = 1;
+        SessionFacade.Attach(session);
+        await session.StartAsync(new NetEndpoint("loop", 0));
+        // Avoid SetReady broadcast on unpaired loopback — seed ready state directly.
+        session.Ready.SetPeer(0, ready: true, modlistHash: "ready-hash");
+
+        var vm = LobbyPresenter.Capture(session);
+        Assert.True(vm.LobbyReady);
+        Assert.True(vm.CanBeginPlay);
+        Assert.True(vm.CanAbort);
+        Assert.Contains("ready", vm.StatusLine, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SessionMessages_lobby_keys_exist_en_and_nl()
+    {
+        Assert.Equal("Begin play", SessionMessages.Get("RMP.BtnBeginPlay"));
+        Assert.Equal("Abort session", SessionMessages.Get("RMP.BtnAbort"));
+        Assert.Contains("RimworldMP", SessionMessages.Get("RMP.MsgHosting"), StringComparison.Ordinal);
+
+        var path = Path.GetFullPath(Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "src", "RimworldMP.Core", "Session", "Locale", "SessionMessages.nl.strings"));
+        if (!File.Exists(path))
+        {
+            path = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory,
+                "..", "..", "..", "..", "..",
+                "src", "RimworldMP.Core", "Session", "Locale", "SessionMessages.nl.strings"));
+        }
+
+        Assert.True(File.Exists(path), path);
+        var loaded = SessionMessages.LoadOptional(path, SessionMessages.CultureNl);
+        Assert.True(loaded >= 40);
+        Assert.Equal("Begin spelen", SessionMessages.Get("RMP.BtnBeginPlay"));
+        Assert.Equal("Sessie afbreken", SessionMessages.Get("RMP.BtnAbort"));
+        SessionMessages.ResetToEnglish();
     }
 
     private static int FreePort()

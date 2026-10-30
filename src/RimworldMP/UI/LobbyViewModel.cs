@@ -24,6 +24,10 @@ public sealed class LobbyViewModel
     public required string ProtocolLabel { get; init; }
     public required int MaxClients { get; init; }
     public required int ConnectedPeerCount { get; init; }
+    public required int ReadyCount { get; init; }
+    public required int ExpectedPeers { get; init; }
+    public required string ReadySummary { get; init; }
+    public required bool AllModsMatch { get; init; }
     public required IReadOnlyList<LobbyPeerRow> Peers { get; init; }
     public required IReadOnlyList<LobbyChatLine> ChatLines { get; init; }
     public required HandoffUiSnapshot Handoff { get; init; }
@@ -35,6 +39,8 @@ public sealed class LobbyViewModel
     public required bool CanToggleReady { get; init; }
     public required bool CanKick { get; init; }
     public required bool CanChat { get; init; }
+    public required bool CanBeginPlay { get; init; }
+    public required bool CanAbort { get; init; }
     public required bool WasKicked { get; init; }
 }
 
