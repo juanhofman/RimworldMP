@@ -107,7 +107,8 @@ public static class RimWorldLocator
     {
         if (OperatingSystem.IsWindows())
         {
-            foreach (var name in new[] { "RimWorldWin64.exe", "RimWorld.exe" })
+            // 1.7 Waylith: RimWorld.exe. Prefer it over legacy Unity RimWorldWin64.exe (may be a shim).
+            foreach (var name in new[] { "RimWorld.exe", "RimWorldWin64.exe" })
             {
                 var p = Path.Combine(installDir, name);
                 if (File.Exists(p))

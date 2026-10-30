@@ -20,21 +20,12 @@ public static class ProcessLauncher
         if (!File.Exists(install.ExecutablePath))
             throw new FileNotFoundException("RimWorld executable not found.", install.ExecutablePath);
 
+        // RimWorld 1.7 Waylith ships RimWorld.exe. Steam's Play button still looks for
+        // RimWorldWin64.exe on some clients — never use steam://rungameid here or Steam fails
+        // with "Uitvoerbaar spelbestand ontbreekt". Launch the real binary directly.
+        EnsureLegacySteamExeShim(install.InstallDir);
+
         var args = extraArgs?.ToArray() ?? Array.Empty<string>();
-
-        // Prefer Steam protocol on Windows so DRM/overlay/workdir match a normal play session.
-        // Extra args are not supported via steam:// — fall back to direct exe.
-        if (OperatingSystem.IsWindows() && args.Length == 0 && TryLaunchViaSteam(out var steamPid))
-        {
-            return new LaunchResult
-            {
-                ProcessId = steamPid,
-                ExecutablePath = install.ExecutablePath,
-                WorkingDirectory = install.InstallDir,
-                Method = "steam",
-            };
-        }
-
         var psi = new ProcessStartInfo
         {
             FileName = install.ExecutablePath,
@@ -57,25 +48,27 @@ public static class ProcessLauncher
         };
     }
 
-    private static bool TryLaunchViaSteam(out int processId)
+    /// <summary>
+    /// Best-effort: if install has RimWorld.exe but not RimWorldWin64.exe, copy/link a shim so
+    /// Steam's legacy launch config also works. Failures are ignored (no admin rights, etc.).
+    /// </summary>
+    public static void EnsureLegacySteamExeShim(string installDir)
     {
-        processId = 0;
+        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(installDir))
+            return;
+
+        var modern = Path.Combine(installDir, "RimWorld.exe");
+        var legacy = Path.Combine(installDir, "RimWorldWin64.exe");
+        if (!File.Exists(modern) || File.Exists(legacy))
+            return;
+
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = $"steam://rungameid/{SteamAppId}",
-                UseShellExecute = true,
-            };
-            var proc = Process.Start(psi);
-            if (proc is null)
-                return false;
-            processId = proc.Id;
-            return true;
+            File.Copy(modern, legacy, overwrite: false);
         }
         catch
         {
-            return false;
+            // Program Files often needs elevation — launcher still starts RimWorld.exe directly.
         }
     }
 }
