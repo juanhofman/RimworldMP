@@ -4,7 +4,7 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 
 | Field | Value |
 | --- | --- |
-| **Audited tip** | `2cafa5b` (VerseBind scaffold #22; product-polish pending) |
+| **Audited tip** | `ac7c4b1` (offline product polish #23) |
 | **Tagged release** | **0.7.0** (`VERSION` / `About.xml` `modVersion`) — GitHub **pre-release** |
 | **Toward next?** | Live RimWorld 1.7 binding smoke (`RIMWORLD_DIR`); fill-in map [verse-binding-checklist.md](./verse-binding-checklist.md) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
