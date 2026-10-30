@@ -1,6 +1,6 @@
-# Smoke checklist (v0.6.0)
+# Smoke checklist (v0.7.0)
 
-**Known limitation:** live RimWorld 1.7 play is untested in this environment. Offline items are the CI gate; in-game items need `RIMWORLD_DIR` + Harmony 3.
+**Known limitation:** requires RimWorld 1.7 for live play; Verse apply still scaffolded. Offline items are the CI gate; in-game items need `RIMWORLD_DIR` + Harmony 3.
 
 ## Offline (no RimWorld)
 
@@ -10,9 +10,9 @@
 - [ ] `dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.sln -c Release` succeeds
 - [ ] `dotnet run --project tools/RimworldMP.Launcher -- help` prints usage
 - [ ] `mod/1.7/Assemblies/` contains Core/API/Net/Compat/main DLLs
-- [ ] `mod/About/About.xml` has `packageId` **RimworldMP.Core** and `modVersion` **0.6.0**
+- [ ] `mod/About/About.xml` has `packageId` **RimworldMP.Core** and `modVersion` **0.7.0**
 - [ ] `mod/About/Preview.png` and `About.png` present
-- [ ] Root `VERSION` is `0.6.0`; `LICENSE` is MIT
+- [ ] Root `VERSION` is `0.7.0`; `LICENSE` is MIT
 
 ## Launcher (needs RimWorld install path; no deep play)
 
