@@ -1,4 +1,5 @@
 using RimworldMP.Core.Lobby;
+using RimworldMP.Core.Session;
 
 namespace RimworldMP.UI;
 
@@ -33,7 +34,7 @@ public static class HandoffUiTracker
     public static void Reset()
     {
         lock (Gate)
-            _current = HandoffUiSnapshot.Unknown;
+            _current = HandoffUiSnapshot.CreateUnknown();
     }
 
     public static void RecordMissing(string path)
@@ -41,7 +42,7 @@ public static class HandoffUiTracker
         Set(new HandoffUiSnapshot(
             HandoffUiKind.Missing,
             path,
-            Detail: "No launcher-handoff.json — open lobby or use the LAN launcher.",
+            Detail: SessionMessages.Get("RMP.HandoffMissing"),
             Role: null,
             Host: null,
             Port: null,
@@ -70,23 +71,23 @@ public static class HandoffUiTracker
         if (!autoStarted || !doc.AutoStartLobby)
         {
             kind = HandoffUiKind.AppliedConfigOnly;
-            detail = "Handoff applied (config only; auto-start off).";
+            detail = SessionMessages.Get("RMP.HandoffConfigOnly");
         }
         else if (doc.IsHostRole)
         {
             kind = HandoffUiKind.AutoHosted;
-            detail = $"Handoff auto-hosted on port {doc.Port}.";
+            detail = SessionMessages.Format("RMP.HandoffAutoHost", doc.Port);
         }
         else if (doc.IsClientRole)
         {
             kind = HandoffUiKind.AutoJoined;
             var host = string.IsNullOrWhiteSpace(doc.Host) ? "127.0.0.1" : doc.Host!;
-            detail = $"Handoff auto-joined {host}:{doc.Port}.";
+            detail = SessionMessages.Format("RMP.HandoffAutoJoin", host, doc.Port);
         }
         else
         {
             kind = HandoffUiKind.Failed;
-            detail = $"Unknown handoff role '{doc.Role}'.";
+            detail = SessionMessages.Format("RMP.HandoffUnknownRole", doc.Role);
         }
 
         Set(new HandoffUiSnapshot(
@@ -117,10 +118,12 @@ public readonly record struct HandoffUiSnapshot(
     string? SessionName,
     string? ModlistHash)
 {
-    public static HandoffUiSnapshot Unknown { get; } = new(
+    public static HandoffUiSnapshot Unknown => CreateUnknown();
+
+    public static HandoffUiSnapshot CreateUnknown() => new(
         HandoffUiKind.Unknown,
         LauncherHandoff.DefaultPath,
-        "Launcher handoff not checked yet.",
+        SessionMessages.Get("RMP.HandoffUnknown"),
         null,
         null,
         null,

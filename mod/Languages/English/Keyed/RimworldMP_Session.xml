@@ -20,10 +20,97 @@
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>You</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>You (host)</RMP.DisplayNameYouHost>
+<<<<<<< HEAD
   <RMP.DesyncHeadline>Desync — simulation frozen</RMP.DesyncHeadline>
   <RMP.DesyncBodyShort>Peers diverged. Open the lobby (F10) to disconnect.</RMP.DesyncBodyShort>
   <RMP.DesyncBodyDetail>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.</RMP.DesyncBodyDetail>
   <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
   <RMP.DesyncNoDump>(no dump)</RMP.DesyncNoDump>
   <RMP.DesyncDumpLabel>Local dump · {0}</RMP.DesyncDumpLabel>
+=======
+  <RMP.LobbySubtitle>Shared colony · LAN · in-game host</RMP.LobbySubtitle>
+  <RMP.LobbySession>Session · {0}</RMP.LobbySession>
+  <RMP.RoleIdle>Idle</RMP.RoleIdle>
+  <RMP.RoleHosting>Hosting</RMP.RoleHosting>
+  <RMP.RoleJoined>Joined</RMP.RoleJoined>
+  <RMP.RoleKicked>Kicked</RMP.RoleKicked>
+  <RMP.RoleFrozen>Frozen (desync)</RMP.RoleFrozen>
+  <RMP.RoleJip>Join-in-progress…</RMP.RoleJip>
+  <RMP.LanIdle>LAN idle</RMP.LanIdle>
+  <RMP.LanHosting>Hosting ({0}) · {1} peer(s) · max {2}</RMP.LanHosting>
+  <RMP.LanConnected>Connected as P{0} ({1})</RMP.LanConnected>
+  <RMP.LanNonLan>In-session (non-LAN transport)</RMP.LanNonLan>
+  <RMP.LanNotConnected>Not connected</RMP.LanNotConnected>
+  <RMP.EndpointHost>0.0.0.0:{0}</RMP.EndpointHost>
+  <RMP.EndpointDefault>— · default port {0}</RMP.EndpointDefault>
+  <RMP.EndpointLoopHost>loopback host · port {0}</RMP.EndpointLoopHost>
+  <RMP.EndpointLoopClient>loopback client · port {0}</RMP.EndpointLoopClient>
+  <RMP.EndpointUnset>—:{0}</RMP.EndpointUnset>
+  <RMP.ProtocolLabel>Protocol v{0} · max {1}</RMP.ProtocolLabel>
+  <RMP.PeerReady>Ready</RMP.PeerReady>
+  <RMP.PeerNotReady>Not ready</RMP.PeerNotReady>
+  <RMP.ModsOk>mods OK</RMP.ModsOk>
+  <RMP.ModsMismatch>mods MISMATCH</RMP.ModsMismatch>
+  <RMP.ModsUnknown>hash ?</RMP.ModsUnknown>
+  <RMP.StatusLive>Session live. Ready / chat / kick available in lobby.</RMP.StatusLive>
+  <RMP.StatusLiveReady>Lobby ready — begin play or unpause when everyone is set.</RMP.StatusLiveReady>
+  <RMP.StatusJip>Receiving join-in-progress save…</RMP.StatusJip>
+  <RMP.StatusDesync>DESYNC at tick {0} — sim frozen. Dump: {1}</RMP.StatusDesync>
+  <RMP.StatusIdleHint>Host or join a LAN lobby. F10 toggles this window.</RMP.StatusIdleHint>
+  <RMP.StatusHandoffError>Handoff error: {0}</RMP.StatusHandoffError>
+  <RMP.ChatHeader>CHAT</RMP.ChatHeader>
+  <RMP.ChatSend>Send</RMP.ChatSend>
+  <RMP.ChatSent>Chat sent</RMP.ChatSent>
+  <RMP.SystemPrefix>system</RMP.SystemPrefix>
+  <RMP.PeersHeader>Peers ({0})</RMP.PeersHeader>
+  <RMP.PeersEmptyHint>Peers — join a session</RMP.PeersEmptyHint>
+  <RMP.PeersNone>No peers yet.</RMP.PeersNone>
+  <RMP.ColName>Name</RMP.ColName>
+  <RMP.ColReady>Ready</RMP.ColReady>
+  <RMP.ColMods>Mods</RMP.ColMods>
+  <RMP.DisplayNameLabel>DISPLAY NAME</RMP.DisplayNameLabel>
+  <RMP.HostIpLabel>HOST IP (join)</RMP.HostIpLabel>
+  <RMP.PortLabel>PORT</RMP.PortLabel>
+  <RMP.ModlistHashLabel>MODLIST HASH</RMP.ModlistHashLabel>
+  <RMP.PlayingAs>Playing as {0}</RMP.PlayingAs>
+  <RMP.LiveBadge>LIVE</RMP.LiveBadge>
+  <RMP.HandoffHeader>LAUNCHER HANDOFF</RMP.HandoffHeader>
+  <RMP.BtnHost>Host</RMP.BtnHost>
+  <RMP.BtnJoin>Join</RMP.BtnJoin>
+  <RMP.BtnReady>Ready up</RMP.BtnReady>
+  <RMP.BtnUnready>Unready</RMP.BtnUnready>
+  <RMP.BtnDisconnect>Disconnect</RMP.BtnDisconnect>
+  <RMP.BtnAbort>Abort session</RMP.BtnAbort>
+  <RMP.BtnBeginPlay>Begin play</RMP.BtnBeginPlay>
+  <RMP.BtnKick>Kick</RMP.BtnKick>
+  <RMP.BtnHandoff>Check launcher handoff</RMP.BtnHandoff>
+  <RMP.FlashHosting>Hosting on {0}…</RMP.FlashHosting>
+  <RMP.FlashJoining>Joining {0}:{1}…</RMP.FlashJoining>
+  <RMP.FlashAborted>Session aborted</RMP.FlashAborted>
+  <RMP.FlashReady>Marked ready</RMP.FlashReady>
+  <RMP.FlashUnready>Marked not ready</RMP.FlashUnready>
+  <RMP.FlashKicked>Kicked {0}</RMP.FlashKicked>
+  <RMP.FlashHandoffChecked>Checked launcher-handoff.json</RMP.FlashHandoffChecked>
+  <RMP.FlashBeginPlay>Lobby ready — close and play. Unpause when ready.</RMP.FlashBeginPlay>
+  <RMP.BeginPlayNotice>Host began play.</RMP.BeginPlayNotice>
+  <RMP.HandoffMissing>No launcher-handoff.json — open lobby or use the LAN launcher.</RMP.HandoffMissing>
+  <RMP.HandoffConfigOnly>Handoff applied (config only; auto-start off).</RMP.HandoffConfigOnly>
+  <RMP.HandoffAutoHost>Handoff auto-hosted on port {0}.</RMP.HandoffAutoHost>
+  <RMP.HandoffAutoJoin>Handoff auto-joined {0}:{1}.</RMP.HandoffAutoJoin>
+  <RMP.HandoffUnknownRole>Unknown handoff role '{0}'.</RMP.HandoffUnknownRole>
+  <RMP.HandoffUnknown>Launcher handoff not checked yet.</RMP.HandoffUnknown>
+  <RMP.DesyncHeadline>Desync — simulation frozen</RMP.DesyncHeadline>
+  <RMP.DesyncBody>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.</RMP.DesyncBody>
+  <RMP.DesyncBodyMods>Mods   {0}\n</RMP.DesyncBodyMods>
+  <RMP.DesyncFallbackBody>Peers diverged. Open the lobby (F10) to disconnect.</RMP.DesyncFallbackBody>
+  <RMP.ReadySummary>Ready {0}/{1} · mods {2}</RMP.ReadySummary>
+  <RMP.ReadySummaryMatch>match</RMP.ReadySummaryMatch>
+  <RMP.ReadySummaryMismatch>mismatch</RMP.ReadySummaryMismatch>
+  <RMP.MetaEndpoint>Endpoint  {0}</RMP.MetaEndpoint>
+  <RMP.MetaModlist>Modlist   {0}</RMP.MetaModlist>
+  <RMP.MsgHosting>RimworldMP: hosting on port {0}</RMP.MsgHosting>
+  <RMP.MsgJoining>RimworldMP: joining {0}:{1}</RMP.MsgJoining>
+  <RMP.MsgStopped>RimworldMP: session stopped</RMP.MsgStopped>
+  <RMP.HashUnset>(unset)</RMP.HashUnset>
+>>>>>>> a230f42 (WIP: lobby i18n keys, presenter polish, layout metrics)
 </LanguageData>

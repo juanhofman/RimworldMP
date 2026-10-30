@@ -34,6 +34,7 @@ public static class LobbyPresenter
         var tick = session?.Tick ?? -1;
         var maxClients = MpConfig.MaxClients;
         var kicked = session?.WasKicked == true;
+        var expectedPeers = session?.ExpectedPeers ?? Math.Max(1, MpConfig.MaxClients);
         DesyncInfo? desyncInfo = session?.Desync.LastDesync;
         var desync = DesyncOverlayModel.From(desyncInfo);
 
@@ -45,34 +46,40 @@ public static class LobbyPresenter
             connected = lan.ConnectedPeers.Count;
             if (lan.Endpoint is { } ep)
             {
-                endpointLabel = isHost ? $"0.0.0.0:{ep.Port}" : ep.ToString();
+                endpointLabel = isHost
+                    ? SessionMessages.Format("RMP.EndpointHost", ep.Port)
+                    : ep.ToString();
                 port = ep.Port;
             }
             else
             {
-                endpointLabel = isHost ? $"0.0.0.0:{port}" : $"—:{port}";
+                endpointLabel = isHost
+                    ? SessionMessages.Format("RMP.EndpointHost", port)
+                    : SessionMessages.Format("RMP.EndpointUnset", port);
             }
 
             var transportTag = lan is LiteNetLibTransport ? "LiteNetLib" : "TCP";
             lanStatus = !lan.IsRunning
-                ? "LAN idle"
+                ? SessionMessages.Get("RMP.LanIdle")
                 : isHost
-                    ? $"Hosting ({transportTag}) · {connected} peer(s) · max {lan.MaxClients}"
+                    ? SessionMessages.Format("RMP.LanHosting", transportTag, connected, lan.MaxClients)
                     : lan.LastJoinRejectReason is { } reject
                         ? FormatJoinReject(reject, lan.LastJoinRejectMessage)
-                        : $"Connected as P{localId} ({transportTag})";
+                        : SessionMessages.Format("RMP.LanConnected", localId, transportTag);
             maxClients = lan.MaxClients > 0 ? lan.MaxClients : maxClients;
         }
         else if (inSession)
         {
-            endpointLabel = isHost ? $"loopback host · port {port}" : $"loopback client · port {port}";
-            lanStatus = "In-session (non-LAN transport)";
+            endpointLabel = isHost
+                ? SessionMessages.Format("RMP.EndpointLoopHost", port)
+                : SessionMessages.Format("RMP.EndpointLoopClient", port);
+            lanStatus = SessionMessages.Get("RMP.LanNonLan");
             connected = session!.Ready.Snapshot().Count;
         }
         else
         {
-            endpointLabel = $"— · default port {port}";
-            lanStatus = "Not connected";
+            endpointLabel = SessionMessages.Format("RMP.EndpointDefault", port);
+            lanStatus = SessionMessages.Get("RMP.LanNotConnected");
         }
 
         var peers = BuildPeers(session, localHash, localId, isHost);
@@ -84,30 +91,41 @@ public static class LobbyPresenter
         if (session is not null && session.Ready.Snapshot().TryGetValue(localId, out var self))
             localReady = self.Ready;
 
+        var readyCount = peers.Count(p => p.Ready);
+        var allModsMatch = peers.Count == 0 || peers.All(p => p.ModlistMatch);
+        var readySummary = SessionMessages.Format(
+            "RMP.ReadySummary",
+            readyCount,
+            Math.Max(expectedPeers, peers.Count),
+            allModsMatch
+                ? SessionMessages.Get("RMP.ReadySummaryMatch")
+                : SessionMessages.Get("RMP.ReadySummaryMismatch"));
+
         var localName = session?.LocalDisplayName
             ?? (string.IsNullOrWhiteSpace(MpConfig.PlayerDisplayName)
                 ? SessionMessages.Get("RMP.DisplayNameYou")
                 : MpConfig.PlayerDisplayName);
 
         var roleLabel = !inSession
-            ? "Idle"
+            ? SessionMessages.Get("RMP.RoleIdle")
             : kicked
-                ? "Kicked"
+                ? SessionMessages.Get("RMP.RoleKicked")
                 : frozen
-                    ? "Frozen (desync)"
+                    ? SessionMessages.Get("RMP.RoleFrozen")
                     : jip
-                        ? "Join-in-progress…"
+                        ? SessionMessages.Get("RMP.RoleJip")
                         : isHost
-                            ? "Hosting"
-                            : "Joined";
+                            ? SessionMessages.Get("RMP.RoleHosting")
+                            : SessionMessages.Get("RMP.RoleJoined");
 
         var chatLines = BuildChat(session);
         var status = BuildStatusLine(inSession, frozen, jip, lobbyReady, readyRequired, kicked, handoffSnap, desync);
+        var canBeginPlay = inSession && isHost && !frozen && !kicked && lobbyReady;
 
         return new LobbyViewModel
         {
             Brand = MpUiPalette.BrandName,
-            Subtitle = "Shared colony · LAN · in-game host",
+            Subtitle = SessionMessages.Get("RMP.LobbySubtitle"),
             SessionRoleLabel = roleLabel,
             InSession = inSession,
             IsHost = isHost,
@@ -124,9 +142,13 @@ public static class LobbyPresenter
             EndpointLabel = endpointLabel,
             LocalModlistHash = localHash,
             LocalModlistShort = ShortHash(localHash),
-            ProtocolLabel = $"Protocol v{NetProtocol.Version} · max {maxClients}",
+            ProtocolLabel = SessionMessages.Format("RMP.ProtocolLabel", NetProtocol.Version, maxClients),
             MaxClients = maxClients,
             ConnectedPeerCount = connected,
+            ReadyCount = readyCount,
+            ExpectedPeers = expectedPeers,
+            ReadySummary = readySummary,
+            AllModsMatch = allModsMatch,
             Peers = peers,
             ChatLines = chatLines,
             Handoff = handoffSnap,
@@ -138,6 +160,8 @@ public static class LobbyPresenter
             CanToggleReady = inSession && !frozen && !kicked,
             CanKick = inSession && isHost && !frozen,
             CanChat = inSession && !kicked,
+            CanBeginPlay = canBeginPlay,
+            CanAbort = inSession && !kicked,
             WasKicked = kicked,
         };
     }
@@ -203,12 +227,14 @@ public static class LobbyPresenter
                 ModlistHash: hash,
                 ModlistShort: ShortHash(hash),
                 ModlistMatch: match,
-                ReadyLabel: ready ? "Ready" : "Not ready",
+                ReadyLabel: ready
+                    ? SessionMessages.Get("RMP.PeerReady")
+                    : SessionMessages.Get("RMP.PeerNotReady"),
                 ModlistLabel: string.IsNullOrEmpty(hash)
-                    ? "hash ?"
+                    ? SessionMessages.Get("RMP.ModsUnknown")
                     : match
-                        ? "mods OK"
-                        : "mods MISMATCH",
+                        ? SessionMessages.Get("RMP.ModsOk")
+                        : SessionMessages.Get("RMP.ModsMismatch"),
                 CanKick: isHost && !isLocal && !hostSeat));
         }
 
@@ -224,15 +250,14 @@ public static class LobbyPresenter
         if (snap.Count == 0)
             return Array.Empty<LobbyChatLine>();
 
-        // Show the last handful of lines for the lobby panel.
-        var start = Math.Max(0, snap.Count - 12);
+        var start = Math.Max(0, snap.Count - LobbyLayoutMetrics.ChatHistoryLines);
         var lines = new List<LobbyChatLine>(snap.Count - start);
         for (var i = start; i < snap.Count; i++)
         {
             var line = snap[i];
             if (line.Kind == SessionChatKind.System)
             {
-                lines.Add(new LobbyChatLine(true, "system", line.Text, "[sys]"));
+                lines.Add(new LobbyChatLine(true, SessionMessages.Get("RMP.SystemPrefix"), line.Text, "[sys]"));
             }
             else
             {
@@ -272,26 +297,28 @@ public static class LobbyPresenter
         if (kicked)
             return SessionMessages.Format("RMP.YouWereKicked", SessionMessages.Get("RMP.KickDefaultReason"));
         if (frozen && desync is not null)
-            return $"DESYNC at tick {desync.Tick} — sim frozen. Dump: {desync.LogPath}";
+            return SessionMessages.Format("RMP.StatusDesync", desync.Tick, desync.LogPath);
         if (jip)
-            return "Receiving join-in-progress save…";
+            return SessionMessages.Get("RMP.StatusJip");
         if (inSession && readyRequired && !lobbyReady)
             return SessionMessages.Get("RMP.ReadyWaiting");
+        if (inSession && lobbyReady)
+            return SessionMessages.Get("RMP.StatusLiveReady");
         if (inSession)
-            return "Session live. Ready / chat / kick available in lobby.";
+            return SessionMessages.Get("RMP.StatusLive");
         if (handoff.IsError)
-            return $"Handoff error: {handoff.Detail}";
+            return SessionMessages.Format("RMP.StatusHandoffError", handoff.Detail);
         if (handoff.IsOk)
             return handoff.Detail;
         if (handoff.Kind == HandoffUiKind.Missing)
             return handoff.Detail;
-        return "Host or join a LAN lobby. F10 toggles this window.";
+        return SessionMessages.Get("RMP.StatusIdleHint");
     }
 
     public static string ShortHash(string? hash)
     {
         if (string.IsNullOrEmpty(hash))
-            return "(unset)";
+            return SessionMessages.Get("RMP.HashUnset");
         return hash.Length <= 10 ? hash : hash[..10] + "…";
     }
 }

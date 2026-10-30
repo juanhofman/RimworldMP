@@ -20,10 +20,97 @@
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>Jij</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>Jij (host)</RMP.DisplayNameYouHost>
+<<<<<<< HEAD
   <RMP.DesyncHeadline>Desync — simulatie bevroren</RMP.DesyncHeadline>
   <RMP.DesyncBodyShort>Peers zijn uiteengelopen. Open de lobby (F10) om te verbreken.</RMP.DesyncBodyShort>
   <RMP.DesyncBodyDetail>Peers zijn uiteengelopen op tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.</RMP.DesyncBodyDetail>
   <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
   <RMP.DesyncNoDump>(geen dump)</RMP.DesyncNoDump>
   <RMP.DesyncDumpLabel>Lokale dump · {0}</RMP.DesyncDumpLabel>
+=======
+  <RMP.LobbySubtitle>Gedeelde kolonie · LAN · host in-game</RMP.LobbySubtitle>
+  <RMP.LobbySession>Sessie · {0}</RMP.LobbySession>
+  <RMP.RoleIdle>Inactief</RMP.RoleIdle>
+  <RMP.RoleHosting>Hosten</RMP.RoleHosting>
+  <RMP.RoleJoined>Deelgenomen</RMP.RoleJoined>
+  <RMP.RoleKicked>Weggestuurd</RMP.RoleKicked>
+  <RMP.RoleFrozen>Bevroren (desync)</RMP.RoleFrozen>
+  <RMP.RoleJip>Join-in-progress…</RMP.RoleJip>
+  <RMP.LanIdle>LAN inactief</RMP.LanIdle>
+  <RMP.LanHosting>Hosten ({0}) · {1} peer(s) · max {2}</RMP.LanHosting>
+  <RMP.LanConnected>Verbonden als P{0} ({1})</RMP.LanConnected>
+  <RMP.LanNonLan>In sessie (niet-LAN transport)</RMP.LanNonLan>
+  <RMP.LanNotConnected>Niet verbonden</RMP.LanNotConnected>
+  <RMP.EndpointHost>0.0.0.0:{0}</RMP.EndpointHost>
+  <RMP.EndpointDefault>— · standaardpoort {0}</RMP.EndpointDefault>
+  <RMP.EndpointLoopHost>loopback-host · poort {0}</RMP.EndpointLoopHost>
+  <RMP.EndpointLoopClient>loopback-client · poort {0}</RMP.EndpointLoopClient>
+  <RMP.EndpointUnset>—:{0}</RMP.EndpointUnset>
+  <RMP.ProtocolLabel>Protocol v{0} · max {1}</RMP.ProtocolLabel>
+  <RMP.PeerReady>Klaar</RMP.PeerReady>
+  <RMP.PeerNotReady>Niet klaar</RMP.PeerNotReady>
+  <RMP.ModsOk>mods OK</RMP.ModsOk>
+  <RMP.ModsMismatch>mods MISMATCH</RMP.ModsMismatch>
+  <RMP.ModsUnknown>hash ?</RMP.ModsUnknown>
+  <RMP.StatusLive>Sessie actief. Ready / chat / kick beschikbaar in de lobby.</RMP.StatusLive>
+  <RMP.StatusLiveReady>Lobby klaar — begin of hervat wanneer iedereen er klaar voor is.</RMP.StatusLiveReady>
+  <RMP.StatusJip>Join-in-progress save ontvangen…</RMP.StatusJip>
+  <RMP.StatusDesync>DESYNC bij tick {0} — sim bevroren. Dump: {1}</RMP.StatusDesync>
+  <RMP.StatusIdleHint>Host of join een LAN-lobby. F10 wisselt dit venster.</RMP.StatusIdleHint>
+  <RMP.StatusHandoffError>Handoff-fout: {0}</RMP.StatusHandoffError>
+  <RMP.ChatHeader>CHAT</RMP.ChatHeader>
+  <RMP.ChatSend>Verstuur</RMP.ChatSend>
+  <RMP.ChatSent>Chat verstuurd</RMP.ChatSent>
+  <RMP.SystemPrefix>systeem</RMP.SystemPrefix>
+  <RMP.PeersHeader>Peers ({0})</RMP.PeersHeader>
+  <RMP.PeersEmptyHint>Peers — join een sessie</RMP.PeersEmptyHint>
+  <RMP.PeersNone>Nog geen peers.</RMP.PeersNone>
+  <RMP.ColName>Naam</RMP.ColName>
+  <RMP.ColReady>Klaar</RMP.ColReady>
+  <RMP.ColMods>Mods</RMP.ColMods>
+  <RMP.DisplayNameLabel>WEERGAVENAAM</RMP.DisplayNameLabel>
+  <RMP.HostIpLabel>HOST-IP (join)</RMP.HostIpLabel>
+  <RMP.PortLabel>POORT</RMP.PortLabel>
+  <RMP.ModlistHashLabel>MODLIJST-HASH</RMP.ModlistHashLabel>
+  <RMP.PlayingAs>Speelt als {0}</RMP.PlayingAs>
+  <RMP.LiveBadge>LIVE</RMP.LiveBadge>
+  <RMP.HandoffHeader>LAUNCHER-HANDOFF</RMP.HandoffHeader>
+  <RMP.BtnHost>Host</RMP.BtnHost>
+  <RMP.BtnJoin>Join</RMP.BtnJoin>
+  <RMP.BtnReady>Klaar melden</RMP.BtnReady>
+  <RMP.BtnUnready>Niet klaar</RMP.BtnUnready>
+  <RMP.BtnDisconnect>Verbinding verbreken</RMP.BtnDisconnect>
+  <RMP.BtnAbort>Sessie afbreken</RMP.BtnAbort>
+  <RMP.BtnBeginPlay>Begin spelen</RMP.BtnBeginPlay>
+  <RMP.BtnKick>Kick</RMP.BtnKick>
+  <RMP.BtnHandoff>Controleer launcher-handoff</RMP.BtnHandoff>
+  <RMP.FlashHosting>Hosten op {0}…</RMP.FlashHosting>
+  <RMP.FlashJoining>Joinen {0}:{1}…</RMP.FlashJoining>
+  <RMP.FlashAborted>Sessie afgebroken</RMP.FlashAborted>
+  <RMP.FlashReady>Als klaar gemarkeerd</RMP.FlashReady>
+  <RMP.FlashUnready>Als niet klaar gemarkeerd</RMP.FlashUnready>
+  <RMP.FlashKicked>{0} gekickt</RMP.FlashKicked>
+  <RMP.FlashHandoffChecked>launcher-handoff.json gecontroleerd</RMP.FlashHandoffChecked>
+  <RMP.FlashBeginPlay>Lobby klaar — sluit en speel. Hervat wanneer klaar.</RMP.FlashBeginPlay>
+  <RMP.BeginPlayNotice>Host is begonnen met spelen.</RMP.BeginPlayNotice>
+  <RMP.HandoffMissing>Geen launcher-handoff.json — open de lobby of gebruik de LAN-launcher.</RMP.HandoffMissing>
+  <RMP.HandoffConfigOnly>Handoff toegepast (alleen config; auto-start uit).</RMP.HandoffConfigOnly>
+  <RMP.HandoffAutoHost>Handoff auto-host op poort {0}.</RMP.HandoffAutoHost>
+  <RMP.HandoffAutoJoin>Handoff auto-join {0}:{1}.</RMP.HandoffAutoJoin>
+  <RMP.HandoffUnknownRole>Onbekende handoff-rol '{0}'.</RMP.HandoffUnknownRole>
+  <RMP.HandoffUnknown>Launcher-handoff nog niet gecontroleerd.</RMP.HandoffUnknown>
+  <RMP.DesyncHeadline>Desync — simulatie bevroren</RMP.DesyncHeadline>
+  <RMP.DesyncBody>Peers liepen uiteen bij tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.</RMP.DesyncBody>
+  <RMP.DesyncBodyMods>Mods   {0}\n</RMP.DesyncBodyMods>
+  <RMP.DesyncFallbackBody>Peers liepen uiteen. Open de lobby (F10) om te verbreken.</RMP.DesyncFallbackBody>
+  <RMP.ReadySummary>Klaar {0}/{1} · mods {2}</RMP.ReadySummary>
+  <RMP.ReadySummaryMatch>match</RMP.ReadySummaryMatch>
+  <RMP.ReadySummaryMismatch>mismatch</RMP.ReadySummaryMismatch>
+  <RMP.MetaEndpoint>Endpoint  {0}</RMP.MetaEndpoint>
+  <RMP.MetaModlist>Modlijst   {0}</RMP.MetaModlist>
+  <RMP.MsgHosting>RimworldMP: hosten op poort {0}</RMP.MsgHosting>
+  <RMP.MsgJoining>RimworldMP: joinen {0}:{1}</RMP.MsgJoining>
+  <RMP.MsgStopped>RimworldMP: sessie gestopt</RMP.MsgStopped>
+  <RMP.HashUnset>(niet gezet)</RMP.HashUnset>
+>>>>>>> a230f42 (WIP: lobby i18n keys, presenter polish, layout metrics)
 </LanguageData>
