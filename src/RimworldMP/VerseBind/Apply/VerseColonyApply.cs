@@ -2,6 +2,7 @@ using RimworldMP.Core.Commands;
 
 #if !RIMWORLDMP_NO_GAME_REFS
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 #endif
 
@@ -23,7 +24,6 @@ public static class VerseColonyApply
                 ApplyResearchStart(cmd.Payload);
                 break;
             case CommandOpcode.ResearchStop:
-                // SCAFFOLD: confirm ResearchManager.Stop / ClearCurrentProject (or equivalent) on 1.7.
                 ApplyResearchStop();
                 break;
             case CommandOpcode.BillSet:
@@ -33,7 +33,7 @@ public static class VerseColonyApply
                 ApplyBillDelete(cmd.Payload);
                 break;
             case CommandOpcode.BillReorder:
-                // SCAFFOLD: BillStack reorder API not confirmed — shadow store only until install.
+                ApplyBillReorder(cmd.Payload);
                 break;
             case CommandOpcode.TradeAccept:
                 ApplyTradeAccept(cmd.Payload);
@@ -68,8 +68,17 @@ public static class VerseColonyApply
 
     private static void ApplyResearchStop()
     {
-        // SCAFFOLD / UNVERIFIED: older community sources used currentProj = null; confirm 1.7 API.
-        // Do not invent a confident wrong call — leave no-op until install.
+        // Confirmed 1.7: ResearchManager.StopProject(ResearchProjectDef); currentProj is private.
+        var rm = Find.ResearchManager;
+        if (rm is null) return;
+        foreach (var proj in DefDatabase<ResearchProjectDef>.AllDefsListForReading)
+        {
+            if (rm.IsCurrentProject(proj))
+            {
+                rm.StopProject(proj);
+                return;
+            }
+        }
     }
 
     private static void ApplyBillSet(byte[] payload)
@@ -114,22 +123,58 @@ public static class VerseColonyApply
             bench.BillStack.Delete(bench.BillStack[slot]);
     }
 
+    private static void ApplyBillReorder(byte[] payload)
+    {
+        var (mapId, benchId, fromSlot, toSlot) = CommandPayloads.ReadBillReorder(payload);
+        var map = VerseThingLookup.FindMap(mapId);
+        var bench = (map is not null
+            ? VerseThingLookup.FindThingOnMap(map, benchId)
+            : VerseThingLookup.FindThing(benchId)) as Building_WorkTable;
+        if (bench?.BillStack is null) return;
+        if (fromSlot < 0 || fromSlot >= bench.BillStack.Count) return;
+        var offset = toSlot - fromSlot;
+        if (offset == 0) return;
+        bench.BillStack.Reorder(bench.BillStack[fromSlot], offset);
+    }
+
     private static void ApplyTradeAccept(byte[] payload)
     {
-        // SCAFFOLD: Deal commit needs live TradeDeal / Verse trader APIs — do not invent Prefix.
+        // Confirmed 1.7: TradeDeal.TryExecute(out bool). Prefer active TradeSession.deal.
         var (mapId, traderId, fingerprint) = CommandPayloads.ReadTradeAccept(payload);
         _ = VerseThingLookup.FindMap(mapId);
         _ = VerseThingLookup.FindThing(traderId);
-        Log.Message(
-            $"[RimworldMP] TradeAccept map={mapId} trader={traderId} fingerprint={fingerprint} (deal commit stub)");
+        if (TradeSession.Active && TradeSession.deal is not null)
+        {
+            _ = TradeSession.deal.TryExecute(out _);
+            return;
+        }
+
+        Log.Warning(
+            $"[RimworldMP] TradeAccept map={mapId} trader={traderId} fingerprint={fingerprint}: no active TradeSession.deal");
     }
 
     private static void ApplyCaravanForm(byte[] payload)
     {
-        // SCAFFOLD: Caravan formation needs Dialog_FormCaravan / CaravanMaker — do not invent Prefix.
-        var (mapId, tile, pawns) = CommandPayloads.ReadCaravanForm(payload);
+        // Confirmed 1.7: CaravanMaker.MakeCaravan(pawns, faction, PlanetTile, addToWorldPawns).
+        var (mapId, tileId, pawnIds) = CommandPayloads.ReadCaravanForm(payload);
         _ = VerseThingLookup.FindMap(mapId);
-        Log.Message($"[RimworldMP] CaravanForm map={mapId} tile={tile} pawns={pawns.Length}");
+        var pawns = new List<Pawn>(pawnIds.Length);
+        foreach (var id in pawnIds)
+        {
+            var p = VerseThingLookup.FindPawn(id);
+            if (p is not null)
+                pawns.Add(p);
+        }
+
+        if (pawns.Count == 0)
+        {
+            Log.Warning($"[RimworldMP] CaravanForm map={mapId} tile={tileId}: no pawns resolved");
+            return;
+        }
+
+        var faction = pawns[0].Faction ?? Faction.OfPlayer;
+        var tile = new PlanetTile(tileId);
+        _ = CaravanMaker.MakeCaravan(pawns, faction, tile, addToWorldPawnsIfNotAlready: true);
     }
 #endif
 }

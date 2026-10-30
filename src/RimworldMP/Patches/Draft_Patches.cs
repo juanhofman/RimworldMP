@@ -3,6 +3,7 @@ using HarmonyLib;
 using RimworldMP.CommandApply;
 using RimworldMP.Core.Commands;
 using RimworldMP.Core.Session;
+using RimWorld;
 using Verse;
 
 namespace RimworldMP.Patches;

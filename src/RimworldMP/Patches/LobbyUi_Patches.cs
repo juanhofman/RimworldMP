@@ -33,7 +33,8 @@ internal static class LobbyUi_Patches
         DesyncFreezeOverlay.DrawIfNeeded();
 
         // Always-on brand entry (main menu + pause/play) without DevMode.
-        var btn = new Rect(12f, UI.screenHeight - 44f, 150f, 28f);
+        // Waylith/1.7: Verse.UI no longer exposes screenWidth/Height — use UnityEngine.Screen.
+        var btn = new Rect(12f, Screen.height - 44f, 150f, 28f);
         var prev = GUI.color;
         GUI.color = new Color(MpUiPalette.Ember.R, MpUiPalette.Ember.G, MpUiPalette.Ember.B, 1f);
         if (Widgets.ButtonText(btn, MpUiPalette.BrandName))

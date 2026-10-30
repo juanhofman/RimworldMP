@@ -28,14 +28,17 @@ public static class DesyncFreezeOverlay
         _fadeIn = Mathf.Min(1f, _fadeIn + Time.unscaledDeltaTime * 2.2f);
         var a = _fadeIn;
 
-        var screen = new Rect(0f, 0f, UI.screenWidth, UI.screenHeight);
+        // Namespace RimworldMP.UI shadows Verse.UI; Waylith dropped screenWidth/Height — use Screen.
+        var sw = Screen.width;
+        var sh = Screen.height;
+        var screen = new Rect(0f, 0f, sw, sh);
         Widgets.DrawBoxSolid(screen, new Color(MpUiPalette.Ink.R, MpUiPalette.Ink.G, MpUiPalette.Ink.B, 0.72f * a));
 
-        var panelW = Mathf.Min(560f, UI.screenWidth - 40f);
+        var panelW = Mathf.Min(560f, sw - 40f);
         var panelH = 248f;
         var panel = new Rect(
-            (UI.screenWidth - panelW) * 0.5f,
-            (UI.screenHeight - panelH) * 0.36f,
+            (sw - panelW) * 0.5f,
+            (sh - panelH) * 0.36f,
             panelW,
             panelH);
         Widgets.DrawBoxSolid(panel, new Color(MpUiPalette.Panel.R, MpUiPalette.Panel.G, MpUiPalette.Panel.B, 0.98f * a));

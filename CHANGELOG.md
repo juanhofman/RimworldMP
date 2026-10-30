@@ -3,14 +3,16 @@
 ## Unreleased
 
 ### Changed
+- **Live RimWorld 1.7.4990 Waylith binding:** compile against install-root `Assembly-CSharp` / `Waylith` / `UnityStubs` (no Unity `Managed` folder); Harmony 3 exact parameter names; `LudeonTK.DebugAction`; `Screen.width/height` for lobby UI; Zone_Stockpile ctor; AccessTools FieldRefs for protected/private `pawn` fields
+- Checklist / registry: filled trade (`TradeDeal.TryExecute`), caravan (`CaravanMaker.MakeCaravan`), research stop, bill reorder, work/timetable policy; world fingerprint samples every 60 ticks; most hooks **Documented** (DLC LoadGame remains Scaffold)
 - Offline product polish: clearer Workshop/SteamCMD-unavailable messaging in ModSync + launcher hooks; CLI `mods sync --path` honoured (no silent wrong install); Compare/Sync fail loud on missing install / post-sync hash mismatch / beacon hash drift warnings
 - Desync freeze overlay EN/NL strings via `SessionMessages` + keyed XML (outside lobby)
 - Install / smoke / launcher docs aligned with protocol **v4** and live LAN ModSync (not stubbed)
 
-See [docs/feature-completeness.md](docs/feature-completeness.md). Stay on **0.7.0** (do not bump VERSION for binding scaffold).
+See [docs/feature-completeness.md](docs/feature-completeness.md) and [docs/verse-binding-checklist.md](docs/verse-binding-checklist.md). Stay on **0.7.0** (no VERSION bump for binding fill-in).
 
 ### Added
-- **Verse binding scaffold:** `VerseBind/` apply shapes + `VerseBindingRegistry` catalog, checklist ([docs/verse-binding-checklist.md](docs/verse-binding-checklist.md)); NO_GAME_REFS stubs keep harness green; trade/caravan/policy/DLC capture left Scaffold (no invented Prefixes); DeterminismHarness `VerseBindingTests`
+- **Verse binding fill-in** against live `RIMWORLD_DIR` 1.7.4990; Policy_Patches (work/timetable); host-lobby smoke log evidence
 
 ## 0.7.0 — Offline feature cut (2026-10-30)
 

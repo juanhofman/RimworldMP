@@ -1,4 +1,5 @@
 #if !RIMWORLDMP_NO_GAME_REFS
+using RimWorld;
 using Verse;
 #endif
 
