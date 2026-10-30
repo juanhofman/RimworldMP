@@ -11,7 +11,6 @@
         ExtendClientAreaToDecorationsHint="False">
 
   <Grid>
-    <!-- Wood atmosphere -->
     <Panel IsHitTestVisible="False">
       <Panel.Background>
         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
@@ -25,7 +24,6 @@
     </Panel>
 
     <Grid ColumnDefinitions="210,*" Margin="14">
-      <!-- Wood side rail (game menu chrome) -->
       <Border Grid.Column="0" Background="#2B2118" BorderBrush="#5C4330" BorderThickness="2" Margin="0,0,10,0" Padding="16,22,12,18">
         <Panel>
           <Image Source="avares://RimworldMP.Launcher/Assets/Textures/wood-grain.png"
@@ -33,7 +31,7 @@
           <DockPanel>
             <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,22">
               <TextBlock Classes="brand" Text="RimworldMP" FontSize="20" />
-              <TextBlock Classes="muted-cream" Text="LAN launcher" FontSize="11" Margin="0,4,0,0" />
+              <TextBlock Classes="muted-cream" Text="Play together on LAN" FontSize="11" Margin="0,4,0,0" />
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Bottom" Spacing="6">
@@ -51,34 +49,33 @@
         </Panel>
       </Border>
 
-      <!-- Parchment dialog surface -->
       <Border x:Name="PageHostBorder" Grid.Column="1" Classes="dialog-frame page-host">
         <Panel>
           <Image Source="avares://RimworldMP.Launcher/Assets/Textures/parchment-grain.png"
                  Stretch="UniformToFill" Opacity="0.55" IsHitTestVisible="False" />
           <Border Padding="40,32,40,28">
             <Panel>
-              <!-- HOME — colonial menu title, not SaaS hero -->
+              <!-- HOME -->
               <Grid x:Name="PageHome" IsVisible="{Binding IsHome}">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="560" Spacing="14">
                   <TextBlock Classes="brand-ink" Text="RimworldMP" FontSize="48" HorizontalAlignment="Center" />
                   <Border Height="1" Background="#5C4330" Margin="40,4" Opacity="0.55" />
-                  <TextBlock Classes="display" Text="Shared colony · same tick" FontSize="22"
+                  <TextBlock Classes="display" Text="One colony. Friends on your Wi‑Fi." FontSize="22"
                              HorizontalAlignment="Center" Opacity="0.9" />
                   <TextBlock Classes="muted" FontSize="14" LineHeight="20" TextWrapping="Wrap" TextAlignment="Center"
-                             Text="Pin Harmony → RimworldMP, find a LAN host, hand off into RimWorld 1.7. Local only — nothing leaves your network." />
+                             Text="Start a game for friends, or join theirs. RimworldMP keeps everything on your local network." />
                   <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,16,0,0" HorizontalAlignment="Center">
-                    <Button Classes="cta" Content="Host a session" Command="{Binding GoHostCommand}" MinWidth="160" />
-                    <Button Classes="ghost" Content="Join LAN" Command="{Binding GoJoinCommand}" MinWidth="120" />
+                    <Button Classes="cta" Content="Start game for friends" Command="{Binding GoHostCommand}" MinWidth="200" />
+                    <Button Classes="ghost" Content="Join a friend" Command="{Binding GoJoinCommand}" MinWidth="140" />
                   </StackPanel>
                 </StackPanel>
               </Grid>
 
               <!-- HOST -->
               <Grid x:Name="PageHost" IsVisible="{Binding IsHost}" RowDefinitions="Auto,*,Auto">
-                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,22">
+                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,20">
                   <TextBlock Classes="display" Text="Host" FontSize="34" />
-                  <TextBlock Classes="muted" Text="Advertise on LAN, write handoff, start RimWorld." FontSize="13" />
+                  <TextBlock Classes="muted" Text="Invite friends on your Wi‑Fi, then start RimWorld." FontSize="13" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Spacing="14" MaxWidth="520" HorizontalAlignment="Left">
@@ -87,36 +84,14 @@
                     <TextBox Classes="field" Text="{Binding SessionName}" />
                   </StackPanel>
                   <StackPanel Spacing="5">
-                    <TextBlock Classes="label" Text="YOUR DISPLAY NAME" />
-                    <TextBox Classes="field" Text="{Binding PlayerDisplayName}" Watermark="Optional" />
+                    <TextBlock Classes="label" Text="YOUR NAME (OPTIONAL)" />
+                    <TextBox Classes="field" Text="{Binding PlayerDisplayName}" Watermark="Shown to friends in lobby" />
                   </StackPanel>
-                  <Grid ColumnDefinitions="*,12,*">
-                    <StackPanel Grid.Column="0" Spacing="5">
-                      <TextBlock Classes="label" Text="GAME PORT" />
-                      <TextBox Classes="field" Text="{Binding HostPort}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Spacing="5">
-                      <TextBlock Classes="label" Text="ADVERTISE IP" />
-                      <TextBox Classes="field" Text="{Binding BindHost}" />
-                    </StackPanel>
-                  </Grid>
-                  <Grid ColumnDefinitions="*,12,*">
-                    <StackPanel Grid.Column="0" Spacing="5">
-                      <TextBlock Classes="label" Text="MAX CLIENTS" />
-                      <NumericUpDown Value="{Binding MaxClients}" Minimum="1" Maximum="16" FormatString="0"
-                                     Background="#EDE3CC" BorderBrush="#5C4330" Foreground="#2A1C12"
-                                     Width="120" HorizontalAlignment="Left" CornerRadius="0" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Spacing="5">
-                      <TextBlock Classes="label" Text="TRANSPORT" />
-                      <ComboBox Classes="field" SelectedItem="{Binding Transport}" Width="200" HorizontalAlignment="Left"
-                                ItemsSource="{Binding TransportChoices}" />
-                    </StackPanel>
-                  </Grid>
-                  <CheckBox IsChecked="{Binding PrepareModsOnLaunch}" Content="Prepare mods (Harmony first + backup)" />
-                  <CheckBox IsChecked="{Binding LaunchGame}" Content="Launch RimWorld after handoff" />
 
-                  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
+                  <CheckBox IsChecked="{Binding PrepareModsOnLaunch}" Content="Line up mods for multiplayer" />
+                  <CheckBox IsChecked="{Binding LaunchGame}" Content="Start RimWorld for me" />
+
+                  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
                     <Border Classes="live-dot" IsVisible="{Binding IsHosting}" VerticalAlignment="Center">
                       <Border.Styles>
                         <Style Selector="Border.live-dot">
@@ -131,13 +106,41 @@
                     </Border>
                     <TextBlock Classes="gold" Text="{Binding HostStatus}" VerticalAlignment="Center" FontSize="13" />
                   </StackPanel>
+
+                  <Expander Header="Advanced" IsExpanded="{Binding ShowAdvanced}" Margin="0,8,0,0">
+                    <StackPanel Spacing="12" Margin="0,10,0,0">
+                      <Grid ColumnDefinitions="*,12,*">
+                        <StackPanel Grid.Column="0" Spacing="5">
+                          <TextBlock Classes="label" Text="GAME PORT" />
+                          <TextBox Classes="field" Text="{Binding HostPort}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="5">
+                          <TextBlock Classes="label" Text="ADVERTISE IP" />
+                          <TextBox Classes="field" Text="{Binding BindHost}" />
+                        </StackPanel>
+                      </Grid>
+                      <Grid ColumnDefinitions="*,12,*">
+                        <StackPanel Grid.Column="0" Spacing="5">
+                          <TextBlock Classes="label" Text="MAX FRIENDS" />
+                          <NumericUpDown Value="{Binding MaxClients}" Minimum="1" Maximum="16" FormatString="0"
+                                         Background="#EDE3CC" BorderBrush="#5C4330" Foreground="#2A1C12"
+                                         Width="120" HorizontalAlignment="Left" CornerRadius="0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="5">
+                          <TextBlock Classes="label" Text="TRANSPORT" />
+                          <ComboBox Classes="field" SelectedItem="{Binding Transport}" Width="200" HorizontalAlignment="Left"
+                                    ItemsSource="{Binding TransportChoices}" />
+                        </StackPanel>
+                      </Grid>
+                    </StackPanel>
+                  </Expander>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
-                  <Button Classes="cta" Command="{Binding StartHostCommand}" MinWidth="150">
+                  <Button Classes="cta" Command="{Binding StartHostCommand}" MinWidth="200">
                     <Panel>
-                      <TextBlock Text="Start hosting" IsVisible="{Binding !IsHosting}" />
-                      <TextBlock Text="Stop beacon" IsVisible="{Binding IsHosting}" />
+                      <TextBlock Text="Start game for friends" IsVisible="{Binding !IsHosting}" />
+                      <TextBlock Text="Stop inviting" IsVisible="{Binding IsHosting}" />
                     </Panel>
                   </Button>
                 </StackPanel>
@@ -145,18 +148,18 @@
 
               <!-- JOIN -->
               <Grid x:Name="PageJoin" IsVisible="{Binding IsJoin}" RowDefinitions="Auto,Auto,*,Auto">
-                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,18">
+                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,16">
                   <TextBlock Classes="display" Text="Join" FontSize="34" />
-                  <TextBlock Classes="muted" Text="Discover a LAN host or enter an IP." FontSize="13" />
+                  <TextBlock Classes="muted" Text="Find a friend on Wi‑Fi, or type their address." FontSize="13" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
-                  <Button Classes="ghost" Content="Scan LAN" Command="{Binding DiscoverCommand}" IsEnabled="{Binding !IsDiscovering}" />
+                  <Button Classes="ghost" Content="Look for friends" Command="{Binding DiscoverCommand}" IsEnabled="{Binding !IsDiscovering}" />
                   <TextBlock Classes="muted" VerticalAlignment="Center" FontSize="12"
-                             Text="Scanning…" IsVisible="{Binding IsDiscovering}" />
+                             Text="Looking for friends on Wi‑Fi…" IsVisible="{Binding IsDiscovering}" />
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,0,0,14">
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
                   <ItemsControl ItemsSource="{Binding DiscoveredHosts}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="models:DiscoveryBeacon">
@@ -170,11 +173,8 @@
                               <TextBlock Classes="muted" FontSize="12"
                                          Text="{Binding Host, StringFormat='{}{0}'}" />
                             </StackPanel>
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
-                              <TextBlock Classes="gold" FontSize="12" Text="{Binding ModHashShort, StringFormat='hash {0}…'}" />
-                              <TextBlock Classes="muted" FontSize="11" HorizontalAlignment="Right"
-                                         Text="{Binding Port, StringFormat=':{0}'}" />
-                            </StackPanel>
+                            <TextBlock Grid.Column="1" Classes="muted" FontSize="12" VerticalAlignment="Center"
+                                       Text="{Binding Port, StringFormat=':{0}'}" />
                           </Grid>
                         </Border>
                       </DataTemplate>
@@ -184,139 +184,131 @@
 
                 <StackPanel Grid.Row="3" Spacing="12" MaxWidth="520" HorizontalAlignment="Left">
                   <StackPanel Spacing="5">
-                    <TextBlock Classes="label" Text="YOUR DISPLAY NAME" />
-                    <TextBox Classes="field" Text="{Binding PlayerDisplayName}" Watermark="Optional" />
+                    <TextBlock Classes="label" Text="YOUR NAME (OPTIONAL)" />
+                    <TextBox Classes="field" Text="{Binding PlayerDisplayName}" Watermark="Shown to friends in lobby" />
                   </StackPanel>
-                  <Grid ColumnDefinitions="*,12,120">
-                    <StackPanel Grid.Column="0" Spacing="5">
-                      <TextBlock Classes="label" Text="HOST IP" />
-                      <TextBox Classes="field" Text="{Binding JoinIp}" Watermark="192.168.x.x" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Spacing="5">
-                      <TextBlock Classes="label" Text="PORT" />
-                      <TextBox Classes="field" Text="{Binding JoinPort}" />
-                    </StackPanel>
-                  </Grid>
                   <StackPanel Spacing="5">
-                    <TextBlock Classes="label" Text="TRANSPORT" />
-                    <ComboBox Classes="field" SelectedItem="{Binding Transport}" Width="200" HorizontalAlignment="Left"
-                              ItemsSource="{Binding TransportChoices}" />
+                    <TextBlock Classes="label" Text="FRIEND’S ADDRESS" />
+                    <TextBox Classes="field" Text="{Binding JoinIp}" Watermark="192.168.x.x" />
                   </StackPanel>
-                  <CheckBox IsChecked="{Binding PrepareModsOnLaunch}" Content="Prepare mods before join" />
-                  <CheckBox IsChecked="{Binding LaunchGame}" Content="Launch RimWorld after handoff" />
-                  <Button Classes="cta" Content="Join session" Command="{Binding JoinSelectedCommand}" HorizontalAlignment="Left" MinWidth="140" />
+                  <CheckBox IsChecked="{Binding PrepareModsOnLaunch}" Content="Line up mods before joining" />
+                  <CheckBox IsChecked="{Binding LaunchGame}" Content="Start RimWorld for me" />
+
+                  <Expander Header="Advanced" IsExpanded="{Binding ShowAdvanced}" Margin="0,4,0,0">
+                    <StackPanel Spacing="12" Margin="0,10,0,0">
+                      <StackPanel Spacing="5">
+                        <TextBlock Classes="label" Text="PORT" />
+                        <TextBox Classes="field" Text="{Binding JoinPort}" Width="120" HorizontalAlignment="Left" />
+                      </StackPanel>
+                      <StackPanel Spacing="5">
+                        <TextBlock Classes="label" Text="TRANSPORT" />
+                        <ComboBox Classes="field" SelectedItem="{Binding Transport}" Width="200" HorizontalAlignment="Left"
+                                  ItemsSource="{Binding TransportChoices}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Expander>
+
+                  <Button Classes="cta" Content="Join a friend" Command="{Binding JoinSelectedCommand}"
+                          HorizontalAlignment="Left" MinWidth="160" Margin="0,4,0,0" />
                 </StackPanel>
               </Grid>
 
               <!-- MODS -->
               <Grid x:Name="PageMods" IsVisible="{Binding IsMods}" RowDefinitions="Auto,Auto,*,Auto">
-                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,14">
+                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
                   <TextBlock Classes="display" Text="Mods" FontSize="34" />
-                  <TextBlock Classes="muted" Text="Harmony first, then official, RimworldMP, then the rest. Sync from host over LAN when ready." FontSize="13" TextWrapping="Wrap" />
+                  <TextBlock Classes="muted" Text="Line up the same mods as your friends. Search your list below." FontSize="13" TextWrapping="Wrap" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Spacing="9" Margin="0,0,0,10">
-                  <TextBlock Classes="label" Text="MODLIST HASH" />
-                  <TextBlock FontFamily="{DynamicResource FontBodyMedium}" FontSize="13" Foreground="#2A1C12"
-                             Text="{Binding ModlistHash}" TextWrapping="Wrap" />
-                  <TextBlock Classes="muted" FontSize="11" Text="{Binding ModsConfigPath}" TextWrapping="Wrap" />
-                  <TextBlock FontSize="12" Foreground="#B85A28" Text="{Binding ModsWarning}"
-                             TextWrapping="Wrap" IsVisible="{Binding ModsWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Grid.Row="1" Spacing="10" Margin="0,0,0,8">
                   <StackPanel Orientation="Horizontal" Spacing="10">
-                    <Button Classes="cta" Content="Prepare for MP" Command="{Binding PrepareModsCommand}" />
-                    <Button Classes="ghost" Content="Restore backup" Command="{Binding RestoreModsCommand}" />
+                    <Button Classes="cta" Content="Fix my mods" Command="{Binding PrepareModsCommand}" />
+                    <Button Classes="ghost" Content="Undo" Command="{Binding RestoreModsCommand}" />
                     <Button Classes="ghost" Content="Refresh" Command="{Binding RefreshModsSnapshotCommand}" />
                   </StackPanel>
+                  <TextBlock FontSize="12" Foreground="#B85A28" Text="{Binding ModsWarning}"
+                             TextWrapping="Wrap" IsVisible="{Binding ModsWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-                  <StackPanel Spacing="9" Margin="0,12,0,0">
-                    <TextBlock Classes="label" Text="SYNC FROM HOST (LAN)" />
-                    <TextBlock Classes="muted" FontSize="12" Text="{Binding SyncStatusMessage}" TextWrapping="Wrap" />
-                    <Grid ColumnDefinitions="*,10,100,10,Auto">
-                      <TextBox Classes="field" Text="{Binding SyncHost}" Watermark="Host IP" />
-                      <TextBox Grid.Column="2" Classes="field" Text="{Binding SyncPort}" Watermark="30557" />
-                      <Button Grid.Column="4" Classes="ghost" Content="Use Join IP" Command="{Binding UseJoinTargetForSyncCommand}" />
-                    </Grid>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                      <Button Classes="ghost" Content="Compare" Command="{Binding CompareWithHostCommand}" IsEnabled="{Binding !IsSyncing}" />
-                      <Button Classes="cta" Content="Sync from host" Command="{Binding SyncFromHostCommand}" IsEnabled="{Binding !IsSyncing}" />
-                      <Button Classes="ghost" Content="Cancel" Command="{Binding CancelSyncCommand}" IsVisible="{Binding IsSyncing}" />
-                    </StackPanel>
-                    <Grid IsVisible="{Binding IsSyncing}" ColumnDefinitions="*,Auto" Margin="0,2,0,0">
-                      <ProgressBar Minimum="0" Maximum="1" Value="{Binding SyncProgressFraction}" Height="6"
-                                   Foreground="#C97828" Background="#C4B08A" />
-                      <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0,0,0"
-                                 VerticalAlignment="Center" Text="{Binding SyncProgressLabel}" />
-                    </Grid>
-                    <Grid IsVisible="{Binding HasSyncDeltas}" ColumnDefinitions="*,12,*" Margin="0,4,0,0">
-                      <StackPanel Grid.Column="0" Spacing="4">
-                        <TextBlock Classes="label" Text="MISSING" />
-                        <ItemsControl ItemsSource="{Binding SyncMissing}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ModSyncDeltaRow">
-                              <TextBlock FontSize="12" Foreground="#B85A28" Margin="0,2" Text="{Binding PackageId}" />
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                      <StackPanel Grid.Column="2" Spacing="4">
-                        <TextBlock Classes="label" Text="MISMATCHED" />
-                        <ItemsControl ItemsSource="{Binding SyncMismatched}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ModSyncDeltaRow">
-                              <TextBlock FontSize="12" Foreground="#6B563F" Margin="0,2" Text="{Binding PackageId}" />
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </Grid>
+                  <StackPanel Spacing="5">
+                    <TextBlock Classes="label" Text="SEARCH MODS" />
+                    <TextBox Classes="field" Text="{Binding ModSearchQuery}" Watermark="Filter by name or package id…" />
                   </StackPanel>
+
+                  <Expander Header="Sync from a friend / Advanced" IsExpanded="{Binding ShowAdvanced}">
+                    <StackPanel Spacing="10" Margin="0,10,0,0">
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding SyncStatusMessage}" TextWrapping="Wrap" />
+                      <Grid ColumnDefinitions="*,10,100,10,Auto">
+                        <TextBox Classes="field" Text="{Binding SyncHost}" Watermark="Friend’s IP" />
+                        <TextBox Grid.Column="2" Classes="field" Text="{Binding SyncPort}" Watermark="30557" />
+                        <Button Grid.Column="4" Classes="ghost" Content="Use Join IP" Command="{Binding UseJoinTargetForSyncCommand}" />
+                      </Grid>
+                      <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Classes="ghost" Content="Compare" Command="{Binding CompareWithHostCommand}" IsEnabled="{Binding !IsSyncing}" />
+                        <Button Classes="cta" Content="Sync from friend" Command="{Binding SyncFromHostCommand}" IsEnabled="{Binding !IsSyncing}" />
+                        <Button Classes="ghost" Content="Cancel" Command="{Binding CancelSyncCommand}" IsVisible="{Binding IsSyncing}" />
+                      </StackPanel>
+                      <Grid IsVisible="{Binding IsSyncing}" ColumnDefinitions="*,Auto">
+                        <ProgressBar Minimum="0" Maximum="1" Value="{Binding SyncProgressFraction}" Height="6"
+                                     Foreground="#C97828" Background="#C4B08A" />
+                        <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0,0,0"
+                                   VerticalAlignment="Center" Text="{Binding SyncProgressLabel}" />
+                      </Grid>
+                      <TextBlock Classes="muted" FontSize="11" Text="{Binding ModsConfigPath}" TextWrapping="Wrap" />
+                      <TextBlock Classes="muted" FontSize="11" Text="{Binding ModlistHash, StringFormat='List id: {0}'}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Expander>
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
-                  <ItemsControl ItemsSource="{Binding ModRows}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:ModListRow">
-                        <Border Classes="mod-row">
-                          <Grid ColumnDefinitions="36,*,Auto">
-                            <TextBlock Classes="muted" FontSize="12" Text="{Binding Index}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" FontFamily="{DynamicResource FontBody}" FontSize="13"
-                                       Foreground="#2A1C12" Text="{Binding PackageId}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Classes="gold" FontSize="11" Text="{Binding Badge}"
-                                       VerticalAlignment="Center" Margin="12,0,0,0" />
-                          </Grid>
-                        </Border>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </ScrollViewer>
+                <Panel Grid.Row="2" Margin="0,6,0,0">
+                  <TextBlock Classes="muted" FontSize="13" Text="{Binding ModsEmptyMessage}"
+                             IsVisible="{Binding ShowModsEmpty}" Margin="0,12,0,0" TextWrapping="Wrap" />
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding HasFilteredMods}">
+                    <ItemsControl ItemsSource="{Binding FilteredModRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ModListRow">
+                          <Border Classes="mod-row">
+                            <Grid ColumnDefinitions="36,*,Auto">
+                              <TextBlock Classes="muted" FontSize="12" Text="{Binding Index}" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="1" FontFamily="{DynamicResource FontBody}" FontSize="13"
+                                         Foreground="#2A1C12" Text="{Binding PackageId}" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Classes="gold" FontSize="11" Text="{Binding Badge}"
+                                         VerticalAlignment="Center" Margin="12,0,0,0" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Panel>
               </Grid>
 
               <!-- LAUNCH -->
               <Grid x:Name="PageLaunch" IsVisible="{Binding IsLaunch}" RowDefinitions="Auto,Auto,*,Auto">
-                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,18">
+                <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,16">
                   <TextBlock Classes="display" Text="Launch" FontSize="34" />
-                  <TextBlock Classes="muted" Text="RimWorld install and session status." FontSize="13" />
+                  <TextBlock Classes="muted" Text="Point RimworldMP at your RimWorld install." FontSize="13" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Spacing="12" MaxWidth="640" Margin="0,0,0,16">
+                <StackPanel Grid.Row="1" Spacing="12" MaxWidth="640" Margin="0,0,0,14">
                   <StackPanel Spacing="5">
-                    <TextBlock Classes="label" Text="INSTALL PATH" />
+                    <TextBlock Classes="label" Text="RIMWORLD FOLDER" />
                     <Grid ColumnDefinitions="*,10,Auto">
                       <TextBox Classes="field" Text="{Binding InstallPath}" Watermark="/path/to/RimWorld" />
-                      <Button Grid.Column="2" Classes="ghost" Content="Locate" Command="{Binding RefreshInstallCommand}" />
+                      <Button Grid.Column="2" Classes="ghost" Content="Find it" Command="{Binding RefreshInstallCommand}" />
                     </Grid>
                     <TextBlock Classes="muted" FontSize="12" Text="{Binding InstallSummary}" TextWrapping="Wrap" />
                   </StackPanel>
-                  <TextBlock Classes="muted" FontSize="12" Text="{Binding LastHandoffPath, StringFormat='Handoff: {0}'}" TextWrapping="Wrap" />
+                  <TextBlock Classes="muted" FontSize="12" Text="{Binding LastHandoffPath, StringFormat='Setup file: {0}'}"
+                             TextWrapping="Wrap" IsVisible="{Binding ShowAdvanced}" />
                 </StackPanel>
 
                 <TextBlock Grid.Row="2" Text="{Binding LaunchLog}" TextWrapping="Wrap" FontSize="13" LineHeight="20"
                            FontFamily="{DynamicResource FontBody}" Foreground="#2A1C12" Margin="0,4,0,0" />
 
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="12" Margin="0,18,0,0">
-                  <Button Classes="cta" Content="Host" Command="{Binding GoHostCommand}" MinWidth="100" />
-                  <Button Classes="ghost" Content="Join" Command="{Binding GoJoinCommand}" MinWidth="100" />
-                  <Button Classes="ghost" Content="Stop beacon" Command="{Binding StopHostCommand}" IsVisible="{Binding IsHosting}" />
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="12" Margin="0,16,0,0">
+                  <Button Classes="cta" Content="Start game for friends" Command="{Binding GoHostCommand}" MinWidth="200" />
+                  <Button Classes="ghost" Content="Join a friend" Command="{Binding GoJoinCommand}" MinWidth="140" />
+                  <Button Classes="ghost" Content="Stop inviting" Command="{Binding StopHostCommand}" IsVisible="{Binding IsHosting}" />
                 </StackPanel>
               </Grid>
             </Panel>

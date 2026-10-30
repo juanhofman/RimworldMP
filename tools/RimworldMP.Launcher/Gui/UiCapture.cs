@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using RimworldMP.Launcher.Gui.Views;
 using RimworldMP.Launcher.Models;
+using RimworldMP.Launcher.Services;
 using RimworldMP.Launcher.ViewModels;
 
 namespace RimworldMP.Launcher.Gui;
@@ -93,7 +94,9 @@ internal static class UiCapture
                     vm.GoJoinCommand.Execute(null);
                     break;
                 case LauncherNavPage.Mods:
-                    vm.GoModsCommand.Execute(null);
+                    // Avoid GoMods → RefreshModsSnapshot wiping capture seed when no ModsConfig exists.
+                    vm.CurrentPage = LauncherNavPage.Mods;
+                    EnsureDemoMods(vm);
                     break;
                 case LauncherNavPage.Launch:
                     vm.GoLaunchCommand.Execute(null);
@@ -133,8 +136,38 @@ internal static class UiCapture
             });
         }
 
-        vm.LaunchLog = "Ready.";
-        vm.InstallSummary = "RimWorld not found — browse or type the install folder.";
+        vm.LaunchLog = "Ready to play.";
+        vm.InstallSummary = "RimWorld not found — set the install folder below.";
+        EnsureDemoMods(vm);
+    }
+
+    private static void EnsureDemoMods(MainViewModel vm)
+    {
+        if (vm.ModRows.Count > 0 && vm.FilteredModRows.Count > 0)
+            return;
+
+        var demo = new[]
+        {
+            LauncherPaths.HarmonyPackageId,
+            "Ludeon.RimWorld",
+            LauncherPaths.RimworldMpPackageId,
+            "dubwise.dubsbadhygiene",
+            "vanillaexpanded.vee",
+        };
+        var rows = new List<ModListRow>();
+        for (var i = 0; i < demo.Length; i++)
+        {
+            var id = demo[i];
+            rows.Add(new ModListRow
+            {
+                Index = i + 1,
+                PackageId = id,
+                IsHarmony = id.Equals(LauncherPaths.HarmonyPackageId, StringComparison.OrdinalIgnoreCase),
+                IsRimworldMp = id.Equals(LauncherPaths.RimworldMpPackageId, StringComparison.OrdinalIgnoreCase),
+            });
+        }
+
+        vm.SeedModRowsForCapture(rows);
     }
 
     private static async Task WaitForRenderAsync()
