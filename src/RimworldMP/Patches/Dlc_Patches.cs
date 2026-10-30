@@ -12,11 +12,14 @@ namespace RimworldMP.Patches;
 /// installed DLC; these patches document the injection boundary and no-op when types are absent.
 /// Full DLC method targets are applied when RIMWORLD_DIR + DLC assemblies are present.
 /// </summary>
+/// <remarks>
+/// SCAFFOLD: Game.LoadGame Postfix is a safe boundary marker only — not a DLC command capture.
+/// Prefer incomplete + documented over inventing Royalty/Ideology Prefixes without DLC DLLs.
+/// </remarks>
 [HarmonyPatch]
 internal static class Dlc_Patches
 {
-    // Placeholder PatchAll-safe type: TickManager already patched elsewhere.
-    // Real DLC targets are registered dynamically in RimworldMPMod when defs/types resolve.
+    // Placeholder PatchAll-safe type. Real DLC targets register when RIMWORLD_DIR + DLC resolve.
     [HarmonyPatch(typeof(Game), nameof(Game.LoadGame))]
     [HarmonyPostfix]
     private static void Game_LoadGame_Postfix()

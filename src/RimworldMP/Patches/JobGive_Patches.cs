@@ -12,6 +12,11 @@ namespace RimworldMP.Patches;
 /// Ordered job gives → lockstep JobGive commands with map id + thickened target payload.
 /// Patches Pawn_JobTracker.TryTakeOrderedJob; applicator re-enters with CommandApplyReentry set.
 /// </summary>
+/// <remarks>
+/// UNVERIFIED (RW 1.7): TryTakeOrderedJob may take JobTag / requestQueue overloads.
+/// Harmony allows subset args; confirm injection checks pass under Lib.Harmony 3 + live DLLs.
+/// Prefer retarget over inventing a wrong full Prefix signature.
+/// </remarks>
 [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryTakeOrderedJob))]
 internal static class Pawn_JobTracker_TryTakeOrderedJob_Patch
 {

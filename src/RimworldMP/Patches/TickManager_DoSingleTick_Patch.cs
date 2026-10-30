@@ -9,6 +9,7 @@ namespace RimworldMP.Patches;
 /// Lockstep tick gate: host emits the next batch, then every peer stalls until that batch is present.
 /// When frozen (desync), the sim does not advance.
 /// </summary>
+/// <remarks>UNVERIFIED (RW 1.7): TickManager.DoSingleTick still the per-tick entry under Waylith.</remarks>
 [HarmonyPatch(typeof(TickManager), nameof(TickManager.DoSingleTick))]
 internal static class TickManager_DoSingleTick_Patch
 {

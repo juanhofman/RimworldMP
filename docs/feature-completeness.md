@@ -6,7 +6,7 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 | --- | --- |
 | **Audited tip** | `2b9033e` (LiteNetLib #16 merge tip at 0.7.0 packaging cut) |
 | **Tagged release** | **0.7.0** (`VERSION` / `About.xml` `modVersion`) — GitHub **pre-release** |
-| **Toward next?** | Live RimWorld 1.7 binding smoke (`RIMWORLD_DIR`); Verse apply still scaffolded |
+| **Toward next?** | Live RimWorld 1.7 binding smoke (`RIMWORLD_DIR`); fill-in map [verse-binding-checklist.md](./verse-binding-checklist.md) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
 
 Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **Won’t do per prefs**.
@@ -75,8 +75,10 @@ Public API: `MP.CallSyncMethod` / `SyncMethodCodec` / `ColonyCommands.*` — see
 
 ## Still Verse-blocked (install required)
 
-1. Harmony prefixes that touch Verse types (draft/job/zone/bill/research/Rand/lobby UI).
-2. Trade deal commit, caravan formation, policy pawn settings.
+Fill-in map: [verse-binding-checklist.md](./verse-binding-checklist.md) (`VerseBindingRegistry`).
+
+1. Harmony prefixes that touch Verse types (draft/job/zone/bill/research/Rand/lobby UI) — shapes isolated; signatures **Unverified**.
+2. Trade deal commit, caravan formation, policy pawn settings — **Scaffold** (no invented Prefixes).
 3. World fingerprint samples into desync hash.
 4. Live 2P smoke 30+ min.
 5. Confirm `Rand.Chance` / `Bool` signatures on installed 1.7.

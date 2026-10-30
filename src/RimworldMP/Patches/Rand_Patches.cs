@@ -11,6 +11,10 @@ namespace RimworldMP.Patches;
 /// patches establish Value/Range/Chance/Bool injection. Remaining APIs (Gaussian, MTB, …)
 /// still need RIMWORLD_DIR validation before patching.
 /// </summary>
+/// <remarks>
+/// UNVERIFIED (RW 1.7): Chance(float) and Bool getter signatures — confirm on install before
+/// adding Gaussian/MTB Prefixes (prefer incomplete + documented over silent wrong Prefix).
+/// </remarks>
 [HarmonyPatch]
 internal static class Rand_Patches
 {
