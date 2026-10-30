@@ -18,9 +18,13 @@ namespace RimworldMP.Patches;
 [HarmonyPatch]
 internal static class Rand_Patches
 {
-    /// <summary>Use vanilla Verse.Rand during JIP save load / when no live session.</summary>
+    /// <summary>
+    /// Forward only during the lockstep sim window. JIP load, lobby UI, and between-tick
+    /// OnGUI must keep Verse.Rand — otherwise host/client frame-local draws desync OpinionHash
+    /// by the first HashInterval (tick 60).
+    /// </summary>
     private static bool ShouldForward(MpSession? session) =>
-        session is { IsActive: true, IsJoinInProgress: false };
+        session is { IsActive: true, IsJoinInProgress: false, IsInSim: true };
 
     [HarmonyPatch(typeof(Rand), nameof(Rand.Value), MethodType.Getter)]
     [HarmonyPrefix]

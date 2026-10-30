@@ -14,6 +14,10 @@ public sealed class DesyncDumpContext
     public IReadOnlyList<DesyncBatchSnapshot>? RecentBatches { get; init; }
     public int CommandHistoryLimit { get; init; } = DesyncDump.DefaultCommandHistory;
     public int BatchHistoryLimit { get; init; } = DesyncDump.DefaultBatchHistory;
+    /// <summary>Live session tick when the dump was written (may exceed the desync tick after a late freeze announce).</summary>
+    public long? SessionTickAtDump { get; init; }
+    /// <summary>SyncedRand OpinionHash at dump time (diagnostic; checkpoint compare uses published hash).</summary>
+    public ulong? RngOpinion { get; init; }
 }
 
 /// <summary>Compact view of one recorded command-batch ring entry.</summary>

@@ -22,6 +22,36 @@ public static class SessionRecovery
         session.RequestJoinPoint();
     }
 
+    /// <summary>
+    /// Overlay Continue after desync freeze.
+    /// Host: clear freeze and push recovery join points to present clients.
+    /// Client: clear via <see cref="RequestRejoin"/> and wait for a fresh join point.
+    /// </summary>
+    public static void SoftRecover(MpSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        if (session.IsHost)
+        {
+            session.Desync.ClearFreeze();
+            session.Chat.AppendSystem(
+                SystemNoticeKind.Recovery,
+                SessionMessages.Get("RMP.RecoveryHostContinued"),
+                session.LocalPlayerId,
+                session.Roster.GetName(session.LocalPlayerId, isHostSeat: true),
+                session.Tick);
+            foreach (var id in session.Ready.Snapshot().Keys)
+            {
+                if (id == 0)
+                    continue;
+                TryHostResyncPeer(session, new NetPeerId(id));
+            }
+
+            return;
+        }
+
+        RequestRejoin(session);
+    }
+
     public static JoinPoint? BuildHostRecoveryPoint(MpSession session, byte[]? saveBlob = null)
     {
         ArgumentNullException.ThrowIfNull(session);

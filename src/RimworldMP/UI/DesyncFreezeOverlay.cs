@@ -1,5 +1,6 @@
 #if !RIMWORLDMP_NO_GAME_REFS
 using RimworldMP.Core.Session;
+using RimworldMP.Lobby;
 using UnityEngine;
 using Verse;
 
@@ -8,6 +9,7 @@ namespace RimworldMP.UI;
 /// <summary>
 /// Full-screen readable desync freeze banner drawn from UIRoot OnGUI.
 /// Intentionally calm — charcoal veil, ember headline, steel detail — not a DebugMenu scrap.
+/// Continue triggers soft-recover (host clears freeze + resync peers; client requests join point).
 /// </summary>
 public static class DesyncFreezeOverlay
 {
@@ -35,10 +37,10 @@ public static class DesyncFreezeOverlay
         Widgets.DrawBoxSolid(screen, new Color(MpUiPalette.Ink.R, MpUiPalette.Ink.G, MpUiPalette.Ink.B, 0.72f * a));
 
         var panelW = Mathf.Min(560f, sw - 40f);
-        var panelH = 248f;
+        var panelH = 292f;
         var panel = new Rect(
             (sw - panelW) * 0.5f,
-            (sh - panelH) * 0.36f,
+            (sh - panelH) * 0.34f,
             panelW,
             panelH);
         Widgets.DrawBoxSolid(panel, new Color(MpUiPalette.Panel.R, MpUiPalette.Panel.G, MpUiPalette.Panel.B, 0.98f * a));
@@ -56,11 +58,28 @@ public static class DesyncFreezeOverlay
 
         GUI.color = new Color(MpUiPalette.Soft.R, MpUiPalette.Soft.G, MpUiPalette.Soft.B, a);
         Text.Font = GameFont.Tiny;
-        Widgets.Label(new Rect(panel.x + 18f, panel.y + 78f, panel.width - 28f, 120f), model.Body);
+        Widgets.Label(new Rect(panel.x + 18f, panel.y + 78f, panel.width - 28f, 110f), model.Body);
 
         GUI.color = new Color(MpUiPalette.Steel.R, MpUiPalette.Steel.G, MpUiPalette.Steel.B, a);
-        Widgets.Label(new Rect(panel.x + 18f, panel.yMax - 36f, panel.width - 28f, 20f),
+        Widgets.Label(new Rect(panel.x + 18f, panel.yMax - 78f, panel.width - 28f, 20f),
             SessionMessages.Format("RMP.DesyncDumpLabel", Truncate(model.LogPath, 72)));
+
+        var btnW = (panel.width - 48f) * 0.5f;
+        var btnH = 32f;
+        var btnY = panel.yMax - 48f;
+        var continueLabel = session.IsHost
+            ? SessionMessages.Get("RMP.BtnContinueHost")
+            : SessionMessages.Get("RMP.BtnContinueClient");
+        if (MpImmediateGui.OkButton(new Rect(panel.x + 18f, btnY, btnW, btnH), continueLabel))
+            session.SoftRecoverFromDesync();
+
+        if (MpImmediateGui.SteelButton(
+                new Rect(panel.x + 30f + btnW, btnY, btnW, btnH),
+                SessionMessages.Get("RMP.BtnDisconnect")))
+        {
+            _ = MpLobbyActions.StopAsync();
+        }
+
         GUI.color = Color.white;
         Text.Font = GameFont.Small;
     }

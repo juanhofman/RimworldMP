@@ -16,16 +16,20 @@
   <RMP.ChatEmpty>(leeg)</RMP.ChatEmpty>
   <RMP.RecoveryRequested>Herstel-rejoin aangevraagd — wachten op join point van de host…</RMP.RecoveryRequested>
   <RMP.RecoverySent>Host stuurde herstel-join point naar peer {0}.</RMP.RecoverySent>
+  <RMP.RecoveryHostContinued>Host ging verder na desync — herstel join points naar clients gestuurd.</RMP.RecoveryHostContinued>
   <RMP.DisplayNameDefault>Speler {0}</RMP.DisplayNameDefault>
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>Jij</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>Jij (host)</RMP.DisplayNameYouHost>
   <RMP.DesyncHeadline>Desync — simulatie bevroren</RMP.DesyncHeadline>
-  <RMP.DesyncBodyShort>Peers zijn uiteengelopen. Open de lobby (F10) om te verbreken.</RMP.DesyncBodyShort>
-  <RMP.DesyncBodyDetail>Peers zijn uiteengelopen op tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.</RMP.DesyncBodyDetail>
+  <RMP.DesyncBodyShort>Peers zijn uiteengelopen. Ga verder om te herstellen, of verbreek.</RMP.DesyncBodyShort>
+  <RMP.DesyncBodyDetail>Peers zijn uiteengelopen op tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nGa verder herstelt zacht; Verbinding verbreken verlaat de sessie.</RMP.DesyncBodyDetail>
   <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
   <RMP.DesyncNoDump>(geen dump)</RMP.DesyncNoDump>
   <RMP.DesyncDumpLabel>Lokale dump · {0}</RMP.DesyncDumpLabel>
+  <RMP.BtnContinueHost>Doorgaan (peers hersyncen)</RMP.BtnContinueHost>
+  <RMP.BtnContinueClient>Doorgaan (hersync aanvragen)</RMP.BtnContinueClient>
+  <RMP.BtnContinue>Doorgaan</RMP.BtnContinue>
   <RMP.LobbySubtitle>Gedeelde kolonie · LAN · host in-game</RMP.LobbySubtitle>
   <RMP.LobbySession>Sessie · {0}</RMP.LobbySession>
   <RMP.RoleIdle>Inactief</RMP.RoleIdle>

@@ -10,14 +10,12 @@ namespace RimworldMP.Patches;
 /// <summary>
 /// Lockstep tick gate: host emits the next batch, then every peer stalls until that batch is present.
 /// When frozen (desync), the sim does not advance.
-/// Postfix also samples world facts into the desync world-fingerprint slot (every 60 ticks).
+/// Postfix samples world facts and publishes the hash checkpoint after the vanilla tick.
 /// </summary>
 /// <remarks>Confirmed on RW 1.7.4990: <c>TickManager.DoSingleTick</c> present under Waylith.</remarks>
 [HarmonyPatch(typeof(TickManager), nameof(TickManager.DoSingleTick))]
 internal static class TickManager_DoSingleTick_Patch
 {
-    private const int WorldSampleInterval = 60;
-
     private static bool Prefix()
     {
         var session = SessionFacade.Current;
@@ -27,13 +25,17 @@ internal static class TickManager_DoSingleTick_Patch
         if (session.IsFrozen)
             return false;
 
+        session.BeginSimScope();
         if (session.IsHost)
             session.HostEmitNextBatch();
 
         if (!session.TryAdvanceSim())
+        {
+            session.EndSimScope();
             return false; // stall until batch arrives
+        }
 
-        return true;
+        return true; // Postfix ends sim scope + hash checkpoint
     }
 
     private static void Postfix(TickManager __instance)
@@ -42,17 +44,30 @@ internal static class TickManager_DoSingleTick_Patch
         if (session is not { IsActive: true })
             return;
 
-        // Only sample after a real tick (Prefix allowed the original through).
-        if (session.IsFrozen)
-            return;
+        try
+        {
+            // Prefix returned false (stall / frozen) — nothing to checkpoint.
+            if (!session.IsInSim)
+                return;
 
-        var tick = __instance.TicksGame;
-        if (tick % WorldSampleInterval != 0)
-            return;
+            if (session.IsFrozen)
+                return;
 
-        Span<byte> fp = stackalloc byte[32];
-        SampleWorldFingerprint(fp, __instance, session.Rand.OpinionHash);
-        session.Desync.SetWorldFingerprint(fp);
+            // Align world sample with session hash interval (not TicksGame alone).
+            if (session.Tick > 0 && session.Tick % MpSession.HashIntervalTicks == 0)
+            {
+                Span<byte> fp = stackalloc byte[32];
+                SampleWorldFingerprint(fp, __instance, session.Rand.OpinionHash);
+                session.Desync.SetWorldFingerprint(fp);
+            }
+
+            session.PublishHashCheckpoint();
+        }
+        finally
+        {
+            if (session.IsInSim)
+                session.EndSimScope();
+        }
     }
 
     private static void SampleWorldFingerprint(Span<byte> dest32, TickManager tm, ulong rngOpinion)

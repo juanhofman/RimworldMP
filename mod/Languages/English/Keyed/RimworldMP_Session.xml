@@ -16,16 +16,20 @@
   <RMP.ChatEmpty>(empty)</RMP.ChatEmpty>
   <RMP.RecoveryRequested>Recovery rejoin requested — waiting for host join point…</RMP.RecoveryRequested>
   <RMP.RecoverySent>Host sent recovery join point to peer {0}.</RMP.RecoverySent>
+  <RMP.RecoveryHostContinued>Host continued after desync — recovery join points sent to clients.</RMP.RecoveryHostContinued>
   <RMP.DisplayNameDefault>Player {0}</RMP.DisplayNameDefault>
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>You</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>You (host)</RMP.DisplayNameYouHost>
   <RMP.DesyncHeadline>Desync — simulation frozen</RMP.DesyncHeadline>
-  <RMP.DesyncBodyShort>Peers diverged. Open the lobby (F10) to disconnect.</RMP.DesyncBodyShort>
-  <RMP.DesyncBodyDetail>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nOpen the lobby (F10) to disconnect.</RMP.DesyncBodyDetail>
+  <RMP.DesyncBodyShort>Peers diverged. Continue to soft-recover, or disconnect.</RMP.DesyncBodyShort>
+  <RMP.DesyncBodyDetail>Peers diverged at tick {0}.\nLocal  {1}\nRemote {2}\n{3}Dump (local only):\n{4}\nContinue soft-recovers; Disconnect leaves the session.</RMP.DesyncBodyDetail>
   <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
   <RMP.DesyncNoDump>(no dump)</RMP.DesyncNoDump>
   <RMP.DesyncDumpLabel>Local dump · {0}</RMP.DesyncDumpLabel>
+  <RMP.BtnContinueHost>Continue (resync peers)</RMP.BtnContinueHost>
+  <RMP.BtnContinueClient>Continue (request resync)</RMP.BtnContinueClient>
+  <RMP.BtnContinue>Continue</RMP.BtnContinue>
   <RMP.LobbySubtitle>Shared colony · LAN · in-game host</RMP.LobbySubtitle>
   <RMP.LobbySession>Session · {0}</RMP.LobbySession>
   <RMP.RoleIdle>Idle</RMP.RoleIdle>

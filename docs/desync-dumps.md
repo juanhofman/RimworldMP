@@ -25,7 +25,7 @@ Marked with `section=…` so harnesses and humans can grep:
 
 1. **header** — `localOnly=true`, `upload=never`, UTC stamp  
 2. **session** — `protocol`, `tick`, `localPeerId`, `peerIds`, `modlistHashShort` (+ full `modlistHash` when known)  
-3. **fingerprint** — `localHash` / `remoteHash` (world fingerprint slot still reserved until Verse samples exist)  
+3. **fingerprint** — `localHash` / `remoteHash` from the published end-of-tick checkpoint (not a live mid-tick snapshot)  
 4. **rng** — `rngSeed`, `rngDraws`, named `rngCounters`  
 5. **recentCommands** — last N applied `MpCommand`s (default 128)  
 6. **recentBatches** — optional ring of recent batch frames (tick / byte length / cmd count / hex preview; default 64)  
