@@ -31,7 +31,8 @@ public sealed class MpSession : IAsyncDisposable
     private bool _kicked;
     private string _modlistHash = "unknown";
     private string _localDisplayName = string.Empty;
-    private int _expectedPeers = 2;
+    /// <summary>Defaults to 1 so a solo host can Begin play / unpause; Begin play locks to present peers.</summary>
+    private int _expectedPeers = 1;
 
     public MpSession(INetTransport transport, bool isHost, long? sessionSeed = null)
     {
@@ -81,6 +82,40 @@ public sealed class MpSession : IAsyncDisposable
 
     /// <summary>Hard gate: ready-check must pass before host emits ticks / unpause.</summary>
     public bool CanStartOrUnpause => _ready.CanStartOrUnpause(_expectedPeers, _modlistHash);
+
+    /// <summary>Host staging queue has commands waiting for the next emitted batch.</summary>
+    public bool HasStagedCommands
+    {
+        get { lock (_applyGate) return _hostStaging.Count > 0; }
+    }
+
+    /// <summary>
+    /// Lock the ready gate to whoever is already in the ready snapshot (at least 1).
+    /// Call from Begin play so solo host is not stuck waiting for a phantom 2nd peer.
+    /// </summary>
+    public void LockExpectedPeersToPresent()
+    {
+        ExpectedPeers = Math.Max(1, _ready.Snapshot().Count);
+    }
+
+    /// <summary>
+    /// While RimWorld is paused, <c>DoSingleTick</c> does not run — flush staged host commands
+    /// (unpause/speed) and apply one admitted batch. No-op when there is nothing to do.
+    /// </summary>
+    public bool PumpPausedCommands()
+    {
+        if (!IsActive || IsFrozen || _jipPending || _kicked)
+            return false;
+
+        var emitted = false;
+        if (IsHost && HasStagedCommands)
+        {
+            HostEmitNextBatch();
+            emitted = true;
+        }
+
+        return TryAdvanceSim() || emitted;
+    }
 
     public event Action<CommandBatch>? OnBatchApply;
     public event Action<DesyncInfo>? OnDesync;
