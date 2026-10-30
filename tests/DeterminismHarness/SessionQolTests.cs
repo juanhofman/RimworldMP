@@ -179,6 +179,32 @@ public class SessionQolTests
     }
 
     [Fact]
+    public async Task PumpPausedCommands_flushes_unpause_without_DoSingleTick()
+    {
+        // Mirrors live bug: after Begin play the game stays paused, DoSingleTick never runs,
+        // staged Pause(false) must still flush via PumpPausedCommands (UIRoot OnGUI path).
+        var hostTransport = new LoopbackTransport();
+        var sink = new LoopbackTransport();
+        LoopbackTransport.Pair(hostTransport, sink);
+
+        await using var host = new MpSession(hostTransport, isHost: true, sessionSeed: 11);
+        host.Ready.Required = true;
+        host.SetModlistHash("mods");
+        await host.StartAsync(new NetEndpoint("loop", 0));
+        // Host seat is ready from ctor; refresh hash without needing a real client peer.
+        host.Ready.SetPeer(0, ready: true, modlistHash: "mods");
+        host.LockExpectedPeersToPresent();
+        Assert.Equal(1, host.ExpectedPeers);
+        Assert.True(host.CanStartOrUnpause);
+
+        host.SubmitCommand(CommandOpcode.Pause, CommandPayloads.Pause(false));
+        Assert.True(host.HasStagedCommands);
+        Assert.True(host.PumpPausedCommands());
+        Assert.False(host.HasStagedCommands);
+        Assert.True(host.Tick >= 1);
+    }
+
+    [Fact]
     public async Task Recovery_rejoin_after_freeze_restores_join_point()
     {
         var hostTransport = new LoopbackTransport();

@@ -393,7 +393,12 @@ public sealed class Dialog_RimworldMPLobby : Window
     private void DoBeginPlay()
     {
         var session = SessionFacade.Current;
-        if (session is null || !session.CanStartOrUnpause)
+        if (session is null)
+            return;
+
+        // Solo host must not wait for a phantom 2nd peer; 2P locks to whoever is present now.
+        session.LockExpectedPeersToPresent();
+        if (!session.CanStartOrUnpause)
             return;
 
         session.BroadcastSystemNotice(
