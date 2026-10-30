@@ -28,10 +28,13 @@ public class LobbyUiTests
         Assert.Equal("#0E1114", MpUiPalette.InkHex);
         Assert.Equal("#7EB0C8", MpUiPalette.SteelHex);
         Assert.Equal("#E07A3D", MpUiPalette.EmberHex);
+        Assert.Equal("#1C232A", MpUiPalette.ElevatedHex);
         Assert.False(LobbyUi.IsVerseUiAvailable); // harness builds with NO_GAME_REFS
         LobbyUi.Open(); // stub no-op
         Assert.True(LobbyLayoutMetrics.WindowWidth >= 540f);
         Assert.True(LobbyLayoutMetrics.PeerRowHeight > 0f);
+        Assert.True(LobbyLayoutMetrics.HudChipGapAboveBar >= 8f);
+        Assert.True(LobbyLayoutMetrics.MainButtonBarHeight >= 32f);
     }
 
     [Fact]

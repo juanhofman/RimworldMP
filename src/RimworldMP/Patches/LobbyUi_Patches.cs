@@ -7,11 +7,11 @@ using Verse;
 namespace RimworldMP.Patches;
 
 /// <summary>
-/// Non-DevMode entry: F10 toggles lobby; corner brand button; desync freeze overlay.
+/// Non-DevMode entry: F10 toggles lobby; brand chip above main tabs; desync freeze overlay.
 /// Avoids fragile MainMenuDrawer / PauseMenu signature patches — re-check under RIMWORLD_DIR.
 /// </summary>
 /// <remarks>
-/// UNVERIFIED (RW 1.7): UIRoot.UIRootOnGUI + UnityEngine.Event / Widgets.ButtonText under Waylith stubs.
+/// UNVERIFIED (RW 1.7): UIRoot.UIRootOnGUI + UnityEngine.Event / Widgets under Waylith stubs.
 /// Prefer this stable hook over inventing MainMenuDrawer Prefixes.
 /// </remarks>
 [HarmonyPatch(typeof(UIRoot), nameof(UIRoot.UIRootOnGUI))]
@@ -29,17 +29,14 @@ internal static class LobbyUi_Patches
             Event.current.Use();
         }
 
-        // Desync veil first so it sits under the corner button / open windows as needed.
+        // Desync veil first so it sits under the corner chip / open windows as needed.
         DesyncFreezeOverlay.DrawIfNeeded();
 
-        // Always-on brand entry (main menu + pause/play) without DevMode.
-        // Waylith/1.7: Verse.UI no longer exposes screenWidth/Height — use UnityEngine.Screen.
-        var btn = new Rect(12f, Screen.height - 44f, 150f, 28f);
-        var prev = GUI.color;
-        GUI.color = new Color(MpUiPalette.Ember.R, MpUiPalette.Ember.G, MpUiPalette.Ember.B, 1f);
-        if (Widgets.ButtonText(btn, MpUiPalette.BrandName))
+        // Brand chip sits above the Architect / main-tab strip — never overlapping it.
+        var stack = Find.WindowStack;
+        var lobbyOpen = stack?.WindowOfType<Dialog_RimworldMPLobby>() is not null;
+        if (MpImmediateGui.DrawHudChip(MpImmediateGui.HudChipRect(), MpUiPalette.BrandName, active: lobbyOpen))
             LobbyUi.Open();
-        GUI.color = prev;
     }
 }
 #endif
