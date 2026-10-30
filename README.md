@@ -20,7 +20,12 @@ Not a fork of Zetrith/RWMT. **v0.7.0** (offline feature cut, GitHub **pre-releas
 | License | MIT |
 | Harmony | Hard dep on Workshop Harmony **3** (≥ v3.0.1 / lib `3.0.0-rc.3`); compile with `Lib.Harmony.Ref` — do **not** bundle `0Harmony.dll` |
 
-## Quick start
+## Quick start (players)
+
+**Download `RimworldMP-Setup-0.7.x.exe` → Next → play.**  
+One Setup installs the launcher, copies **Harmony** + **RimworldMP** into your RimWorld Mods folder, and adds Desktop / Start Menu shortcuts. See [`docs/install-play-guide.md`](docs/install-play-guide.md).
+
+## Quick start (devs)
 
 ```bash
 dotnet build RimworldMP.sln -c Release
@@ -31,9 +36,12 @@ dotnet build tools/RimworldMP.Launcher/RimworldMP.Launcher.sln -c Release
 export RIMWORLD_DIR="/path/to/RimWorld"
 dotnet build RimworldMP.sln -c Release
 # Copy mod/ → RimWorld/Mods/RimworldMP ; enable Harmony then RimworldMP
+
+# Windows single Setup.exe:
+powershell -NoProfile -ExecutionPolicy Bypass -File packaging/build-setup.ps1
 ```
 
-Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · Release notes: [`docs/release-notes-v0.7.0.md`](docs/release-notes-v0.7.0.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md) · Completeness: [`docs/feature-completeness.md`](docs/feature-completeness.md) · Launcher: [`docs/launcher-mvp.md`](docs/launcher-mvp.md)
+Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · Packaging: [`packaging/README.md`](packaging/README.md) · Release notes: [`docs/release-notes-v0.7.0.md`](docs/release-notes-v0.7.0.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md) · Completeness: [`docs/feature-completeness.md`](docs/feature-completeness.md) · Launcher: [`docs/launcher-mvp.md`](docs/launcher-mvp.md)
 
 ## Layout
 
