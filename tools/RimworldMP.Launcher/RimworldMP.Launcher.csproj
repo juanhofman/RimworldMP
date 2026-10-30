@@ -21,7 +21,8 @@
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.2" />
+    <!-- Do not pin Tmds.DBus.Protocol: Avalonia.FreeDesktop expects 0.21.x (Connection type).
+         An explicit 0.9x pin causes TypeLoadException at X11 startup. -->
   </ItemGroup>
 
   <ItemGroup>

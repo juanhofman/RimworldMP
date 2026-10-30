@@ -35,6 +35,17 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         RefreshInstall();
         RefreshModsSnapshot();
         StatusLine = "Local-only LAN launcher — no telemetry.";
+        ApplyInitialPageFromEnvironment();
+    }
+
+    /// <summary>Optional: RIMWORLDMP_LAUNCHER_PAGE=Home|Host|Join|Mods|Launch for screenshot/automation.</summary>
+    private void ApplyInitialPageFromEnvironment()
+    {
+        var raw = Environment.GetEnvironmentVariable("RIMWORLDMP_LAUNCHER_PAGE");
+        if (string.IsNullOrWhiteSpace(raw))
+            return;
+        if (Enum.TryParse<LauncherNavPage>(raw.Trim(), ignoreCase: true, out var page))
+            CurrentPage = page;
     }
 
     [ObservableProperty] private LauncherNavPage _currentPage = LauncherNavPage.Home;
