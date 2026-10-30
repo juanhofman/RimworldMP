@@ -1,8 +1,8 @@
 # Install & play — RimWorld 1.7 (Workshop-style folder)
 
-**Version:** v0.6.0 · **PackageId:** `RimworldMP.Core` · **License:** MIT
+**Version:** v0.7.0 (pre-release) · **PackageId:** `RimworldMP.Core` · **License:** MIT
 
-**Known limitation:** this stack is **untested in live RimWorld 1.7**. Full Harmony/Verse patches need a game install (`RIMWORLD_DIR`).
+**Known limitation:** **requires a RimWorld 1.7 install for live play; Verse apply paths remain scaffolded.** Full Harmony/Verse patches need a game install (`RIMWORLD_DIR`).
 
 ## Install the mod
 

@@ -3,8 +3,8 @@
   <name>RimworldMP</name>
   <author>RimworldMP contributors</author>
   <packageId>RimworldMP.Core</packageId>
-  <modVersion>0.6.0</modVersion>
-  <description>From-scratch RimWorld 1.7 multiplayer: shared colony, LAN TCP (protocol v3), in-game host. v0.6.0 — UI + launcher release: LAN launcher (locate/mods/host/join/handoff), P0 sim-correctness (modlist join gate, map-safe cmds, JIP load hooks, MaxClients 4), in-mod lobby (F10 / button). Requires Harmony 3. Known limitation: untested in live RW 1.7 without RIMWORLD_DIR game refs.</description>
+  <modVersion>0.7.0</modVersion>
+  <description>From-scratch RimWorld 1.7 multiplayer: shared colony, LAN TCP default / LiteNetLib opt-in (protocol v4), in-game host. v0.7.0 — offline feature cut: SyncMethod + colony catalog, Compat API, Session QoL, LiteNetLib, desync dumps, zero-warning builds. Requires Harmony 3. Requires a RimWorld 1.7 install for live play; Verse apply paths remain scaffolded. Untested in live RW 1.7 without RIMWORLD_DIR game refs.</description>
   <supportedVersions>
     <li>1.7</li>
   </supportedVersions>

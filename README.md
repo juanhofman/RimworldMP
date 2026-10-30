@@ -4,9 +4,9 @@
 
 From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **in-game host**.
 
-Not a fork of Zetrith/RWMT. **v0.6.0** (UI + launcher release): Avalonia LAN launcher with mod manager + LAN mod sync, protocol **v4** lockstep (MinSupported **3**) with modlist join hard-gate, TCP default / LiteNetLib opt-in, P0 sim-correctness, in-mod lobby (F10 / button / launcher handoff), [local desync dumps](docs/desync-dumps.md). PackageId **`RimworldMP.Core`**. License **MIT**.
+Not a fork of Zetrith/RWMT. **v0.7.0** (offline feature cut, GitHub **pre-release**): SyncMethod + full colony catalog, Compat API, Session QoL, LiteNetLib LAN transport, richer [desync dumps](docs/desync-dumps.md), zero-warning builds — on top of the Avalonia LAN launcher / ModSync / P0 stack from 0.6. Protocol **v4** (MinSupported **3**); TCP default / LiteNetLib opt-in. PackageId **`RimworldMP.Core`**. License **MIT**.
 
-**Known limitation:** untested in live RimWorld 1.7 — full Verse patches need `RIMWORLD_DIR` / game DLLs. CI (no game install): [`docs/ci.md`](docs/ci.md).
+**Known limitation:** requires a RimWorld 1.7 install for live play; Verse apply paths remain scaffolded. Full Harmony patches need `RIMWORLD_DIR` / game DLLs. CI (no game install): [`docs/ci.md`](docs/ci.md).
 
 ## Locked scope
 
@@ -33,7 +33,7 @@ dotnet build RimworldMP.sln -c Release
 # Copy mod/ → RimWorld/Mods/RimworldMP ; enable Harmony then RimworldMP
 ```
 
-Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · Release notes: [`docs/release-notes-v0.6.0.md`](docs/release-notes-v0.6.0.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md) · Launcher: [`docs/launcher-mvp.md`](docs/launcher-mvp.md) · P0: [`docs/p0-sim-correctness.md`](docs/p0-sim-correctness.md)
+Play guide: [`docs/install-play-guide.md`](docs/install-play-guide.md) · Release notes: [`docs/release-notes-v0.7.0.md`](docs/release-notes-v0.7.0.md) · Smoke: [`docs/smoke-checklist.md`](docs/smoke-checklist.md) · Completeness: [`docs/feature-completeness.md`](docs/feature-completeness.md) · Launcher: [`docs/launcher-mvp.md`](docs/launcher-mvp.md)
 
 ## Layout
 

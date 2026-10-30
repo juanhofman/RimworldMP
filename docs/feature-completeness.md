@@ -4,9 +4,9 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 
 | Field | Value |
 | --- | --- |
-| **Audited tip** | (update on merge of SyncMethod / colony catalog PR) |
-| **Tagged release** | **0.6.0** (`VERSION` / `About.xml` `modVersion`) |
-| **Toward 0.7.0?** | **Candidate slice landed offline** — SyncMethod + colony catalog + Compat/API + LiteNetLib + Session QoL (stay on 0.6.0 until packaging / live smoke or a deliberate cut) |
+| **Audited tip** | `2b9033e` (LiteNetLib #16 merge tip at 0.7.0 packaging cut) |
+| **Tagged release** | **0.7.0** (`VERSION` / `About.xml` `modVersion`) — GitHub **pre-release** |
+| **Toward next?** | Live RimWorld 1.7 binding smoke (`RIMWORLD_DIR`); Verse apply still scaffolded |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
 
 Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **Won’t do per prefs**.
@@ -67,8 +67,8 @@ Public API: `MP.CallSyncMethod` / `SyncMethodCodec` / `ColonyCommands.*` — see
 
 ## Version policy
 
-- **Current release line:** `0.6.0` — UI + launcher + P0 sim + ModSync (see [CHANGELOG](../CHANGELOG.md), [release-notes-v0.6.0.md](./release-notes-v0.6.0.md)).
-- **Do not bump to 0.7.0** until a coherent slice is cut deliberately. Stay on 0.6.0 for this merge unless packaging asks otherwise.
+- **Current release line:** `0.7.0` — offline feature cut (SyncMethod, Compat API, Session QoL, LiteNetLib, quality); GitHub **pre-release** (see [CHANGELOG](../CHANGELOG.md), [release-notes-v0.7.0.md](./release-notes-v0.7.0.md)).
+- **Requires RimWorld 1.7 install for live play; Verse apply still scaffolded.**
 - When bumping: keep `VERSION`, `mod/About/About.xml` `modVersion`, and CHANGELOG in lockstep.
 
 ---
@@ -89,5 +89,5 @@ Session QoL (chat / kick / ready / i18n) is offline-testable — see [session-qo
 
 1. Fast-forward `main`; set **Audited tip** to the merge SHA.
 2. Adjust only rows whose status or notes changed; keep the four status words.
-3. If a PR ships a 0.7-worthy slice, bump version trio + move CHANGELOG **Unreleased** → dated section in the same PR when possible.
+3. If a PR ships a version bump, keep `VERSION`, `About.xml` `modVersion`, and CHANGELOG in lockstep.
 4. Mirror the file to the Project store path `docs/feature-completeness.md` when agents maintain both.
