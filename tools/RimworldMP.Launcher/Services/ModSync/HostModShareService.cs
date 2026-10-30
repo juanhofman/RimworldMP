@@ -28,7 +28,13 @@ public sealed class HostModShareService : IAsyncDisposable
     {
         await StopAsync().ConfigureAwait(false);
 
-        var installed = ModInventory.ScanInstalled(rimWorldInstallDir);
+        // ScanInstalled can take several seconds (Workshop + local Mods). Never run it on the
+        // Avalonia UI thread — StopAsync often completes synchronously when idle, so without an
+        // explicit offload the scan would freeze the window (Windows Application Hang 1002).
+        var installed = await Task.Run(
+                () => ModInventory.ScanInstalled(rimWorldInstallDir),
+                cancellationToken)
+            .ConfigureAwait(false);
         var manifest = ModInventory.BuildSessionManifest(orderedPackageIds, installed, rwBuild);
         Manifest = manifest;
 

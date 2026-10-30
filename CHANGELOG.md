@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+- **Launcher host hang:** LAN mod scan no longer blocks the Avalonia UI thread (Windows Application Hang when starting RimWorld). Host/join prep + game start run off the UI.
+- **RimWorld 1.7 launch path:** launcher starts `RimWorld.exe` directly (not `steam://`) and best-effort copies a `RimWorldWin64.exe` shim so Steam Play still finds an executable on Waylith installs.
+
 ### Changed
 - **Live RimWorld 1.7.4990 Waylith binding:** compile against install-root `Assembly-CSharp` / `Waylith` / `UnityStubs` (no Unity `Managed` folder); Harmony 3 exact parameter names; `LudeonTK.DebugAction`; `Screen.width/height` for lobby UI; Zone_Stockpile ctor; AccessTools FieldRefs for protected/private `pawn` fields
 - Checklist / registry: filled trade (`TradeDeal.TryExecute`), caravan (`CaravanMaker.MakeCaravan`), research stop, bill reorder, work/timetable policy; world fingerprint samples every 60 ticks; most hooks **Documented** (DLC LoadGame remains Scaffold)

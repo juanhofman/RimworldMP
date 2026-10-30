@@ -513,8 +513,19 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 PlayerDisplayName = PlayerDisplayName,
             };
 
-            var (ordered, hash, warnings) = PrepLocal(options.PrepareMods, "host");
-            var install = _orch.Locate(options.InstallPath);
+            StatusLine = "Preparing host…";
+            // PrepLocal / locate can touch disk; keep Avalonia responsive.
+            var prep = await Task.Run(() =>
+            {
+                var mods = PrepLocal(options.PrepareMods, "host");
+                var inst = _orch.Locate(options.InstallPath);
+                return (mods.Ordered, mods.Hash, mods.Warnings, Install: inst);
+            }).ConfigureAwait(true);
+
+            var ordered = prep.Ordered;
+            var hash = prep.Hash;
+            var warnings = prep.Warnings;
+            var install = prep.Install;
             var rwBuild = install?.VersionHint ?? "1.7";
             var bindHost = options.BindHost!;
 
@@ -541,6 +552,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             {
                 if (install is null)
                     throw new InvalidOperationException("RimWorld not found — required to share mods over LAN.");
+                StatusLine = "Sharing mods on LAN…";
                 await _hostModShare.StartAsync(
                         ordered,
                         install.InstallDir,
@@ -561,6 +573,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                     MaxClients = options.MaxClients,
                     ShareMods = true,
                     ModSyncPort = _hostModShare.Port,
+                    Transport = options.Transport,
+                    PlayerDisplayName = options.PlayerDisplayName,
                 };
                 SyncPort = _hostModShare.Port.ToString(CultureInfo.InvariantCulture);
                 modShareNote = $"\nMod sync TCP {bindHost}:{_hostModShare.Port} ({_hostModShare.Manifest?.Mods.Count ?? 0} packages)";
@@ -575,7 +589,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             {
                 if (install is null)
                     throw new InvalidOperationException("RimWorld not found. Set install path on Launch.");
-                launch = ProcessLauncher.Launch(install);
+                StatusLine = "Starting RimWorld…";
+                launch = await Task.Run(() => ProcessLauncher.Launch(install)).ConfigureAwait(true);
             }
 
             IsHosting = true;
@@ -662,7 +677,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
     }
 
     [RelayCommand]
-    private void JoinSelected()
+    private async Task JoinSelectedAsync()
     {
         try
         {
@@ -671,18 +686,28 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             if (!int.TryParse(JoinPort, out var port) || port is < 1 or > 65535)
                 throw new InvalidOperationException("That port number doesn’t look right.");
 
-            var result = _orch.StartJoin(new JoinSessionOptions
+            StatusLine = "Preparing to join…";
+            var joinIp = JoinIp.Trim();
+            var sessionName = string.IsNullOrWhiteSpace(SessionName) ? "RimworldMP LAN" : SessionName.Trim();
+            var installPath = InstallPath;
+            var prepare = PrepareModsOnLaunch;
+            var launchGame = LaunchGame;
+            var hostHash = SelectedBeacon?.ModlistHash;
+            var transport = Transport;
+            var displayName = PlayerDisplayName;
+
+            var result = await Task.Run(() => _orch.StartJoin(new JoinSessionOptions
             {
-                Host = JoinIp.Trim(),
+                Host = joinIp,
                 Port = port,
-                SessionName = string.IsNullOrWhiteSpace(SessionName) ? "RimworldMP LAN" : SessionName.Trim(),
-                InstallPath = InstallPath,
-                PrepareMods = PrepareModsOnLaunch,
-                LaunchGame = LaunchGame,
-                HostModlistHash = SelectedBeacon?.ModlistHash,
-                Transport = Transport,
-                PlayerDisplayName = PlayerDisplayName,
-            });
+                SessionName = sessionName,
+                InstallPath = installPath,
+                PrepareMods = prepare,
+                LaunchGame = launchGame,
+                HostModlistHash = hostHash,
+                Transport = transport,
+                PlayerDisplayName = displayName,
+            })).ConfigureAwait(true);
 
             LastHandoffPath = result.HandoffPath;
             ModlistHash = result.ModlistHash;
