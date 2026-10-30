@@ -2,7 +2,7 @@
 
 External **local-only** helper for RimWorld **1.7**: locate the game, pin Harmony → RimworldMP mod order, LAN host/join discovery, write handoff JSON, launch the process.
 
-**Default UX:** Avalonia 11 desktop UI (steel/ember on ink). **CLI** remains a full fallback (`--cli` or any subcommand).
+**Default UX:** Avalonia 11 desktop UI (RimWorld-like wood + parchment). **CLI** remains a full fallback (`--cli` or any subcommand).
 
 Lockstep / sim stays **inside** the mod. This tool does **not** upload ModsConfig, saves, or telemetry.
 
@@ -41,7 +41,7 @@ Headless / no `DISPLAY`: the process falls back to CLI help instead of starting 
 | **Mods** | Ordered list (Harmony-first badges), hash, prepare/restore, **Sync from host** hooks |
 | **Launch** | Install path, status log, handoff path |
 
-Visual direction: ink `#0E1114`, steel `#7EB0C8`, ember `#E07A3D`; Syne + Space Grotesk + IBM Plex Sans. Screenshots: optional — no screenshot tooling in CI; describe flows instead.
+Visual direction: wood/ink brown + parchment, amber colonial buttons, Cinzel / Barlow Condensed / Source Sans 3 — see [ui-design-brief.md](./ui-design-brief.md). Screenshots: optional in CI; Project store `media/launcher-ui/`.
 
 LAN **mod file sync** is live via `LanModSyncClient` / `InstalledModCatalog` (TCP **30557**). Workshop live download / SteamCMD is **not** supported — LAN host transfer + local Workshop cache only. Hooks: [launcher-mod-manager-hooks.md](./launcher-mod-manager-hooks.md) · [mod-manager-lan-sync.md](./mod-manager-lan-sync.md).
 
@@ -138,5 +138,5 @@ tools/RimworldMP.Launcher/
   Services/                  # locate, mods, discovery, handoff, launch
   Services/ModSync/          # IModCatalog, IModSyncClient + stubs
   Models/
-  Assets/Fonts/              # Syne, Space Grotesk, IBM Plex Sans (OFL)
+  Assets/Fonts/              # Cinzel, Barlow Condensed, Source Sans 3 (OFL)
 ```

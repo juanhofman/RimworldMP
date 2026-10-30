@@ -7,29 +7,41 @@
     <StyleInclude Source="avares://RimworldMP.Launcher/Gui/Styles/Theme.axaml" />
   </Application.Styles>
   <Application.Resources>
-    <FontFamily x:Key="FontBrand">avares://RimworldMP.Launcher/Assets/Fonts/Syne-Bold.ttf#Syne</FontFamily>
-    <FontFamily x:Key="FontDisplay">avares://RimworldMP.Launcher/Assets/Fonts/SpaceGrotesk-Bold.ttf#Space Grotesk</FontFamily>
-    <FontFamily x:Key="FontDisplayMedium">avares://RimworldMP.Launcher/Assets/Fonts/SpaceGrotesk-Medium.ttf#Space Grotesk</FontFamily>
-    <FontFamily x:Key="FontBody">avares://RimworldMP.Launcher/Assets/Fonts/IBMPlexSans-Regular.ttf#IBM Plex Sans</FontFamily>
-    <FontFamily x:Key="FontBodyMedium">avares://RimworldMP.Launcher/Assets/Fonts/IBMPlexSans-Medium.ttf#IBM Plex Sans</FontFamily>
-    <FontFamily x:Key="FontBodySemi">avares://RimworldMP.Launcher/Assets/Fonts/IBMPlexSans-SemiBold.ttf#IBM Plex Sans</FontFamily>
+    <FontFamily x:Key="FontBrand">avares://RimworldMP.Launcher/Assets/Fonts/Cinzel-Bold.ttf#Cinzel</FontFamily>
+    <FontFamily x:Key="FontBrandSemi">avares://RimworldMP.Launcher/Assets/Fonts/Cinzel-SemiBold.ttf#Cinzel</FontFamily>
+    <FontFamily x:Key="FontDisplay">avares://RimworldMP.Launcher/Assets/Fonts/BarlowCondensed-Bold.ttf#Barlow Condensed</FontFamily>
+    <FontFamily x:Key="FontDisplaySemi">avares://RimworldMP.Launcher/Assets/Fonts/BarlowCondensed-SemiBold.ttf#Barlow Condensed</FontFamily>
+    <FontFamily x:Key="FontBody">avares://RimworldMP.Launcher/Assets/Fonts/SourceSans3-Regular.ttf#Source Sans 3</FontFamily>
+    <FontFamily x:Key="FontBodyMedium">avares://RimworldMP.Launcher/Assets/Fonts/SourceSans3-Medium.ttf#Source Sans 3</FontFamily>
+    <FontFamily x:Key="FontBodySemi">avares://RimworldMP.Launcher/Assets/Fonts/SourceSans3-SemiBold.ttf#Source Sans 3</FontFamily>
 
-    <Color x:Key="Ink">#0E1114</Color>
-    <Color x:Key="InkElevated">#151A1F</Color>
-    <Color x:Key="InkLine">#24303A</Color>
-    <Color x:Key="Steel">#7EB0C8</Color>
-    <Color x:Key="SteelDim">#5A8498</Color>
-    <Color x:Key="Ember">#E07A3D</Color>
-    <Color x:Key="EmberHot">#F08A4D</Color>
-    <Color x:Key="Fog">#C5D0D8</Color>
-    <Color x:Key="FogMuted">#8A96A0</Color>
-    <SolidColorBrush x:Key="BrushInk" Color="{StaticResource Ink}" />
-    <SolidColorBrush x:Key="BrushInkElevated" Color="{StaticResource InkElevated}" />
-    <SolidColorBrush x:Key="BrushInkLine" Color="{StaticResource InkLine}" />
-    <SolidColorBrush x:Key="BrushSteel" Color="{StaticResource Steel}" />
-    <SolidColorBrush x:Key="BrushSteelDim" Color="{StaticResource SteelDim}" />
-    <SolidColorBrush x:Key="BrushEmber" Color="{StaticResource Ember}" />
-    <SolidColorBrush x:Key="BrushFog" Color="{StaticResource Fog}" />
-    <SolidColorBrush x:Key="BrushFogMuted" Color="{StaticResource FogMuted}" />
+    <!-- Wood / parchment palette (vanilla RW menu feel) -->
+    <Color x:Key="WoodDeep">#1C1410</Color>
+    <Color x:Key="WoodPanel">#2B2118</Color>
+    <Color x:Key="WoodEdge">#4A3828</Color>
+    <Color x:Key="BorderHard">#5C4330</Color>
+    <Color x:Key="Parchment">#E4D5B5</Color>
+    <Color x:Key="ParchmentDeep">#D6C4A0</Color>
+    <Color x:Key="InkBrown">#2A1C12</Color>
+    <Color x:Key="Cream">#F2E6C9</Color>
+    <Color x:Key="GoldMuted">#C4A574</Color>
+    <Color x:Key="Amber">#C97828</Color>
+    <Color x:Key="AmberHot">#D98935</Color>
+    <Color x:Key="AmberEdge">#8B5A1E</Color>
+    <Color x:Key="WarnEmber">#B85A28</Color>
+
+    <SolidColorBrush x:Key="BrushWoodDeep" Color="{StaticResource WoodDeep}" />
+    <SolidColorBrush x:Key="BrushWoodPanel" Color="{StaticResource WoodPanel}" />
+    <SolidColorBrush x:Key="BrushWoodEdge" Color="{StaticResource WoodEdge}" />
+    <SolidColorBrush x:Key="BrushBorderHard" Color="{StaticResource BorderHard}" />
+    <SolidColorBrush x:Key="BrushParchment" Color="{StaticResource Parchment}" />
+    <SolidColorBrush x:Key="BrushParchmentDeep" Color="{StaticResource ParchmentDeep}" />
+    <SolidColorBrush x:Key="BrushInkBrown" Color="{StaticResource InkBrown}" />
+    <SolidColorBrush x:Key="BrushCream" Color="{StaticResource Cream}" />
+    <SolidColorBrush x:Key="BrushGoldMuted" Color="{StaticResource GoldMuted}" />
+    <SolidColorBrush x:Key="BrushAmber" Color="{StaticResource Amber}" />
+    <SolidColorBrush x:Key="BrushAmberHot" Color="{StaticResource AmberHot}" />
+    <SolidColorBrush x:Key="BrushAmberEdge" Color="{StaticResource AmberEdge}" />
+    <SolidColorBrush x:Key="BrushWarnEmber" Color="{StaticResource WarnEmber}" />
   </Application.Resources>
 </Application>

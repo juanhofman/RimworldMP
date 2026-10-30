@@ -30,11 +30,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         _modSync = modSync;
         SyncFromHostAvailable = _modSync.IsAvailable;
         SyncStatusMessage = _modSync.IsAvailable
-            ? "Ready to compare with a LAN host (LAN pull / Workshop cache — no SteamCMD)."
+            ? "Ready to match mods with a friend on your network."
             : StubModSyncClient.UnavailableMessage;
         RefreshInstall();
         RefreshModsSnapshot();
-        StatusLine = "Local-only LAN launcher — no telemetry.";
+        StatusLine = "Local only — nothing leaves your network.";
+        HostStatus = "Ready when you are.";
+        LaunchLog = "Ready to play.";
         ApplyInitialPageFromEnvironment();
     }
 
@@ -58,11 +60,16 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
     [ObservableProperty] private string _sessionName = "RimworldMP LAN";
 
+    [ObservableProperty] private string _playerDisplayName = "";
+
     [ObservableProperty] private string _hostPort = LauncherPaths.DefaultGamePort.ToString(CultureInfo.InvariantCulture);
 
     [ObservableProperty] private string _bindHost = SessionOrchestrator.GetPrimaryLanIPv4() ?? "127.0.0.1";
 
     [ObservableProperty] private int _maxClients = 4;
+
+    /// <summary>Handoff transport token shown in Host/Join (<c>tcp</c> or <c>litenetlib</c>).</summary>
+    [ObservableProperty] private string _transport = "tcp";
 
     [ObservableProperty] private bool _prepareModsOnLaunch = true;
 
@@ -70,7 +77,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
     [ObservableProperty] private bool _isHosting;
 
-    [ObservableProperty] private string _hostStatus = "Idle";
+    [ObservableProperty] private string _hostStatus = "Ready when you are.";
 
     [ObservableProperty] private string _joinIp = "";
 
@@ -86,9 +93,18 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
     [ObservableProperty] private string _modsWarning = "";
 
-    [ObservableProperty] private string _launchLog = "Ready.";
+    [ObservableProperty] private string _launchLog = "Ready to play.";
 
     [ObservableProperty] private string _lastHandoffPath = LauncherPaths.HandoffPath;
+
+    /// <summary>Shows port / transport / advertise IP / handoff paths.</summary>
+    [ObservableProperty] private bool _showAdvanced;
+
+    [ObservableProperty] private string _modSearchQuery = "";
+
+    [ObservableProperty] private string _modsEmptyMessage = "";
+
+    [ObservableProperty] private bool _modsConfigMissing;
 
     // --- LAN mod sync (IModSyncClient; default LanModSyncClient) ---
     [ObservableProperty] private string _syncHost = "";
@@ -109,15 +125,21 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
     public ObservableCollection<string> ActiveMods { get; } = new();
     public ObservableCollection<ModListRow> ModRows { get; } = new();
+    public ObservableCollection<ModListRow> FilteredModRows { get; } = new();
     public ObservableCollection<DiscoveryBeacon> DiscoveredHosts { get; } = new();
     public ObservableCollection<ModSyncDeltaRow> SyncMissing { get; } = new();
     public ObservableCollection<ModSyncDeltaRow> SyncMismatched { get; } = new();
+
+    /// <summary>Calm transport picker labels — tokens match handoff / NetTransportFactory.</summary>
+    public IReadOnlyList<string> TransportChoices { get; } = ["tcp", "litenetlib"];
 
     public bool IsHome => CurrentPage == LauncherNavPage.Home;
     public bool IsHost => CurrentPage == LauncherNavPage.Host;
     public bool IsJoin => CurrentPage == LauncherNavPage.Join;
     public bool IsMods => CurrentPage == LauncherNavPage.Mods;
     public bool IsLaunch => CurrentPage == LauncherNavPage.Launch;
+    public bool HasFilteredMods => FilteredModRows.Count > 0;
+    public bool ShowModsEmpty => !HasFilteredMods;
 
     partial void OnCurrentPageChanged(LauncherNavPage value)
     {
@@ -127,6 +149,11 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         OnPropertyChanged(nameof(IsMods));
         OnPropertyChanged(nameof(IsLaunch));
     }
+
+    partial void OnModSearchQueryChanged(string value) => RebuildFilteredMods();
+
+    [RelayCommand]
+    private void ToggleAdvanced() => ShowAdvanced = !ShowAdvanced;
 
     [RelayCommand]
     private void GoHome() => CurrentPage = LauncherNavPage.Home;
@@ -153,13 +180,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         var install = _orch.Locate(string.IsNullOrWhiteSpace(InstallPath) ? null : InstallPath);
         if (install is null)
         {
-            InstallSummary = "RimWorld not found — browse or type the install folder.";
+            InstallSummary = "RimWorld not found — set the install folder below.";
             return;
         }
 
         InstallPath = install.InstallDir;
-        InstallSummary = $"{install.Source} · {install.VersionHint ?? "1.7"} · {install.ExecutablePath}";
-        StatusLine = $"Located RimWorld ({install.Source}).";
+        InstallSummary = $"Found RimWorld ({install.Source}, {install.VersionHint ?? "1.7"}).";
+        StatusLine = "RimWorld found — you can host or join.";
     }
 
     [RelayCommand]
@@ -183,6 +210,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             var fromCatalog = _catalog.GetActivePackageIds();
             if (fromCatalog.Count > 0)
             {
+                ModsConfigMissing = false;
                 ApplyModList(fromCatalog, _catalog.ComputeActiveHash());
                 ModsConfigPath = _orch.Mods.ResolveModsConfigPath() ?? "(catalog)";
                 return;
@@ -190,10 +218,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
             ModsConfigPath = _orch.Mods.ResolveModsConfigPath() ?? "(not found)";
             ModlistHash = "—";
-            ModsWarning = "ModsConfig.xml not found yet.";
+            ModsConfigMissing = true;
+            ModsWarning = "";
+            RebuildFilteredMods();
             return;
         }
 
+        ModsConfigMissing = false;
         ModsConfigPath = snap.Path;
         ApplyModList(snap.ActiveMods, _orch.Mods.ComputeHash(snap.ActiveMods));
     }
@@ -207,12 +238,12 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             ApplyModList(result.Ordered, result.Hash);
             ModsConfigPath = result.ConfigPath;
             ModsWarning = result.Warnings.Count == 0 ? "" : string.Join(" ", result.Warnings);
-            StatusLine = $"Mods prepared · hash {ShortHash(result.Hash)}";
-            LaunchLog = $"Prepared mods. Backup: {result.BackupPath}\nHash: {result.Hash}";
+            StatusLine = "Mods lined up for multiplayer.";
+            LaunchLog = "Mods are ready for friends to match. A backup of your old list was saved.";
         }
         catch (Exception ex)
         {
-            StatusLine = $"Mods prepare failed: {ex.Message}";
+            StatusLine = $"Could not fix mods: {ex.Message}";
             LaunchLog = ex.Message;
         }
     }
@@ -365,6 +396,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
     {
         ActiveMods.Clear();
         ModRows.Clear();
+        ModsConfigMissing = false;
         for (var i = 0; i < ordered.Count; i++)
         {
             var id = ordered[i];
@@ -381,6 +413,45 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         ModlistHash = hash;
         var warnings = SessionOrchestrator.CollectModWarnings(ordered);
         ModsWarning = warnings.Count == 0 ? "" : string.Join(" ", warnings);
+        RebuildFilteredMods();
+    }
+
+    /// <summary>Design-capture helper: seed rows then refresh the filtered list.</summary>
+    internal void SeedModRowsForCapture(IEnumerable<ModListRow> rows)
+    {
+        ModRows.Clear();
+        foreach (var row in rows)
+            ModRows.Add(row);
+        ModsConfigMissing = false;
+        RebuildFilteredMods();
+    }
+
+    private void RebuildFilteredMods()
+    {
+        FilteredModRows.Clear();
+        var q = ModSearchQuery.Trim();
+        IEnumerable<ModListRow> source = ModRows;
+        if (q.Length > 0)
+        {
+            source = ModRows.Where(r =>
+                r.PackageId.Contains(q, StringComparison.OrdinalIgnoreCase)
+                || r.Badge.Contains(q, StringComparison.OrdinalIgnoreCase));
+        }
+
+        foreach (var row in source)
+            FilteredModRows.Add(row);
+
+        if (ModsConfigMissing && ModRows.Count == 0)
+            ModsEmptyMessage = "ModsConfig not found — set install on Launch.";
+        else if (ModRows.Count == 0)
+            ModsEmptyMessage = "No mods listed yet — try Fix my mods, or set install on Launch.";
+        else if (FilteredModRows.Count == 0)
+            ModsEmptyMessage = $"No mods match “{q}”.";
+        else
+            ModsEmptyMessage = "";
+
+        OnPropertyChanged(nameof(HasFilteredMods));
+        OnPropertyChanged(nameof(ShowModsEmpty));
     }
 
     private void PopulateSyncDeltas(ModSyncPlan plan)
@@ -401,12 +472,12 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         {
             _orch.RestoreMods();
             RefreshModsSnapshot();
-            StatusLine = "Restored pre-MP ModsConfig backup.";
-            LaunchLog = "ModsConfig restored from pre-mp backup.";
+            StatusLine = "Restored your previous mod list.";
+            LaunchLog = "Your pre-multiplayer mod list is back.";
         }
         catch (Exception ex)
         {
-            StatusLine = $"Restore failed: {ex.Message}";
+            StatusLine = $"Couldn’t restore mods: {ex.Message}";
             LaunchLog = ex.Message;
         }
     }
@@ -438,6 +509,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 ModSyncPort = int.TryParse(SyncPort, out var msp) && msp is >= 1 and <= 65535
                     ? msp
                     : LauncherPaths.DefaultModSyncPort,
+                Transport = Transport,
+                PlayerDisplayName = PlayerDisplayName,
             };
 
             var (ordered, hash, warnings) = PrepLocal(options.PrepareMods, "host");
@@ -452,7 +525,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 modlistHash: hash,
                 sessionName: options.SessionName,
                 rwBuild: rwBuild,
-                maxClients: options.MaxClients);
+                maxClients: options.MaxClients,
+                transport: options.Transport,
+                playerDisplayName: options.PlayerDisplayName);
             LastHandoffPath = HandoffWriter.Write(handoff);
 
             ActiveMods.Clear();
@@ -504,19 +579,26 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             }
 
             IsHosting = true;
-            HostStatus = $"Live · {bindHost}:{port} · hash {ShortHash(hash)}";
+            HostStatus = "Friends can find you on Wi‑Fi.";
             CurrentPage = LauncherNavPage.Launch;
             var warn = warnings.Count == 0 ? "" : "\n" + string.Join("\n", warnings);
             LaunchLog =
-                $"Hosting “{options.SessionName}”\nAdvertise {bindHost}:{port}\nDiscovery UDP {options.DiscoveryPort}\nHandoff: {LastHandoffPath}\nHash: {hash}" +
-                modShareNote +
-                (launch is null ? "\n(Game not launched)" : $"\nLaunched pid={launch.ProcessId}") + warn;
-            StatusLine = "Beacon live — stop from Host when done.";
+                $"You’re hosting “{options.SessionName}”.\nFriends can join at {bindHost}.\n" +
+                (launch is null ? "Start RimWorld when you’re ready." : "RimWorld is starting…") +
+                warn;
+            if (ShowAdvanced)
+            {
+                LaunchLog +=
+                    $"\n\nAdvanced: port {port}, discovery {options.DiscoveryPort}, handoff {LastHandoffPath}, list {ShortHash(hash)}" +
+                    modShareNote;
+            }
+
+            StatusLine = "You’re hosting — friends can find you on Wi‑Fi.";
         }
         catch (Exception ex)
         {
             await StopHostAsync().ConfigureAwait(true);
-            StatusLine = $"Host failed: {ex.Message}";
+            StatusLine = $"Couldn’t start hosting: {ex.Message}";
             LaunchLog = ex.Message;
             CurrentPage = LauncherNavPage.Launch;
         }
@@ -536,8 +618,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
 
         _hostCts = null;
         IsHosting = false;
-        HostStatus = "Idle";
-        StatusLine = "Host beacon stopped.";
+        HostStatus = "Ready when you are.";
+        StatusLine = "Stopped inviting friends.";
     }
 
     [RelayCommand]
@@ -546,19 +628,19 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         IsDiscovering = true;
         DiscoveredHosts.Clear();
         SelectedBeacon = null;
-        StatusLine = "Listening for LAN beacons…";
+        StatusLine = "Looking for friends on Wi‑Fi…";
         try
         {
             var found = await SessionOrchestrator.DiscoverAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(true);
             foreach (var b in found)
                 DiscoveredHosts.Add(b);
             StatusLine = found.Count == 0
-                ? "No hosts found — enter IP manually."
-                : $"Found {found.Count} host(s).";
+                ? "Nobody found yet — type a friend’s IP below."
+                : $"Found {found.Count} friend{(found.Count == 1 ? "" : "s")} nearby.";
         }
         catch (Exception ex)
         {
-            StatusLine = $"Discover failed: {ex.Message}";
+            StatusLine = $"Couldn’t search Wi‑Fi: {ex.Message}";
         }
         finally
         {
@@ -585,9 +667,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
         try
         {
             if (string.IsNullOrWhiteSpace(JoinIp))
-                throw new InvalidOperationException("Enter a host IP or discover a LAN session.");
+                throw new InvalidOperationException("Pick a friend from the list or type their IP.");
             if (!int.TryParse(JoinPort, out var port) || port is < 1 or > 65535)
-                throw new InvalidOperationException("Invalid join port.");
+                throw new InvalidOperationException("That port number doesn’t look right.");
 
             var result = _orch.StartJoin(new JoinSessionOptions
             {
@@ -598,6 +680,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
                 PrepareMods = PrepareModsOnLaunch,
                 LaunchGame = LaunchGame,
                 HostModlistHash = SelectedBeacon?.ModlistHash,
+                Transport = Transport,
+                PlayerDisplayName = PlayerDisplayName,
             });
 
             LastHandoffPath = result.HandoffPath;
@@ -609,16 +693,20 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable, IDispos
             CurrentPage = LauncherNavPage.Launch;
             var warn = result.Warnings.Count == 0 ? "" : "\n" + string.Join("\n", result.Warnings);
             LaunchLog =
-                $"Joining {result.AdvertiseHost}:{port}\nHandoff: {result.HandoffPath}\nHash: {result.ModlistHash}" +
-                (result.HashMatchesHost ? "" : "\n⚠ Hash mismatch with host beacon") +
-                (result.Launch is null ? "\n(Game not launched)" : $"\nLaunched pid={result.Launch.ProcessId}") + warn;
+                $"Joining your friend at {result.AdvertiseHost}.\n" +
+                (result.HashMatchesHost ? "Mod lists look aligned." : "Mod lists may not match — try Fix my mods.") +
+                (result.Launch is null ? "\nStart RimWorld when you’re ready." : "\nRimWorld is starting…") +
+                warn;
+            if (ShowAdvanced)
+                LaunchLog += $"\n\nAdvanced: port {port}, handoff {result.HandoffPath}, list {ShortHash(result.ModlistHash)}";
+
             StatusLine = result.HashMatchesHost
-                ? $"Join handoff written · {ShortHash(result.ModlistHash)}"
-                : "Join handoff written — hash mismatch warning.";
+                ? "Ready to join — RimWorld should pick it up."
+                : "Joined with a mod-list warning — check Mods.";
         }
         catch (Exception ex)
         {
-            StatusLine = $"Join failed: {ex.Message}";
+            StatusLine = $"Couldn’t join: {ex.Message}";
             LaunchLog = ex.Message;
             CurrentPage = LauncherNavPage.Launch;
         }

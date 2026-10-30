@@ -14,6 +14,8 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- Avoid inheriting repo Directory.Build.props GenerateDependencyFile=false quirks when nested. -->
     <GenerateDependencyFile>true</GenerateDependencyFile>
+    <!-- Avalonia.FreeDesktop pulls Tmds.DBus.Protocol 0.21.x (vulnerable advisory NU1903); keep transitive until Avalonia bumps. -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +29,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\Fonts\**" />
+    <AvaloniaResource Include="Assets\Textures\**" />
     <AvaloniaResource Include="Gui\Styles\**" />
   </ItemGroup>
 

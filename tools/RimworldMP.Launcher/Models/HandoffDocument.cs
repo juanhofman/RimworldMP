@@ -28,6 +28,10 @@ public sealed class HandoffDocument
     [JsonPropertyName("sessionName")]
     public string SessionName { get; init; } = "RimworldMP";
 
+    /// <summary>Optional local player name for lobby + chat (additive protocol 1).</summary>
+    [JsonPropertyName("playerDisplayName")]
+    public string? PlayerDisplayName { get; init; }
+
     [JsonPropertyName("autoStartLobby")]
     public bool AutoStartLobby { get; init; } = true;
 
@@ -37,6 +41,13 @@ public sealed class HandoffDocument
     /// <summary>Optional host cap (protocol 1 additive). In-mod default 4.</summary>
     [JsonPropertyName("maxClients")]
     public int? MaxClients { get; init; }
+
+    /// <summary>
+    /// Optional game transport: <c>tcp</c> (default) or <c>litenetlib</c>.
+    /// Additive protocol-1 field — both peers must match.
+    /// </summary>
+    [JsonPropertyName("transport")]
+    public string? Transport { get; init; }
 
     [JsonPropertyName("rwBuild")]
     public string? RwBuild { get; init; }

@@ -28,6 +28,9 @@ public sealed class HostSessionOptions
     /// <summary>Serve active mods over LAN TCP (default port 30557) for client sync.</summary>
     public bool ShareMods { get; init; }
     public int ModSyncPort { get; init; } = LauncherPaths.DefaultModSyncPort;
+    /// <summary>Handoff transport token: <c>tcp</c> or <c>litenetlib</c> (null = omit / mod default).</summary>
+    public string? Transport { get; init; }
+    public string? PlayerDisplayName { get; init; }
 }
 
 public sealed class JoinSessionOptions
@@ -40,6 +43,8 @@ public sealed class JoinSessionOptions
     public bool PrepareMods { get; init; } = true;
     public bool LaunchGame { get; init; } = true;
     public string? HostModlistHash { get; init; }
+    public string? Transport { get; init; }
+    public string? PlayerDisplayName { get; init; }
 }
 
 public sealed class SessionStartResult
@@ -110,7 +115,9 @@ public sealed class SessionOrchestrator
             modlistHash: hash,
             sessionName: options.SessionName,
             rwBuild: rwBuild,
-            maxClients: options.MaxClients);
+            maxClients: options.MaxClients,
+            transport: options.Transport,
+            playerDisplayName: options.PlayerDisplayName);
         var handoffPath = HandoffWriter.Write(handoff);
 
         var beacon = CreateHostBeacon(options, hash, bindHost, rwBuild);
@@ -188,7 +195,9 @@ public sealed class SessionOrchestrator
             port: options.Port,
             modlistHash: hash,
             sessionName: options.SessionName,
-            rwBuild: rwBuild);
+            rwBuild: rwBuild,
+            transport: options.Transport,
+            playerDisplayName: options.PlayerDisplayName);
         var handoffPath = HandoffWriter.Write(handoff);
 
         LaunchResult? launch = null;
