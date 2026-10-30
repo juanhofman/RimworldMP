@@ -20,6 +20,10 @@ namespace RimworldMP.Patches;
 [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryTakeOrderedJob))]
 internal static class Pawn_JobTracker_TryTakeOrderedJob_Patch
 {
+    // 1.7: Pawn_JobTracker.pawn is protected — FieldRef keeps Prefix without inventing a wrong public API.
+    private static readonly AccessTools.FieldRef<Pawn_JobTracker, Pawn> JobPawn =
+        AccessTools.FieldRefAccess<Pawn_JobTracker, Pawn>("pawn");
+
     private static bool Prefix(Pawn_JobTracker __instance, Job job, ref bool __result)
     {
         var session = SessionFacade.Current;
@@ -30,7 +34,7 @@ internal static class Pawn_JobTracker_TryTakeOrderedJob_Patch
         if (job?.def is null)
             return true;
 
-        var pawn = __instance.pawn;
+        var pawn = JobPawn(__instance);
         if (pawn is null)
             return true;
 

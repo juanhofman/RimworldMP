@@ -32,7 +32,7 @@ public static class VerseZoneApply
         {
             zone = zoneKind switch
             {
-                1 => new Zone_Stockpile(map.zoneManager),
+                1 => new Zone_Stockpile(StorageSettingsPreset.DefaultStockpile, map.zoneManager),
                 2 => new Zone_Growing(map.zoneManager),
                 _ => null,
             };

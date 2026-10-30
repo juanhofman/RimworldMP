@@ -41,22 +41,23 @@ public class VerseBindingTests
     }
 
     [Fact]
-    public void Registry_marks_trade_caravan_policy_capture_as_scaffold()
+    public void Registry_marks_filled_trade_caravan_policy_documented_dlc_scaffold()
     {
+        // Filled against RW 1.7.4990 Waylith signatures (see docs/verse-binding-checklist.md).
         Assert.Equal(
-            VerseBindingVerification.Scaffold,
+            VerseBindingVerification.Documented,
             VerseBindingRegistry.Find(VerseBindingIds.CaptureTrade)?.Verification);
         Assert.Equal(
-            VerseBindingVerification.Scaffold,
+            VerseBindingVerification.Documented,
             VerseBindingRegistry.Find(VerseBindingIds.CaptureCaravan)?.Verification);
         Assert.Equal(
-            VerseBindingVerification.Scaffold,
+            VerseBindingVerification.Documented,
             VerseBindingRegistry.Find(VerseBindingIds.CapturePolicy)?.Verification);
         Assert.Equal(
-            VerseBindingVerification.Scaffold,
+            VerseBindingVerification.Documented,
             VerseBindingRegistry.Find(VerseBindingIds.ApplyTrade)?.Verification);
         Assert.Equal(
-            VerseBindingVerification.Scaffold,
+            VerseBindingVerification.Documented,
             VerseBindingRegistry.Find(VerseBindingIds.ApplyCaravan)?.Verification);
         Assert.Equal(
             VerseBindingVerification.Scaffold,
@@ -86,7 +87,8 @@ public class VerseBindingTests
     public void WhereVerification_filters_scaffold_hooks()
     {
         var scaffold = VerseBindingRegistry.WhereVerification(VerseBindingVerification.Scaffold).ToList();
-        Assert.Contains(scaffold, h => h.Id == VerseBindingIds.CaptureTrade);
+        Assert.Contains(scaffold, h => h.Id == VerseBindingIds.DlcLoadGame);
         Assert.DoesNotContain(scaffold, h => h.Id == VerseBindingIds.ApplyPause);
+        Assert.DoesNotContain(scaffold, h => h.Id == VerseBindingIds.CaptureTrade);
     }
 }

@@ -4,7 +4,7 @@ Do **not** commit Ludeon game assemblies.
 
 To build the full `RimworldMP` game project (Harmony patches + command applicators against Verse):
 
-1. Set `RIMWORLD_DIR` to your RimWorld **1.7** install directory (the folder that contains `Assembly-CSharp.dll`, `Waylith.dll`, and `UnityStubs.dll`), **or**
+1. Set `RIMWORLD_DIR` to your RimWorld **1.7** install directory (Waylith: the **install root** that contains `Assembly-CSharp.dll`, `Waylith.dll`, and `UnityStubs.dll` — not a Unity `Managed` folder), **or**
 2. Copy those three DLLs into `refs/RimWorld/` (gitignored).
 
 | DLL | Role |

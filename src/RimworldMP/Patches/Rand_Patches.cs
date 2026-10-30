@@ -33,26 +33,26 @@ internal static class Rand_Patches
 
     [HarmonyPatch(typeof(Rand), nameof(Rand.Range), typeof(int), typeof(int))]
     [HarmonyPrefix]
-    private static bool RangeInt_Prefix(int min, int max, ref int __result)
+    private static bool RangeInt_Prefix(int minInclusive, int maxExclusive, ref int __result)
     {
         var session = SessionFacade.Current;
         if (session is not { IsActive: true })
             return true;
 
-        __result = session.Rand.Next(min, max);
+        __result = session.Rand.Next(minInclusive, maxExclusive);
         session.Desync.IncrementCounter("Rand.Range");
         return false;
     }
 
     [HarmonyPatch(typeof(Rand), nameof(Rand.Range), typeof(float), typeof(float))]
     [HarmonyPrefix]
-    private static bool RangeFloat_Prefix(float min, float max, ref float __result)
+    private static bool RangeFloat_Prefix(float minInclusive, float maxInclusive, ref float __result)
     {
         var session = SessionFacade.Current;
         if (session is not { IsActive: true })
             return true;
 
-        __result = session.Rand.Range(min, max);
+        __result = session.Rand.Range(minInclusive, maxInclusive);
         session.Desync.IncrementCounter("Rand.Range");
         return false;
     }

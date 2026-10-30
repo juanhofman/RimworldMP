@@ -1,7 +1,9 @@
 #if !RIMWORLDMP_NO_GAME_REFS
+using System.Globalization;
 using RimworldMP.Core.Session;
 using RimworldMP.Lobby;
 using RimworldMP.Net.Protocol;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -14,7 +16,7 @@ namespace RimworldMP.UI;
 public sealed class Dialog_RimworldMPLobby : Window
 {
     private string _host = "127.0.0.1";
-    private string _port = NetProtocol.DefaultPort.ToString();
+    private string _port = NetProtocol.DefaultPort.ToString(CultureInfo.InvariantCulture);
     private string _modlistHash = MpConfig.ModlistHash;
     private string _displayName = MpConfig.PlayerDisplayName;
     private string _chatDraft = string.Empty;
@@ -38,7 +40,7 @@ public sealed class Dialog_RimworldMPLobby : Window
     public override void PreOpen()
     {
         base.PreOpen();
-        _port = MpConfig.DefaultPort.ToString();
+        _port = MpConfig.DefaultPort.ToString(CultureInfo.InvariantCulture);
         if (string.IsNullOrEmpty(_modlistHash))
             _modlistHash = MpConfig.ModlistHash;
         if (string.IsNullOrEmpty(_displayName))
@@ -47,7 +49,7 @@ public sealed class Dialog_RimworldMPLobby : Window
         if (!string.IsNullOrEmpty(handoff.Host) && handoff.Kind == HandoffUiKind.AutoJoined)
             _host = handoff.Host!;
         if (handoff.Port is int p && p > 0)
-            _port = p.ToString();
+            _port = p.ToString(CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(handoff.ModlistHash))
             _modlistHash = handoff.ModlistHash!;
         if (!string.IsNullOrEmpty(handoff.SessionName) && string.IsNullOrEmpty(_displayName))

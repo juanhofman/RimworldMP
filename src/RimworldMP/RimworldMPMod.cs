@@ -8,6 +8,8 @@ using RimworldMP.Net.Protocol;
 using RimworldMP.UI;
 
 #if !RIMWORLDMP_NO_GAME_REFS
+using LudeonTK;
+using RimWorld;
 using Verse;
 #endif
 
