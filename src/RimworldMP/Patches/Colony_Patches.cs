@@ -9,9 +9,15 @@ using Verse;
 namespace RimworldMP.Patches;
 
 /// <summary>
-/// Phase 2 colony command capture: bills, research, trade accept, caravan form (subset).
+/// Phase 2 colony command capture: bills + research (subset).
+/// Trade accept / caravan form capture are intentionally <b>not</b> patched here —
+/// see <see cref="VerseBind.VerseBindingIds.CaptureTrade"/> / CaptureCaravan scaffolds.
 /// Payloads always carry map/thing ids — never rely on Find.CurrentMap at apply time.
 /// </summary>
+/// <remarks>
+/// UNVERIFIED (RW 1.7): ResearchManager.SetCurrentProject, BillStack.AddBill / Delete(Bill).
+/// Do not invent TradeDeal / CaravanMaker Prefixes until RIMWORLD_DIR names the methods.
+/// </remarks>
 [HarmonyPatch]
 internal static class Colony_Patches
 {

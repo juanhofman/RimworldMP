@@ -9,7 +9,12 @@ namespace RimworldMP.Join;
 /// <summary>
 /// Verse-backed <see cref="ISaveLoad"/> for join-in-progress. Compiled only with game refs;
 /// signatures need a live <c>RIMWORLD_DIR</c> install to validate against RimWorld 1.7.
+/// Catalogued as <see cref="VerseBind.VerseBindingIds.JipSaveLoad"/>.
 /// </summary>
+/// <remarks>
+/// UNVERIFIED (RW 1.7): GameDataSaveLoader.SaveGame / LoadGame and GenFilePaths helpers.
+/// NO_GAME_REFS stubs throw by design (fail-loud JIP); smoke uses <see cref="GameLoadHooks.TryCreateDefault"/>.
+/// </remarks>
 public sealed class VerseSaveLoad : ISaveLoad
 {
 #if !RIMWORLDMP_NO_GAME_REFS

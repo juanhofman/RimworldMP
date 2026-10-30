@@ -10,6 +10,10 @@ namespace RimworldMP.Patches;
 /// Non-DevMode entry: F10 toggles lobby; corner brand button; desync freeze overlay.
 /// Avoids fragile MainMenuDrawer / PauseMenu signature patches — re-check under RIMWORLD_DIR.
 /// </summary>
+/// <remarks>
+/// UNVERIFIED (RW 1.7): UIRoot.UIRootOnGUI + UnityEngine.Event / Widgets.ButtonText under Waylith stubs.
+/// Prefer this stable hook over inventing MainMenuDrawer Prefixes.
+/// </remarks>
 [HarmonyPatch(typeof(UIRoot), nameof(UIRoot.UIRootOnGUI))]
 internal static class LobbyUi_Patches
 {

@@ -10,6 +10,7 @@ namespace RimworldMP.Patches;
 /// <summary>
 /// Draft / undraft → lockstep commands. Structural patch on Pawn_DraftController.Drafted setter.
 /// </summary>
+/// <remarks>UNVERIFIED (RW 1.7): Pawn_DraftController.Drafted setter — common community target.</remarks>
 [HarmonyPatch(typeof(Pawn_DraftController), nameof(Pawn_DraftController.Drafted), MethodType.Setter)]
 internal static class Pawn_DraftController_Drafted_Patch
 {
