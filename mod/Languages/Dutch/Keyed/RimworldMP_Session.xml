@@ -20,4 +20,10 @@
   <RMP.DisplayNameHost>Host</RMP.DisplayNameHost>
   <RMP.DisplayNameYou>Jij</RMP.DisplayNameYou>
   <RMP.DisplayNameYouHost>Jij (host)</RMP.DisplayNameYouHost>
+  <RMP.DesyncHeadline>Desync — simulatie bevroren</RMP.DesyncHeadline>
+  <RMP.DesyncBodyShort>Peers zijn uiteengelopen. Open de lobby (F10) om te verbreken.</RMP.DesyncBodyShort>
+  <RMP.DesyncBodyDetail>Peers zijn uiteengelopen op tick {0}.\nLokaal  {1}\nRemote {2}\n{3}Dump (alleen lokaal):\n{4}\nOpen de lobby (F10) om te verbreken.</RMP.DesyncBodyDetail>
+  <RMP.DesyncModsLine>Mods   {0}\n</RMP.DesyncModsLine>
+  <RMP.DesyncNoDump>(geen dump)</RMP.DesyncNoDump>
+  <RMP.DesyncDumpLabel>Lokale dump · {0}</RMP.DesyncDumpLabel>
 </LanguageData>

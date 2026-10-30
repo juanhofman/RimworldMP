@@ -1,11 +1,15 @@
 namespace RimworldMP.Launcher.Services.ModSync;
 
 /// <summary>
-/// Placeholder sync client so the Avalonia Mods screen can bind without a LAN file server yet.
-/// The mod-sync agent should replace DI registration with a real implementation.
+/// Placeholder sync client for tests / Avalonia layout without a network backend.
+/// Production uses <see cref="LanModSyncClient"/> via <see cref="ModSyncServices.UseLanBackends"/>.
 /// </summary>
 public sealed class StubModSyncClient : IModSyncClient
 {
+    public const string UnavailableMessage =
+        "LAN mod sync backend not registered (stub). Call ModSyncServices.UseLanBackends() " +
+        "or set ModSyncServices.Sync = new LanModSyncClient(...). See docs/launcher-mod-manager-hooks.md.";
+
     public bool IsAvailable => false;
 
     public Task<ModSyncPlan> CompareAsync(ModSyncHostTarget target, CancellationToken cancellationToken = default)
@@ -21,6 +25,7 @@ public sealed class StubModSyncClient : IModSyncClient
             Mismatched = Array.Empty<ModSyncDelta>(),
             ExtraLocal = Array.Empty<ModSyncDelta>(),
             RemoteOrder = Array.Empty<string>(),
+            Warnings = new[] { UnavailableMessage },
         });
     }
 
@@ -34,13 +39,13 @@ public sealed class StubModSyncClient : IModSyncClient
         {
             Phase = "unavailable",
             Fraction = 0,
-            Message = "LAN mod sync is not implemented in this build. Waiting on mod-sync agent.",
+            Message = UnavailableMessage,
         });
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(new ModSyncResult
         {
             Success = false,
-            Error = "IModSyncClient stub: LAN transfer not wired. See docs/launcher-mod-manager-hooks.md.",
+            Error = UnavailableMessage,
         });
     }
 }

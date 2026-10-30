@@ -4,7 +4,7 @@ Snapshot of **what ships on `main`** vs prefs and known blockers. Maintained as 
 
 | Field | Value |
 | --- | --- |
-| **Audited tip** | `2b9033e` (LiteNetLib #16 merge tip at 0.7.0 packaging cut) |
+| **Audited tip** | `2cafa5b` (VerseBind scaffold #22; product-polish pending) |
 | **Tagged release** | **0.7.0** (`VERSION` / `About.xml` `modVersion`) — GitHub **pre-release** |
 | **Toward next?** | Live RimWorld 1.7 binding smoke (`RIMWORLD_DIR`); fill-in map [verse-binding-checklist.md](./verse-binding-checklist.md) |
 | **Prefs** | RimWorld **1.7 only** · shared colony · LAN-first · **in-game host only** · no dedicated server required |
@@ -22,7 +22,7 @@ Status vocabulary: **Done** · **Partial** · **Blocked on RIMWORLD_DIR** · **W
 | **SyncMethod** | **Done** (offline) | `MP.CallSyncMethod` → opcode `90` → applicator invoke; `SyncMethodCodec`; `[SyncMethod]` attribute scan; `ColonyCommands` | Live author mods still need game session |
 | **JIP** | **Partial** / **Blocked on RIMWORLD_DIR** | Chunked transfer + paced LiteNetLib chunks + `CompleteOrThrow` fail-loud; `SaveBlobPipeline` / `ISaveLoad` / `MemorySaveLoad`; join hard-gate (`RMP3` v4 / MinSupported 3) | `VerseSaveLoad` SaveGame/LoadGame needs install |
 | **Launcher** | **Done** | Avalonia 11 UI + CLI: locate RW, mod prepare/hash, UDP discovery, host/join, `launcher-handoff.json`, process launch ([launcher-mvp.md](./launcher-mvp.md)) | Avalonia visual QA optional; launching game binary needs a real install |
-| **Mod sync** | **Done** | `RimworldMP.ModSync` host share TCP **30557**, client compare/pull + content-hash verify, Workshop **cache** secondary ([mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) | Live Workshop **download** / SteamCMD: stub only |
+| **Mod sync** | **Done** | `RimworldMP.ModSync` host share TCP **30557**, client compare/pull + content-hash verify, Workshop **cache** secondary; SteamCMD stub fail-loud ([mod-manager-lan-sync.md](./mod-manager-lan-sync.md)) | Live Workshop **download** / SteamCMD: intentionally unsupported |
 | **Transports** | **Done** (LAN) (+ **Won’t do** rows) | `INetTransport`: **Loopback** + **LAN TCP** (default) + **LiteNetLib** UDP (`MpConfig.TransportKind` / handoff `transport`, port **30555**) — [transport-litenetlib.md](./transport-litenetlib.md) | **Steam** / **dedicated host**: **Won’t do per prefs** |
 | **API** | **Done** (offline) / **Partial** (live watches) | `[SyncMethod]` / `[SyncField]`, `FieldWatch`, `HostInject`, attribute registration, `CallSyncMethod` schedule, XML docs; examples + `ApiRegistrationTests`; [mod-author-api.md](./mod-author-api.md) | Live field-watch → command emission still stub-bound |
 | **DLC hooks** | **Partial** / **Blocked on RIMWORLD_DIR** | Phase 3 opcodes + `DlcHooks.*` + `DlcStateStore` shadow apply | Live DLC Harmony targets need DLC assemblies |

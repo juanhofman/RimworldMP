@@ -6,7 +6,7 @@ From-scratch **RimWorld 1.7** multiplayer: **shared colony**, **LAN-first**, **i
 
 Not a fork of Zetrith/RWMT. **v0.7.0** (offline feature cut, GitHub **pre-release**): SyncMethod + full colony catalog, Compat API, Session QoL, LiteNetLib LAN transport, richer [desync dumps](docs/desync-dumps.md), zero-warning builds — on top of the Avalonia LAN launcher / ModSync / P0 stack from 0.6. Protocol **v4** (MinSupported **3**); TCP default / LiteNetLib opt-in. PackageId **`RimworldMP.Core`**. License **MIT**.
 
-**Known limitation:** requires a RimWorld 1.7 install for live play; Verse apply paths remain scaffolded. Full Harmony patches need `RIMWORLD_DIR` / game DLLs. CI (no game install): [`docs/ci.md`](docs/ci.md).
+**Status:** GitHub **pre-release** — offline CI green; **not** proven in live RimWorld 1.7. Verse/Harmony apply remains scaffolded ([verse-binding-checklist.md](docs/verse-binding-checklist.md)); needs `RIMWORLD_DIR` / game DLLs for live play. Workshop live download / SteamCMD is unsupported (LAN ModSync + local Workshop cache only). CI: [`docs/ci.md`](docs/ci.md).
 
 ## Locked scope
 

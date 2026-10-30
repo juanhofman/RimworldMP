@@ -149,7 +149,11 @@ public sealed class ClientModSync
 
             var (op, payload) = await ModSyncFrameIo.ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
             if (op == ModSyncOpcode.Error)
-                throw new InvalidOperationException(ModSyncFrameIo.DecodeUtf8(payload));
+            {
+                throw new InvalidOperationException(
+                    FormatAcquisitionFailure(needed.PackageId, ModSyncFrameIo.DecodeUtf8(payload)));
+            }
+
             if (op != ModSyncOpcode.ModBlob)
                 throw new InvalidOperationException($"Expected ModBlob, got {op}");
 
@@ -187,6 +191,12 @@ public sealed class ClientModSync
     {
         foreach (var provider in _providers)
         {
+            if (!provider.IsImplemented)
+            {
+                Log?.Invoke($"provider {provider.Name}: skipped — {provider.LimitationMessage ?? "not implemented"}");
+                continue;
+            }
+
             try
             {
                 var path = await provider.TryResolveLocalFolderAsync(needed, ct).ConfigureAwait(false);
@@ -201,6 +211,10 @@ public sealed class ClientModSync
 
         return null;
     }
+
+    /// <summary>Fail-loud copy when LAN cannot supply a package (no silent SteamCMD fallback).</summary>
+    public static string FormatAcquisitionFailure(string packageId, string hostError) =>
+        $"{hostError} (packageId={packageId}). {SteamCmdProviderStub.StubLimitation}";
 
     private string CopyFolderIntoMods(string sourceDir, string packageId)
     {

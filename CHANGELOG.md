@@ -2,7 +2,12 @@
 
 ## Unreleased
 
-Post-0.7.0 work. See [docs/feature-completeness.md](docs/feature-completeness.md). Stay on **0.7.0** (do not bump VERSION for binding scaffold).
+### Changed
+- Offline product polish: clearer Workshop/SteamCMD-unavailable messaging in ModSync + launcher hooks; CLI `mods sync --path` honoured (no silent wrong install); Compare/Sync fail loud on missing install / post-sync hash mismatch / beacon hash drift warnings
+- Desync freeze overlay EN/NL strings via `SessionMessages` + keyed XML (outside lobby)
+- Install / smoke / launcher docs aligned with protocol **v4** and live LAN ModSync (not stubbed)
+
+See [docs/feature-completeness.md](docs/feature-completeness.md). Stay on **0.7.0** (do not bump VERSION for binding scaffold).
 
 ### Added
 - **Verse binding scaffold:** `VerseBind/` apply shapes + `VerseBindingRegistry` catalog, checklist ([docs/verse-binding-checklist.md](docs/verse-binding-checklist.md)); NO_GAME_REFS stubs keep harness green; trade/caravan/policy/DLC capture left Scaffold (no invented Prefixes); DeterminismHarness `VerseBindingTests`

@@ -20,6 +20,10 @@ public sealed class WorkshopCacheProvider : IModAcquisitionProvider
 
     public string Name => "steam-workshop-cache";
 
+    public bool IsImplemented => true;
+
+    public string? LimitationMessage => null;
+
     public Task<string?> TryResolveLocalFolderAsync(
         ModManifestEntry needed,
         CancellationToken cancellationToken = default)

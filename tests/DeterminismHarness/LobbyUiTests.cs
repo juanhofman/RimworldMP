@@ -14,6 +14,7 @@ public class LobbyUiTests
     public LobbyUiTests()
     {
         MpConfig.ResetToDefaults();
+        SessionMessages.ResetToEnglish();
         HandoffUiTracker.Reset();
         SessionFacade.Clear();
         ZoneWorld.Current.Reset();
@@ -110,6 +111,7 @@ public class LobbyUiTests
         Assert.NotNull(model);
         Assert.Equal(120, model!.Tick);
         Assert.Equal("0123456789ab…", model.LocalHashShort);
+        Assert.Equal(SessionMessages.Get("RMP.DesyncHeadline"), model.Headline);
         Assert.Contains("frozen", model.Headline, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("120", model.Body, StringComparison.Ordinal);
         Assert.Contains("local only", model.Body, StringComparison.OrdinalIgnoreCase);

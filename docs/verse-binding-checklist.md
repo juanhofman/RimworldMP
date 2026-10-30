@@ -104,5 +104,6 @@ Offline already green: opcode catalog, shadow stores, SyncMethod, registry + stu
 ## Related
 
 - [feature-completeness.md](./feature-completeness.md) — matrix / Verse-blocked list
+- [smoke-checklist.md](./smoke-checklist.md) — offline CI gate + in-game rows that need this fill-in
 - [code-quality.md](./code-quality.md) — `RIMWORLDMP_NO_GAME_REFS` / TreatWarningsAsErrors
 - [p0-sim-correctness.md](./p0-sim-correctness.md) — lockstep / JIP offline guarantees

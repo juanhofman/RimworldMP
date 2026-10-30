@@ -1,8 +1,9 @@
+using RimworldMP.Core.Session;
 using RimworldMP.Core.Sync;
 
 namespace RimworldMP.UI;
 
-/// <summary>Readable copy for the full-screen desync freeze overlay.</summary>
+/// <summary>Readable copy for the full-screen desync freeze overlay (EN/NL via <see cref="SessionMessages"/>).</summary>
 public sealed class DesyncOverlayModel
 {
     public required long Tick { get; init; }
@@ -20,22 +21,36 @@ public sealed class DesyncOverlayModel
         var modShort = string.IsNullOrEmpty(info.ModlistHashShort) || info.ModlistHashShort == "—"
             ? null
             : info.ModlistHashShort;
+        var modsLine = modShort is null
+            ? ""
+            : SessionMessages.Format("RMP.DesyncModsLine", modShort);
         return new DesyncOverlayModel
         {
             Tick = info.Tick,
             LocalHashShort = ShortHash(info.LocalHashHex),
             RemoteHashShort = ShortHash(info.RemoteHashHex),
             LogPath = info.LogPath,
-            Headline = "Desync — simulation frozen",
-            Body =
-                $"Peers diverged at tick {info.Tick}.\n" +
-                $"Local  {ShortHash(info.LocalHashHex)}\n" +
-                $"Remote {ShortHash(info.RemoteHashHex)}\n" +
-                (modShort is null ? "" : $"Mods   {modShort}\n") +
-                $"Dump (local only):\n{info.LogPath}\n" +
-                "Open the lobby (F10) to disconnect.",
+            Headline = SessionMessages.Get("RMP.DesyncHeadline"),
+            Body = SessionMessages.Format(
+                "RMP.DesyncBodyDetail",
+                info.Tick,
+                ShortHash(info.LocalHashHex),
+                ShortHash(info.RemoteHashHex),
+                modsLine,
+                info.LogPath),
         };
     }
+
+    public static DesyncOverlayModel Fallback(long tick) =>
+        new()
+        {
+            Tick = tick,
+            LocalHashShort = "—",
+            RemoteHashShort = "—",
+            LogPath = SessionMessages.Get("RMP.DesyncNoDump"),
+            Headline = SessionMessages.Get("RMP.DesyncHeadline"),
+            Body = SessionMessages.Get("RMP.DesyncBodyShort"),
+        };
 
     public static string ShortHash(string? hex)
     {

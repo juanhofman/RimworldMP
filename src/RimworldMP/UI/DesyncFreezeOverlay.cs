@@ -23,15 +23,7 @@ public static class DesyncFreezeOverlay
         }
 
         var model = DesyncOverlayModel.From(session.Desync.LastDesync)
-                    ?? new DesyncOverlayModel
-                    {
-                        Tick = session.Tick,
-                        LocalHashShort = "—",
-                        RemoteHashShort = "—",
-                        LogPath = "(no dump)",
-                        Headline = "Desync — simulation frozen",
-                        Body = "Peers diverged. Open the lobby (F10) to disconnect.",
-                    };
+                    ?? DesyncOverlayModel.Fallback(session.Tick);
 
         _fadeIn = Mathf.Min(1f, _fadeIn + Time.unscaledDeltaTime * 2.2f);
         var a = _fadeIn;
@@ -65,7 +57,7 @@ public static class DesyncFreezeOverlay
 
         GUI.color = new Color(MpUiPalette.Steel.R, MpUiPalette.Steel.G, MpUiPalette.Steel.B, a);
         Widgets.Label(new Rect(panel.x + 18f, panel.yMax - 36f, panel.width - 28f, 20f),
-            $"Local dump · {Truncate(model.LogPath, 72)}");
+            SessionMessages.Format("RMP.DesyncDumpLabel", Truncate(model.LogPath, 72)));
         GUI.color = Color.white;
         Text.Font = GameFont.Small;
     }
